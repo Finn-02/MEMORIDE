@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "description": "기대 결과는 이번 호출의 새 효과다. 중복 영수증 내용에는 과거 선물이 남아도 새 지급 효과는 0이다. 시나리오마다 새 journeyId로 재생하거나 의도적 replay를 사용한다.",
+  "scenarios": [
+    {
+      "id": "D01",
+      "title": "일상 첫 완료",
+      "resetBefore": true,
+      "arrival": {
+        "journeyId": "00000000-0000-4000-8000-000000000001",
+        "source": "DEMO",
+        "kind": "DAILY",
+        "regionId": null,
+        "routeRevision": 0,
+        "evidence": "DEMO_FINAL_DESTINATION",
+        "completedAtEpochMs": 1793408400000,
+        "elapsedSeconds": 1200,
+        "distanceMeters": 5000.0
+      },
+      "expected": {
+        "growthDelta": 1,
+        "grantedItemIds": [],
+        "duplicate": false
+      }
+    },
+    {
+      "id": "D02",
+      "title": "같은 날 추가 일상",
+      "dependsOn": "D01",
+      "arrival": {
+        "journeyId": "00000000-0000-4000-8000-000000000002",
+        "source": "DEMO",
+        "kind": "DAILY",
+        "regionId": null,
+        "routeRevision": 0,
+        "evidence": "DEMO_FINAL_DESTINATION",
+        "completedAtEpochMs": 1793408400000,
+        "elapsedSeconds": 1200,
+        "distanceMeters": 5000.0
+      },
+      "expected": {
+        "growthDelta": 0,
+        "grantedItemIds": [],
+        "duplicate": false
+      }
+    },
+    {
+      "id": "D03",
+      "title": "대전 첫 발견",
+      "resetBefore": true,
+      "arrival": {
+        "journeyId": "00000000-0000-4000-8000-000000000003",
+        "source": "DEMO",
+        "kind": "REGION",
+        "regionId": "daejeon",
+        "routeRevision": 0,
+        "evidence": "DEMO_FINAL_DESTINATION",
+        "completedAtEpochMs": 1793408400000,
+        "elapsedSeconds": 1200,
+        "distanceMeters": 5000.0
+      },
+      "expected": {
+        "growthDelta": 0,
+        "grantedItemIds": [
+          "daejeon_bread",
+          "daejeon_hat",
+          "daejeon_sign"
+        ],
+        "discoveredRegionId": "daejeon",
+        "duplicate": false
+      }
+    },
+    {
+      "id": "D04",
+      "title": "같은 도착 반복",
+      "dependsOn": "D03",
+      "replayOf": "D03",
+      "arrival": {
+        "journeyId": "00000000-0000-4000-8000-000000000003",
+        "source": "DEMO",
+        "kind": "REGION",
+        "regionId": "daejeon",
+        "routeRevision": 0,
+        "evidence": "DEMO_FINAL_DESTINATION",
+        "completedAtEpochMs": 1793408400000,
+        "elapsedSeconds": 1200,
+        "distanceMeters": 5000.0
+      },
+      "expected": {
+        "growthDelta": 0,
+        "grantedItemIds": [],
+        "duplicate": true
+      }
+    },
+    {
+      "id": "D05",
+      "title": "대전 재방문",
+      "dependsOn": "D04",
+      "arrival": {
+        "journeyId": "00000000-0000-4000-8000-000000000005",
+        "source": "DEMO",
+        "kind": "REGION",
+        "regionId": "daejeon",
+        "routeRevision": 0,
+        "evidence": "DEMO_FINAL_DESTINATION",
+        "completedAtEpochMs": 1793408400000,
+        "elapsedSeconds": 1200,
+        "distanceMeters": 5000.0
+      },
+      "expected": {
+        "growthDelta": 0,
+        "grantedItemIds": [],
+        "duplicate": false
+      }
+    },
+    {
+      "id": "D06",
+      "title": "측정값 없는 원주 발견",
+      "resetBefore": true,
+      "arrival": {
+        "journeyId": "00000000-0000-4000-8000-000000000006",
+        "source": "DEMO",
+        "kind": "REGION",
+        "regionId": "wonju",
+        "routeRevision": 0,
+        "evidence": "DEMO_FINAL_DESTINATION",
+        "completedAtEpochMs": 1793408400000,
+        "elapsedSeconds": null,
+        "distanceMeters": null
+      },
+      "expected": {
+        "growthDelta": 0,
+        "grantedItemIds": [
+          "wonju_potato",
+          "wonju_crown",
+          "wonju_tree"
+        ],
+        "discoveredRegionId": "wonju",
+        "duplicate": false
+      }
+    }
+  ]
+}

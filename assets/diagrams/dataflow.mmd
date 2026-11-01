@@ -1,0 +1,9 @@
+flowchart TD
+  Input["유효 도착 A"] --> Tx["중복 확인과 게임 저장 B"]
+  Tx --> Result{"저장 결과"}
+  Result -->|실패| Error["오류와 재시도"]
+  Result -->|성공 또는 기존 결과| Gate{"실제 이용 가능"}
+  Gate -->|아니오| Pending["최신 영수증 보류"]
+  Gate -->|예| Brief["브리핑 PM"]
+  Pending -->|복귀| Brief
+  Brief --> Ack["표시 완료만 기록"]

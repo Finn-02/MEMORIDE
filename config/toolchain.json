@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "verified": false,
+  "verifiedBy": null,
+  "verifiedAt": null,
+  "javaMajor": null,
+  "androidStudio": null,
+  "agp": null,
+  "gradle": null,
+  "kotlin": null,
+  "compose": null,
+  "minSdk": 28,
+  "compileSdk": null,
+  "targetSdk": null,
+  "naviHelper": "3.0.5",
+  "applicationId": "io.kailand",
+  "pleosEmulator": "2.1.0",
+  "gradleDaemonJvmCriteria": false,
+  "note": "Proposed values are not verified. A records one real build on D1. No personal SDK/JDK paths."
+}

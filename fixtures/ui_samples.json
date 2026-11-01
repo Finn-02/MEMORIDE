@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "1.1.0",
+  "description": "Preview inputs only. Never replace the live game state with these samples.",
+  "samples": [
+    {
+      "id": "fresh",
+      "label": "Preview DEMO initial",
+      "gate": {
+        "state": "PARKED_ALLOWED"
+      },
+      "game": {
+        "avatar": {
+          "characterId": "tori",
+          "outfitItemId": null
+        },
+        "dailyGrowth": 0,
+        "ownedItemIds": [],
+        "discoveredRegionIds": [],
+        "decorationSlots": {},
+        "pendingReceipt": null
+      }
+    },
+    {
+      "id": "regional",
+      "label": "Preview DEMO regional",
+      "gate": {
+        "state": "PARKED_ALLOWED"
+      },
+      "game": {
+        "avatar": {
+          "characterId": "tori",
+          "outfitItemId": "daejeon_hat"
+        },
+        "dailyGrowth": 0,
+        "ownedItemIds": [
+          "daejeon_bread",
+          "daejeon_hat",
+          "daejeon_sign"
+        ],
+        "discoveredRegionIds": [
+          "daejeon"
+        ],
+        "decorationSlots": {
+          "slot_left": "daejeon_sign"
+        },
+        "pendingReceipt": {
+          "journeyId": "00000000-0000-4000-8000-000000000003",
+          "source": "DEMO",
+          "kind": "REGION",
+          "regionId": "daejeon",
+          "completedAtEpochMs": 1793408400000,
+          "elapsedSeconds": 1200,
+          "distanceMeters": 5000.0,
+          "growthBefore": 0,
+          "growthAfter": 0,
+          "discoveredRegionId": "daejeon",
+          "grantedItemIds": [
+            "daejeon_bread",
+            "daejeon_hat",
+            "daejeon_sign"
+          ]
+        }
+      }
+    },
+    {
+      "id": "daily",
+      "label": "Preview DEMO daily",
+      "gate": {
+        "state": "PARKED_ALLOWED"
+      },
+      "game": {
+        "avatar": {
+          "characterId": "tori",
+          "outfitItemId": null
+        },
+        "dailyGrowth": 1,
+        "ownedItemIds": [],
+        "discoveredRegionIds": [],
+        "decorationSlots": {},
+        "pendingReceipt": {
+          "journeyId": "00000000-0000-4000-8000-000000000001",
+          "source": "DEMO",
+          "kind": "DAILY",
+          "regionId": null,
+          "completedAtEpochMs": 1793408400000,
+          "elapsedSeconds": 1200,
+          "distanceMeters": 5000.0,
+          "growthBefore": 0,
+          "growthAfter": 1,
+          "discoveredRegionId": null,
+          "grantedItemIds": []
+        }
+      }
+    },
+    {
+      "id": "missing_metrics",
+      "label": "Preview DEMO missing_metrics",
+      "gate": {
+        "state": "PARKED_ALLOWED"
+      },
+      "game": {
+        "avatar": {
+          "characterId": "tori",
+          "outfitItemId": null
+        },
+        "dailyGrowth": 0,
+        "ownedItemIds": [
+          "wonju_potato",
+          "wonju_crown",
+          "wonju_tree"
+        ],
+        "discoveredRegionIds": [
+          "wonju"
+        ],
+        "decorationSlots": {},
+        "pendingReceipt": {
+          "journeyId": "00000000-0000-4000-8000-000000000006",
+          "source": "DEMO",
+          "kind": "REGION",
+          "regionId": "wonju",
+          "completedAtEpochMs": 1793408400000,
+          "elapsedSeconds": null,
+          "distanceMeters": null,
+          "growthBefore": 0,
+          "growthAfter": 0,
+          "discoveredRegionId": "wonju",
+          "grantedItemIds": [
+            "wonju_potato",
+            "wonju_crown",
+            "wonju_tree"
+          ]
+        }
+      }
+    },
+    {
+      "id": "restricted_pending",
+      "label": "Preview DEMO restricted",
+      "gate": {
+        "state": "RESTRICTED",
+        "reason": "test input only"
+      },
+      "game": {
+        "avatar": {
+          "characterId": "tori",
+          "outfitItemId": "daejeon_hat"
+        },
+        "dailyGrowth": 0,
+        "ownedItemIds": [
+          "daejeon_bread",
+          "daejeon_hat",
+          "daejeon_sign"
+        ],
+        "discoveredRegionIds": [
+          "daejeon"
+        ],
+        "decorationSlots": {
+          "slot_left": "daejeon_sign"
+        },
+        "pendingReceipt": {
+          "journeyId": "00000000-0000-4000-8000-000000000003",
+          "source": "DEMO",
+          "kind": "REGION",
+          "regionId": "daejeon",
+          "completedAtEpochMs": 1793408400000,
+          "elapsedSeconds": 1200,
+          "distanceMeters": 5000.0,
+          "growthBefore": 0,
+          "growthAfter": 0,
+          "discoveredRegionId": "daejeon",
+          "grantedItemIds": [
+            "daejeon_bread",
+            "daejeon_hat",
+            "daejeon_sign"
+          ]
+        }
+      }
+    }
+  ]
+}

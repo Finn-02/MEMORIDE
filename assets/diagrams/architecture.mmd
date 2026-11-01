@@ -1,0 +1,9 @@
+flowchart TD
+  Input["Pleos 또는 DEMO 입력 A"] --> Root["AppRoot와 여정 연결 A"]
+  Gate["실제 플랫폼 제한 A"] --> Root
+  Root --> Game["게임 규칙과 단일 저장 B"]
+  Root --> Visit["가상 방문 C"]
+  Game --> Island["섬과 렌더러 B"]
+  Game --> Experience["동행과 월드맵 C"]
+  Game --> Brief["결과 브리핑 PM"]
+  Visit --> Experience

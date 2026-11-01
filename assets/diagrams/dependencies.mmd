@@ -1,0 +1,11 @@
+flowchart TD
+  Start["D1 공통 앱과 계약 A"] --> B["B 게임"]
+  Start --> C["C 체험"]
+  Start --> PM["PM 브리핑"]
+  B --> Fake["한 지역 Fake 흐름 통합"]
+  C --> Fake
+  PM --> Fake
+  Start --> SDK["실제 SDK 검증 A"]
+  Fake --> Freeze["D11 기능 동결"]
+  SDK --> Freeze
+  Freeze --> Release["release 설치와 인수"]

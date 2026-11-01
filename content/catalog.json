@@ -1,0 +1,201 @@
+{
+  "contentVersion": "1.1.0",
+  "description": "게임 테마와 시연용 좌표. 제휴·특정 매장 방문 인증 아님.",
+  "characters": [
+    {
+      "id": "tori",
+      "name": "토리",
+      "assetKey": "char_tori"
+    },
+    {
+      "id": "momo",
+      "name": "모모",
+      "assetKey": "char_momo"
+    },
+    {
+      "id": "lulu",
+      "name": "루루",
+      "assetKey": "char_lulu"
+    }
+  ],
+  "expressions": {
+    "idle": "face_idle",
+    "happy": "face_happy",
+    "eat": "face_eat"
+  },
+  "assets": {
+    "char_tori": {
+      "path": "assets/starter/char_tori.png",
+      "kind": "body"
+    },
+    "char_momo": {
+      "path": "assets/starter/char_momo.png",
+      "kind": "body"
+    },
+    "char_lulu": {
+      "path": "assets/starter/char_lulu.png",
+      "kind": "body"
+    },
+    "face_idle": {
+      "path": "assets/starter/face_idle.png",
+      "kind": "face"
+    },
+    "face_happy": {
+      "path": "assets/starter/face_happy.png",
+      "kind": "face"
+    },
+    "face_eat": {
+      "path": "assets/starter/face_eat.png",
+      "kind": "face"
+    },
+    "outfit_bread_hat": {
+      "path": "assets/starter/outfit_bread_hat.png",
+      "kind": "outfit"
+    },
+    "outfit_ginkgo_crown": {
+      "path": "assets/starter/outfit_ginkgo_crown.png",
+      "kind": "outfit"
+    },
+    "outfit_wave_scarf": {
+      "path": "assets/starter/outfit_wave_scarf.png",
+      "kind": "outfit"
+    },
+    "food_bread": {
+      "path": "assets/starter/food_bread.png",
+      "kind": "food"
+    },
+    "food_potato": {
+      "path": "assets/starter/food_potato.png",
+      "kind": "food"
+    },
+    "food_sashimi": {
+      "path": "assets/starter/food_sashimi.png",
+      "kind": "food"
+    },
+    "decor_bakery_sign": {
+      "path": "assets/starter/decor_bakery_sign.png",
+      "kind": "decor"
+    },
+    "decor_ginkgo": {
+      "path": "assets/starter/decor_ginkgo.png",
+      "kind": "decor"
+    },
+    "decor_shell": {
+      "path": "assets/starter/decor_shell.png",
+      "kind": "decor"
+    }
+  },
+  "regions": [
+    {
+      "id": "daejeon",
+      "name": "대전",
+      "theme": "빵을 떠올리는 지역 테마",
+      "latitude": 36.35,
+      "longitude": 127.38,
+      "itemIds": [
+        "daejeon_bread",
+        "daejeon_hat",
+        "daejeon_sign"
+      ]
+    },
+    {
+      "id": "wonju",
+      "name": "원주",
+      "theme": "은행나무와 지역 먹거리 테마",
+      "latitude": 37.34,
+      "longitude": 127.92,
+      "itemIds": [
+        "wonju_potato",
+        "wonju_crown",
+        "wonju_tree"
+      ]
+    },
+    {
+      "id": "sokcho",
+      "name": "속초",
+      "theme": "바다와 음식 테마",
+      "latitude": 38.2,
+      "longitude": 128.59,
+      "itemIds": [
+        "sokcho_sashimi",
+        "sokcho_scarf",
+        "sokcho_shell"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "daejeon_bread",
+      "regionId": "daejeon",
+      "type": "FOOD",
+      "name": "빵",
+      "assetKey": "food_bread"
+    },
+    {
+      "id": "daejeon_hat",
+      "regionId": "daejeon",
+      "type": "OUTFIT",
+      "name": "빵모자",
+      "assetKey": "outfit_bread_hat"
+    },
+    {
+      "id": "daejeon_sign",
+      "regionId": "daejeon",
+      "type": "DECOR",
+      "name": "작은 빵 간판",
+      "assetKey": "decor_bakery_sign"
+    },
+    {
+      "id": "wonju_potato",
+      "regionId": "wonju",
+      "type": "FOOD",
+      "name": "감자 음식",
+      "assetKey": "food_potato"
+    },
+    {
+      "id": "wonju_crown",
+      "regionId": "wonju",
+      "type": "OUTFIT",
+      "name": "은행잎 머리장식",
+      "assetKey": "outfit_ginkgo_crown"
+    },
+    {
+      "id": "wonju_tree",
+      "regionId": "wonju",
+      "type": "DECOR",
+      "name": "은행나무",
+      "assetKey": "decor_ginkgo"
+    },
+    {
+      "id": "sokcho_sashimi",
+      "regionId": "sokcho",
+      "type": "FOOD",
+      "name": "회 접시",
+      "assetKey": "food_sashimi"
+    },
+    {
+      "id": "sokcho_scarf",
+      "regionId": "sokcho",
+      "type": "OUTFIT",
+      "name": "파도 목도리",
+      "assetKey": "outfit_wave_scarf"
+    },
+    {
+      "id": "sokcho_shell",
+      "regionId": "sokcho",
+      "type": "DECOR",
+      "name": "바다 조개",
+      "assetKey": "decor_shell"
+    }
+  ],
+  "rules": {
+    "dailyGrowthCap": 3,
+    "dailyGrantLimit": 1,
+    "timeZone": "Asia/Seoul",
+    "decorationSlotIds": [
+      "slot_left",
+      "slot_right",
+      "slot_back"
+    ]
+  }
+}

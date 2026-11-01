@@ -1,0 +1,13 @@
+# Reference only. Rename only after checking plan support and real usernames.
+# GitHub Free private repositories do not provide the same CODEOWNERS protection as paid plans.
+# Replace the placeholders before use. Do not assume this file enforces ownership.
+/app/src/main/java/io/kailand/app/ @REPLACE_WITH_A
+/app/src/main/java/io/kailand/core/ @REPLACE_WITH_A
+/app/src/main/java/io/kailand/feature/island/ @REPLACE_WITH_B
+/app/src/main/java/io/kailand/feature/companion/ @REPLACE_WITH_C
+/app/src/main/java/io/kailand/feature/visit/ @REPLACE_WITH_C
+/app/src/main/java/io/kailand/feature/world/ @REPLACE_WITH_C
+/app/src/main/java/io/kailand/feature/demo/ @REPLACE_WITH_C
+/app/src/main/java/io/kailand/feature/briefing/ @REPLACE_WITH_PM
+/content/ @REPLACE_WITH_PM
+/fixtures/ @REPLACE_WITH_PM

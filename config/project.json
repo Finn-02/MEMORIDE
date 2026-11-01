@@ -1,0 +1,12 @@
+{
+  "projectName": "MEMORIDE",
+  "koreanName": "메모라이드",
+  "tagline": "Ride Becomes a Memory",
+  "worldConcept": "카일랜드",
+  "documentationVersion": "1.2",
+  "applicationIdProposal": "io.kailand",
+  "scopeBaseline": "1.2 naming revision of 1.1",
+  "contentVersion": "1.1.0",
+  "saveSchemaVersion": 1,
+  "androidAppImplemented": false
+}

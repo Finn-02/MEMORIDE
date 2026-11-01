@@ -1,0 +1,11 @@
+stateDiagram-v2
+  [*] --> IDLE
+  IDLE --> REQUESTED: 목적 공개 요청
+  REQUESTED --> ACCEPTED: 유효한 수락
+  ACCEPTED --> VISITING: 캐릭터 표시
+  VISITING --> COMPLETED: 닫기
+  REQUESTED --> TERMINATED: 거절 또는 만료 또는 철회
+  ACCEPTED --> TERMINATED: 플랫폼 제한
+  VISITING --> TERMINATED: 플랫폼 제한 또는 화면 이탈
+  COMPLETED --> [*]
+  TERMINATED --> [*]

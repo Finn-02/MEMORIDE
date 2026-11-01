@@ -1,0 +1,36 @@
+name: Manual checks
+on:
+  workflow_dispatch:
+    inputs:
+      run_android:
+        description: 'Run Android checks only after A records a verified toolchain'
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: manual-check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Static checks
+        run: python3 scripts/check_all.py
+      - name: Read verified Java major
+        if: ${{ inputs.run_android }}
+        id: toolchain
+        run: python3 scripts/doctor.py --ci-output
+      - uses: actions/setup-java@v4
+        if: ${{ inputs.run_android }}
+        with:
+          distribution: temurin
+          java-version: ${{ steps.toolchain.outputs.java_major }}
+      - name: Android checks without emulator or signing
+        if: ${{ inputs.run_android }}
+        run: python3 scripts/check_all.py --android

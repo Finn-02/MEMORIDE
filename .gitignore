@@ -1,0 +1,46 @@
+# Local Android and IDE data
+.gradle/
+**/build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+captures/
+# Secrets and signing
+*.jks
+*.keystore
+keystore.properties
+.env
+.env.*
+!.env.example
+*.pem
+# Build outputs; add final contest APK intentionally with git add -f if needed
+*.apk
+*.aab
+# Documentation snapshots are delivered in ZIP; MD is the development source
+*.docx
+*.pdf
+# Local working files
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+tmp/
+*.log
+**/*.local.md
+
+# Other local secrets and machine-specific instruction files
+.claude/settings.local.json
+AGENTS.local.md
+CLAUDE.local.md
+config/*.local.json
+.venv/
+venv/
+.cxx/
+*.p12
+*.pfx
+
+# Release snapshots and optional document-only fonts are distributed in the development ZIP
+*.zip
+assets/fonts/*.ttf
+MANIFEST.sha256

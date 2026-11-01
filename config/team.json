@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "project": "MEMORIDE",
+  "repository": "Finn-02/MEMORIDE",
+  "parts": {
+    "part1": {
+      "alias": "A",
+      "githubLogin": null,
+      "os": "Windows"
+    },
+    "part2": {
+      "alias": "B",
+      "githubLogin": null,
+      "os": "Windows"
+    },
+    "part3": {
+      "alias": "C",
+      "githubLogin": null,
+      "os": "Windows"
+    },
+    "pm": {
+      "alias": "P",
+      "githubLogin": "Finn-02",
+      "os": "macOS"
+    }
+  },
+  "note": "Part assignment pending. Store GitHub IDs only; no contact information."
+}
