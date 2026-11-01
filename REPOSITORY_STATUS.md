@@ -13,6 +13,12 @@ DOCX·ZIP·문서 열람용 TTF·공식 빈 동의서·캐시·서명키는 초�
 
 ## PM이 실제로 확인할 설정
 
-팀원 세 명의 정확한 GitHub ID를 config/team.json에 배정하고 collaborator로 초대한다. Actions는 Settings → Actions → General에서 우선 Disable하고, 필요할 때만 비용을 확인한 뒤 수동 검사에 사용한다. 기본 브랜치·squash merge·리뷰 규칙은 REPO_SETUP.md를 따른다. 계정에 없는 유료 보호 기능을 전제로 하지 않는다.
+PM은 팀원 초대를 완료했다고 알렸다. 실제 수락·로컬 clone은 각 팀원이 확인한다. 파트 결정 후 정확한 GitHub ID를 config/team.json에 기록한다. Actions는 Settings → Actions → General에서 우선 Disable하고, 필요할 때만 비용을 확인한 뒤 수동 검사에 사용한다. 기본 브랜치·squash merge·리뷰 규칙은 REPO_SETUP.md를 따른다. 계정에 없는 유료 보호 기능을 전제로 하지 않는다.
 
 이번 작업에서는 collaborator 초대, 저장소 Actions 활성/비활성, 예산·결제·브랜치 보호 설정을 변경하지 않았다. 제공 workflow는 수동 실행 전용이며 push/PR 자동 트리거가 없다. 실제 실행 건수는 배포 직전 원격에서 별도 확인한다.
+
+## 개발 시작 안내 보완
+
+같은 1.2 범위를 유지하며 README를 팀원 시작 설명서로 개편했다. 설치·인증·Mac/Windows 명령·로컬 AI·파트별 첫 작업·Git 일상 흐름·A01 공용 빌드 전달 기준과 EditorConfig를 추가했다. 기존 119개 파일은 초기 자료 반영 시점의 수치다. 현재 파일 수는 Git tree를 따른다.
+
+공통 Android 도구 버전은 아직 검증 전이며 네 PC의 설치가 완료된 상태가 아니다. 이번 온보딩 변경은 실제 앱·wrapper를 생성하지 않는다. 원격 문서는 이전 DOCX·ZIP보다 최신이며, 원래 컨셉·기능 경계·노력 2:2:2:1은 유지한다.

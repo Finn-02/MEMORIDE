@@ -1,18 +1,18 @@
 # private 저장소 초기 적용
 
-이 파일은 사람이 적용할 절차다. Finn-02/MEMORIDE private 저장소는 확인했다. 초기 반영 결과는 REPOSITORY_STATUS.md를 따른다. 팀 초대·Actions 비활성화·비용·merge 설정은 아래 절차대로 PM이 실제 화면에서 확인한다.
+이 파일은 사람이 적용할 절차다. Finn-02/MEMORIDE private 저장소는 확인했다. 초기 반영 결과는 REPOSITORY_STATUS.md를 따른다. PM은 팀원 초대를 완료했다고 알렸다. 팀원은 수락·접근을 확인하고, Actions 비활성화·비용·merge 설정은 아래 절차대로 PM이 실제 화면에서 확인한다.
 
 ## PM 준비
 
 1. https://github.com/Finn-02/MEMORIDE 저장소가 private인지 확인한다. 이 배포의 초기 자료가 이미 반영되었다면 새로 git init하거나 같은 파일을 중복 업로드하지 않는다.
-2. A·B·C의 정확한 GitHub ID를 확인해 collaborator로 초대한다. 개인정보 동의서는 저장소에 올리지 않는다.
+2. 이미 보낸 초대의 수락 여부와 A·B·C의 정확한 GitHub ID를 확인한다. 재초대가 필요한지는 실제 접근 실패 때만 확인한다. 개인정보 동의서는 저장소에 올리지 않는다.
 3. Settings → Actions → General에서 이 저장소 Actions를 우선 Disable한다. 다른 저장소나 계정 전체 결제 설정은 바꾸지 않는다.
 4. main 기본 브랜치와 squash merge·병합 후 브랜치 삭제를 설정한다. 계정이 지원하면 main 보호·리뷰 1개를 적용한다. Free private 지원을 가정하지 않는다.
 5. 역할과 리뷰 짝 A↔PM, B↔C를 정한다. CODEOWNERS.example은 참고용이며 강제 기능이 아니다.
 
 ## 파트 1의 공통 앱 추가
 
-ZIP 안 폴더의 내용물을 실제 저장소 루트로 사용한다. ZIP 자체와 바깥 중첩 폴더를 개발 루트로 커밋하지 않는다. 숨김 .github·.gitattributes·.gitignore도 포함한다.
+현재 원격 main을 개발 기준으로 사용한다. 기존 ZIP은 오프라인 스냅샷이다. 이미 반영된 저장소 위에 ZIP을 덮어쓰거나 git init을 반복하지 않는다. [A01 전달 기준](docs/BOOTSTRAP_HANDOFF.md)을 따른다.
 
 현재 자료가 반영된 main을 clone하고 작은 브랜치에서 A01을 시작한다. ZIP은 오프라인 배포용 스냅샷이며 개발 기준은 같은 버전의 원격 MD다.
 
@@ -37,7 +37,7 @@ content와 fixtures는 Gradle sourceSets 또는 작은 복사 과정 중 하나�
 
 ## 팀원 시작
 
-clone → 로컬 줄바꿈 설정 → 같은 root를 Android Studio에서 열기 → 로컬 SDK/JDK 설정 → 정적 검사 → Android 검사 → 자기 part 브랜치 생성 순서다. 명령은 docs/15_cross_platform.md를 따른다. IDE 자동 업그레이드 제안은 혼자 적용하지 않는다.
+팀원은 [README](README.md)에서 시작해 [온보딩](docs/ONBOARDING.md)·[로컬 AI](docs/LOCAL_AI_SETUP.md)·[첫 작업](docs/FIRST_TASKS.md)을 순서대로 따른다. A01 전에는 기초 설정·정적 검사·내부 준비를 하고, A01 이후 같은 프로젝트를 받아 Android 검사한다. IDE 자동 업그레이드 제안은 혼자 적용하지 않는다.
 
 ## 수동 Actions를 쓰기로 할 때만
 

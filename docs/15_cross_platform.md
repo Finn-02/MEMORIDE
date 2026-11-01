@@ -1,5 +1,7 @@
 # 15 macOS와 Windows 공통 개발 환경
 
+처음 설치·clone·검사는 [온보딩](ONBOARDING.md), 실제 매일 명령은 [Git 안내](GIT_DAILY.md)를 먼저 따른다. 이 문서는 OS별 세부 차이의 기준이다.
+
 ## 15 1 같은 코드와 다른 로컬 경로
 
 PM은 macOS, A·B·C는 Windows를 사용한다. 공통 언어는 Kotlin·Compose이고 Python 도구는 3.10 이상 표준 라이브러리만 쓴다. WSL·Docker·유료 클라우드 PC를 필수로 두지 않는다. A의 Windows를 기준 Pleos 실행 PC, C의 Windows를 백업으로 지정한다. 이는 실행 책임 분담이며 PM의 Mac 개발을 제외한다는 뜻이 아니다.
@@ -8,7 +10,7 @@ PM은 macOS, A·B·C는 Windows를 사용한다. 공통 언어는 Kotlin·Compos
 
 | 항목 | macOS PM | Windows A B C |
 |---|---|---|
-| 권장 작업 폴더 | `~/src/kailand` | `C:\src\kailand` |
+| 권장 작업 폴더 | `~/src/MEMORIDE` | `C:\src\MEMORIDE` |
 | 기본 터미널 | zsh 또는 IDE Terminal | PowerShell 또는 IDE Terminal |
 | Python 명령 | `python3` | `py -3`, 없으면 설치된 `python` |
 | Gradle 명령 | `./gradlew` | `.\gradlew.bat` |
@@ -61,4 +63,4 @@ JSON·MD·Python은 UTF-8로 저장한다. 제공 Python 도구는 읽기 인코
 
 ## 15 6 문서 열람
 
-제공 Word 문서는 NanumGothic을 사용한다. Mac과 Windows의 대체 글꼴에 따른 페이지 차이를 줄이려면 assets/fonts의 Regular·Bold를 설치한다. 공식 Google Fonts 원본과 OFL.txt를 동봉했으며 문서 열람용이다. 앱에는 자동 포함하지 않는다. [S41]
+기존 배포 ZIP의 Word 문서는 NanumGothic을 사용한다. Mac과 Windows의 대체 글꼴에 따른 페이지 차이를 줄이려면 배포 ZIP의 assets/fonts에 있는 Regular·Bold를 설치한다. 현재 Git 저장소에는 TTF 대신 OFL.txt만 있으며 공식 Google Fonts 원본은 ZIP에서 제공한다. 글꼴은 문서 열람용이다. 앱에는 자동 포함하지 않는다. [S41]
