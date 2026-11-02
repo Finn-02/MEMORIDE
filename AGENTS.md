@@ -58,3 +58,12 @@ This package is planning and seed material, not a runnable Android app yet.
 
 Part mapping: part 1=A, part 2=B, part 3=C, PM=P. Assignment is config/team.json.
 Read docs/18_final_review.md for navigation, action ownership and asynchronous acknowledgement boundaries.
+
+## Review ZIP delivery
+- After each MEMORIDE task that produces results for ChatGPT review, package the relevant report and deliverables into one ZIP.
+- On PM Junkyung's local Mac only, save the ZIP to /Users/jujunkyung/Downloads/ with a unique task and KST timestamp in its filename. Do not ask for that location again.
+- Include a concise REPORT.md with actual OS, branch/SHA, changes, commands/results, NOT RUN items and next steps; include only necessary logs and relevant changes.
+- Exclude credentials, signing keys, private forms, caches and unrelated files; do not archive the whole repository or home directory. Do not commit review ZIPs.
+- Verify that the ZIP exists, is nonempty and passes an integrity check, then report its actual full path.
+- Windows contributors use their own real output folder. A Linux/cloud workspace must not create a fake /Users path or claim to have saved on the PM Mac.
+- Details: docs/PM_REVIEW_EXPORT.md. This is a per-task instruction, not an installed background automation.
