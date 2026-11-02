@@ -8,5 +8,5 @@
   "scopeBaseline": "1.2 naming revision of 1.1",
   "contentVersion": "1.1.0",
   "saveSchemaVersion": 1,
-  "androidAppImplemented": false
+  "androidAppImplemented": true
 }
