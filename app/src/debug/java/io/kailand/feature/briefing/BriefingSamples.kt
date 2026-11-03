@@ -5,7 +5,9 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -131,7 +133,8 @@ internal fun BriefingSampleHost(sampleId: String, variant: String = "") {
         }
     }
     val callback: suspend () -> MutationResult = {
-        delay(500)
+        // Give manual device checks time to observe disabled controls and try competing inputs.
+        delay(2500)
         attempts++
         if (variant == "retry" && attempts == 1) {
             MutationResult.StorageFailure("Preview only")
@@ -141,7 +144,10 @@ internal fun BriefingSampleHost(sampleId: String, variant: String = "") {
         }
     }
     MemorideTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Text("P01 개발 샘플 · 실제 저장/이동 없음", Modifier.padding(12.dp), style = MaterialTheme.typography.labelLarge)
             if (callbackStatus.isNotEmpty()) Text(callbackStatus, Modifier.padding(horizontal = 12.dp))
             val loaded = sample

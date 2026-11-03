@@ -45,3 +45,18 @@ regional, daily, missing_metrics, restricted_pending, fresh에 각각 Preview가
 - 기존 AVD가 이번에는 ADB `device`로 연결됐고 일반 Android 홈을 관찰했다. 초기 offline 원인은 확정하지 않았다. Wipe Data·AVD 삭제·전체 ADB 서버 중단은 하지 않았다.
 - Compose Preview에서 DAILY, 측정값 누락, RESTRICTED 화면을 직접 관찰했다. 지역/기타 일부 Preview는 로딩 상태로 보였다. Preview를 기기에 실행하는 UI 조작은 반영을 확인하지 못해 P01 에뮬레이터 실행·실패/재시도 버튼·Back·창 크기/글자 크기 시험은 NOT RUN이다. 화면 인수 완료로 기록하지 않는다.
 - A01 개발 홈→여정→복귀·정식 MainActivity 실행·A04 실제 연결·실제 Pleos/SDK/차량 gate/release는 이번에 NOT RUN. 다음은 일반 에뮬레이터의 독립 Preview 실행과 P01 화면/실패·재시도 수동 확인이다.
+
+
+## 독립 기기 인수 후속 (2026-11-03)
+
+[기기 인수표](P01_UI_ACCEPTANCE.md)의 14개 사례를 일반 ARM64 API37 에뮬레이터에서 확인했다. 정적 Preview 로딩 관찰과 별도로, 실제 PreviewActivity foreground·화면/UI dump·실패/재시도·Back·중복 입력·작은 창/큰 글자를 기록했다. A04 실제 저장/라우팅·Pleos/차량 gate/release는 NOT RUN이다.
+
+기존 debug APK에는 exported `androidx.compose.ui.tooling.PreviewActivity`와 `BriefingSamplesKt` 메서드가 들어 있다. IDE Run Preview 반영이 어려우면 대상 일반 에뮬레이터에서 아래처럼 실행한다. `-f 0x10008000`은 사용자 저장 데이터 삭제 없이 새 Activity task로 샘플 세션을 시작한다.
+
+```bash
+adb -s emulator-5554 shell am start -W -f 0x10008000 \
+  -n io.kailand/androidx.compose.ui.tooling.PreviewActivity \
+  --es composable io.kailand.feature.briefing.BriefingSamplesKt.RetryBriefingPreview
+```
+
+이번 샘플 보완은 상태 표시줄 겹침을 없애는 안전 영역 여백과 수동 동시 입력 관찰을 위한 모의 대기 2.5초다. 성공·실패 정책과 공개 화면 계약은 바뀌지 않았다. 설치 직후 첫 Preview가 흰 화면이면 같은 Activity 새 task 실행을 재시도한다. 이는 관측한 도구 현상의 복구 방법이며 원인이나 정식 앱 시작 성공을 확정한 것은 아니다.
