@@ -11,6 +11,7 @@ import io.kailand.core.contract.GameService
 import io.kailand.core.contract.GameSnapshot
 import io.kailand.core.contract.JourneyKind
 import io.kailand.core.contract.MutationResult
+import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +68,7 @@ class BGameService internal constructor(
         }
     }
 
-    /** REGION only. Duplicate lookup and every reward effect share one transaction. */
+    /** Duplicate lookup, DAILY growth and REGION gifts share one transaction. */
     override suspend fun completeArrival(command: ArrivalCommand): ArrivalResult {
         if (_readiness.value != GameReadiness.READY) {
             return ArrivalResult.StorageFailure("Game save is not ready")
@@ -88,23 +89,31 @@ class BGameService internal constructor(
                         result = ArrivalResult.AlreadyApplied(original.toContract())
                         current // Never replace a newer pending receipt or reopen an acknowledged one.
                     } else {
-                        val discovered = command.regionId?.takeIf { it !in current.discoveredRegionIds }
+                        // DAILY never carries a region, even if the caller supplied one.
+                        val regionId = command.regionId.takeIf { command.kind == JourneyKind.REGION }
+                        val discovered = regionId?.takeIf { it !in current.discoveredRegionIds }
                         val gifts = discovered?.let(regionRewards::itemsFor) ?: emptyList()
+                        val dailyDate = if (command.kind == JourneyKind.DAILY) dailyDate(command.completedAtEpochMs) else null
+                        val grantGrowth = dailyDate != null && current.dailyGrowth < regionRewards.dailyGrowthCap &&
+                            !hasDailyGrantOn(current, dailyDate)
+                        val growthAfter = current.dailyGrowth + if (grantGrowth) 1 else 0
                         val receipt = ArrivalReceipt(
                             journeyId = command.journeyId,
                             source = command.source,
                             kind = command.kind,
-                            regionId = command.regionId,
+                            regionId = regionId,
                             completedAtEpochMs = command.completedAtEpochMs,
                             elapsedSeconds = command.elapsedSeconds,
                             distanceMeters = command.distanceMeters,
                             growthBefore = current.dailyGrowth,
-                            growthAfter = current.dailyGrowth,
+                            growthAfter = growthAfter,
                             discoveredRegionId = discovered,
                             grantedItemIds = gifts,
                         )
                         result = ArrivalResult.Applied(receipt)
                         current.copy(
+                            dailyGrowth = growthAfter,
+                            lastDailyGrantDate = if (grantGrowth) dailyDate else current.lastDailyGrantDate,
                             ownedItemIds = current.ownedItemIds + gifts,
                             discoveredRegionIds = current.discoveredRegionIds + listOfNotNull(discovered),
                             processedReceipts = current.processedReceipts +
@@ -123,8 +132,17 @@ class BGameService internal constructor(
         }
     }
 
+    private fun dailyDate(completedAtEpochMs: Long): String = Instant.ofEpochMilli(completedAtEpochMs)
+        .atZone(regionRewards.timeZone).toLocalDate().toString()
+
+    private fun hasDailyGrantOn(save: GameSave, date: String): Boolean =
+        save.lastDailyGrantDate == date || save.processedReceipts.values.any { receipt ->
+            // Original receipts cover out-of-order arrivals without a new save field.
+            receipt.kind == JourneyKind.DAILY.name && receipt.growthAfter > receipt.growthBefore &&
+                dailyDate(receipt.completedAtEpochMs) == date
+        }
+
     private fun invalidArrivalReason(command: ArrivalCommand): String? = when {
-        command.kind != JourneyKind.REGION -> "DAILY arrival handling is not implemented"
         !JOURNEY_ID.matches(command.journeyId) -> "Invalid journey ID"
         command.routeRevision < 0 -> "Invalid route revision"
         (command.source == DataSource.DEMO) !=
@@ -133,7 +151,8 @@ class BGameService internal constructor(
         command.elapsedSeconds != null && command.elapsedSeconds < 0 -> "Invalid elapsed time"
         command.distanceMeters != null &&
             (!command.distanceMeters.isFinite() || command.distanceMeters < 0) -> "Invalid distance"
-        command.regionId != null && !regionRewards.contains(command.regionId) -> "Unknown region"
+        command.kind == JourneyKind.REGION && command.regionId != null &&
+            !regionRewards.contains(command.regionId) -> "Unknown region"
         else -> null
     }
 

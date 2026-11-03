@@ -27,6 +27,76 @@ import org.junit.rules.TemporaryFolder
 class GameSaveDataStoreTest {
     @get:Rule val temp = TemporaryFolder()
 
+    @Test fun dailyDatesAndD06NullOriginalsSurviveRealFileRecreation() = runBlocking {
+        val file = File(temp.root, "daily.preferences_pb")
+        val d01 = IslandTestData.arrival("D01")
+        val d02 = IslandTestData.arrival("D02")
+        val d06 = IslandTestData.arrival("D06")
+        val nextDay = d01.copy(journeyId = "00000000-0000-4000-8000-000000000888",
+            completedAtEpochMs = d01.completedAtEpochMs + 86_400_000)
+
+        suspend fun <T> session(block: suspend (BGameService, PreferencesGameSaveStore) -> T): T {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            try {
+                val backend = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
+                val store = PreferencesGameSaveStore(backend)
+                val service = BGameService(store, scope) { IslandTestData.rewards }
+                assertEquals(GameReadiness.READY, service.readiness.first { it != GameReadiness.LOADING })
+                return block(service, store)
+            } finally { scope.coroutineContext[Job]?.cancelAndJoin() }
+        }
+
+        val (daily, wonju) = session { service, store ->
+            val daily = (service.completeArrival(d01) as ArrivalResult.Applied).receipt
+            val savedDaily = store.read()!!
+            assertEquals(1, savedDaily.dailyGrowth)
+            assertEquals("2026-10-31", savedDaily.lastDailyGrantDate)
+            assertEquals(daily, savedDaily.processedReceipts.getValue(d01.journeyId).toContract())
+            assertEquals(d01.journeyId, savedDaily.pendingReceiptId)
+            val wonju = (service.completeArrival(d06) as ArrivalResult.Applied).receipt
+            assertNull(wonju.elapsedSeconds)
+            assertNull(wonju.distanceMeters)
+            assertEquals(1, wonju.growthBefore)
+            assertEquals(1, wonju.growthAfter)
+            val saved = store.read()!!
+            assertEquals(wonju.grantedItemIds.toSet(), saved.ownedItemIds)
+            assertEquals(setOf("wonju"), saved.discoveredRegionIds)
+            assertEquals(wonju, saved.processedReceipts.getValue(d06.journeyId).toContract())
+            assertEquals(MutationResult.Success, service.acknowledgeReceipt(d06.journeyId))
+            daily to wonju
+        }
+
+        session { service, store ->
+            assertNull(service.state.value.pendingReceipt)
+            assertEquals(daily, (service.completeArrival(d01.copy(completedAtEpochMs = nextDay.completedAtEpochMs))
+                as ArrivalResult.AlreadyApplied).receipt)
+            assertEquals(wonju, (service.completeArrival(d06.copy(elapsedSeconds = 999, distanceMeters = 999.0))
+                as ArrivalResult.AlreadyApplied).receipt)
+            assertNull(service.state.value.pendingReceipt)
+            val sameDate = (service.completeArrival(d02) as ArrivalResult.Applied).receipt
+            assertEquals(1, sameDate.growthBefore)
+            assertEquals(1, sameDate.growthAfter)
+            assertEquals(2, (service.completeArrival(nextDay) as ArrivalResult.Applied).receipt.growthAfter)
+            assertEquals("2026-11-01", store.read()!!.lastDailyGrantDate)
+            assertTrue(service.acknowledgeReceipt(d02.journeyId) is MutationResult.Rejected)
+            assertEquals(nextDay.journeyId, store.read()!!.pendingReceiptId)
+        }
+
+        session { service, store ->
+            assertEquals(2, service.state.value.dailyGrowth)
+            assertEquals(nextDay.journeyId, service.state.value.pendingReceipt?.journeyId)
+            val olderDayNewId = d01.copy(journeyId = "00000000-0000-4000-8000-000000000889")
+            val receipt = (service.completeArrival(olderDayNewId) as ArrivalResult.Applied).receipt
+            assertEquals(2, receipt.growthBefore)
+            assertEquals(2, receipt.growthAfter)
+            val beforeReplay = store.read()
+            assertEquals(daily, (service.completeArrival(d01) as ArrivalResult.AlreadyApplied).receipt)
+            assertEquals(wonju, (service.completeArrival(d06) as ArrivalResult.AlreadyApplied).receipt)
+            assertEquals(beforeReplay, store.read())
+            assertEquals(olderDayNewId.journeyId, service.state.value.pendingReceipt?.journeyId)
+        }
+    }
+
     @Test fun d03D04D05AndAcknowledgementSurviveRealFileRecreation() = runBlocking {
         val file = File(temp.root, "arrivals.preferences_pb")
         val firstScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -92,6 +162,7 @@ class GameSaveDataStoreTest {
             val key = stringPreferencesKey("game_save_json_v1")
             val corruptInputs = listOf(
                 "{broken json",
+                GameSaveCodec.encode(saved.copy(lastDailyGrantDate = "not-a-date")),
                 GameSaveCodec.encode(saved.copy(pendingReceiptId = null,
                     processedReceipts = mapOf("wrong-id" to receipt))),
                 GameSaveCodec.encode(saved.copy(pendingReceiptId = null,

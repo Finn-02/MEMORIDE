@@ -161,7 +161,7 @@ class RegionArrivalTest {
             d03.copy(completedAtEpochMs = -1), d03.copy(elapsedSeconds = -1),
             d03.copy(distanceMeters = -1.0), d03.copy(distanceMeters = Double.NaN),
             d03.copy(distanceMeters = Double.POSITIVE_INFINITY), d03.copy(regionId = "missing"),
-            d03.copy(regionId = ""), IslandTestData.arrival("D01"),
+            d03.copy(regionId = ""),
         )
         invalid.forEach { assertTrue("Must reject $it", service.completeArrival(it) is ArrivalResult.Rejected) }
         assertTrue(service.apply(GameAction.SelectCharacter("momo")) is MutationResult.Rejected)

@@ -5,6 +5,7 @@ import io.kailand.core.contract.AvatarPreview
 import io.kailand.core.contract.DataSource
 import io.kailand.core.contract.GameSnapshot
 import io.kailand.core.contract.JourneyKind
+import java.time.LocalDate
 import kotlinx.serialization.Serializable
 
 /** B-owned, local-only save representation. Not a shared contract or SDK type. */
@@ -27,6 +28,7 @@ internal data class GameSave(
         check(schemaVersion == SAVE_SCHEMA_VERSION) { "Unsupported game save schemaVersion" }
         check(dailyGrowth in 0..3) { "Invalid saved dailyGrowth" }
         check(characterId.isNotBlank()) { "Invalid saved characterId" }
+        lastDailyGrantDate?.let { check(LocalDate.parse(it).toString() == it) { "Invalid saved DAILY date" } }
         // Validate historical receipts too: acknowledging must not hide corrupt entries.
         processedReceipts.forEach { (id, receipt) ->
             check(id == receipt.journeyId && id.isNotBlank()) { "Mismatched receipt ID" }
