@@ -31,7 +31,7 @@
 | A 기준 PC | Windows 11 AMD64 | PASS, Python 34개 시험 포함 | PASS, 단위 시험 4개 PASS | NOT RUN | NOT RUN |
 | B | Windows CPU 미확인 | NOT RUN | NOT RUN | 필요 시 | 필요 시 |
 | C 백업 PC | Windows CPU 미확인 | NOT RUN | NOT RUN | NOT RUN | NOT RUN |
-| PM | macOS CPU 미확인 | NOT RUN | NOT RUN | 가능하면 검증 | 필요 시 |
+| PM | macOS 27.2 arm64 | PASS, Python 34개 | PASS, Android 단위 시험 4개 실제 실행 | NOT RUN | NOT RUN |
 
 ## 로컬 명령
 
@@ -72,3 +72,15 @@ doctor는 진단만 하며 설치·설정 변경·요금제 변경을 하지 않
 2026-11-02 Windows Android Studio의 Medium Phone API 37.0에서 실행된 앱 화면을 직접 관찰했다. MEMORIDE 제목, DEMO · A01 개발 샘플 · 게임 저장/보상 없음, 임시 tori 외형과 다섯 이동 버튼 표시 PASS. 첫 화면 표시만 확인했으며 화면 이동·재실행·저장·실제 차량 제한·Pleos·release 검증은 하지 않았다.
 
 추가 확인: 홈에서 여정 준비로 이동한 화면을 직접 관찰했다. 사용자가 메인 섬 버튼으로 처음 화면에 복귀했다고 확인했다. 시스템 뒤로 가기 버튼·제스처는 별도로 검증하지 않았다.
+
+
+## PM Mac A01 공통 기반 확인 (2026-11-03)
+
+- 사용자 지정 역할 PM. 기존 저장소에서 `origin/main`을 fetch하고 A01 병합 커밋 `a4a00106cb193074105b47eb607de69998353b17` 포함을 확인했다. 깨끗한 기존 main을 fast-forward한 뒤 처음 만든 `part/pm-p01-briefing`에서 검증했다. 위의 PR OPEN 표시는 병합 전 기록이다.
+- macOS 27.2 / arm64, Python 3.13.12. Android Studio Rabbit 2 2026.2.2 (`AI-262.10968.63.2622.16730706`), JBR 25.0.4, SDK Platform 37.0 revision 2 / Build-Tools 36.0.0을 기존 설치에서 확인했다.
+- 터미널 기본 Java는 11이었다. 검증 프로세스에 설치된 JBR 25의 `JAVA_HOME`과 개인 SDK의 `ANDROID_HOME`을 지정했다. `./gradlew --version`: Gradle 9.3.1, Launcher/Daemon JVM JBR 25.0.4, exit 0. IDE는 개인 설정의 `GRADLE_LOCAL_JAVA_HOME`으로 같은 JBR을 선택했다. 개인 경로는 Git에서 제외되는 설정에만 남겼다.
+- `python3 scripts/check_all.py --android`: exit 0. 콘텐츠·UI 샘플·패키지 검사와 Python 시험 34개 PASS. `:app:testDebugUnitTest` 4개, 실패/오류/skip 0. `:app:assembleDebug` PASS, `BUILD SUCCESSFUL in 3m 48s`, 45 actionable tasks 모두 실제 실행. 최초 Mac 실행으로, Android 시험의 UP-TO-DATE 재사용이 아니다.
+- 샌드박스 실행은 Gradle 로컬 소켓의 `Operation not permitted`로 중단됐다. 승인된 일반 로컬 권한 재실행으로 해결했다. SDK XML 버전 경고와 native library 2개 strip 생략 경고는 남았으나 빌드는 성공했다. 공용 코드·버전 변경으로 우회하지 않았다.
+- IDE 최초 Sync는 `onSuccess`, `onImportFinished`, `Gradle sync finished in 2 m 56 s 880 ms`로 확인했다. 개인 JDK 설정 적용 후 후속 Sync도 14:10:41 KST에 `Gradle sync finished in 1 m 23 s 95 ms`로 완료됐다. IDE가 자동 생성한 JVM criteria 파일은 저장소 밖으로 보존해 공통 `gradleDaemonJvmCriteria=false`를 유지했다.
+- 기존 일반 ARM64 API 37.0 에뮬레이터 시작을 시도했으나 `emulator-5554 offline` 상태였다. DevelopmentActivity 홈·여정 준비·홈 복귀와 정식 MainActivity UNKNOWN의 실행 관찰은 NOT RUN. UNKNOWN 관련 단위 시험 PASS를 실차 gate 성공으로 간주하지 않는다. 실제 Pleos·SDK·차량 gate·release는 모두 NOT RUN.
+- 다음 작업은 P01: fixture 기반 BriefingScreen과 순수 문구 포맷 함수. 이번 작업에는 기능 구현·push·PR·Actions 실행을 포함하지 않았다.
