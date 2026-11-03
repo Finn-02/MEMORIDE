@@ -1,7 +1,7 @@
 # PM 진행 상태
 
-상태: P01 독립 코드·시험·빌드·기기 화면 인수 완료 (일반 ARM64 API37, 상세 docs/P01_UI_ACCEPTANCE.md)
-오늘 완료: 14개 기기 인수 항목 확인. debug 샘플 안전 영역/관찰용 대기 보완. 기존 A01/P01 커밋 보존.
-막힌 작업과 한계: 설치 직후 첫 Preview 흰 화면은 새 Activity task 실행으로 정상화, 원인 미확정. A04 실제 acknowledge·라우팅/저장 실패 I06·Pleos·차량 gate·release는 NOT RUN.
-다음 작업: 검토 ZIP과 연결 예제로 작은 PR 전달 준비. 이번 작업에서 push/PR/병합/Actions는 하지 않음.
-시험: 이번 수정 후 debug 빌드 PASS, 기기 인수14개 PASS. 이전 Python34개/Android17개 PASS는 재실행하지 않음. 임시 창/글자 크기 복원 확인.
+상태: P01은 PR #2로 main 반영 완료. P02 보완은 기존 PM 브랜치에 적용하고 Mac 검사를 완료했으며 작은 커밋·PR로 전달한다.
+오늘 완료: Catalog·fixtures·ID 유지. MVP 개수·성장/슬롯·표시 이름·APK 자산 경로·REGION/DAILY 성장 예제 검사 및 회귀 시험10개 보완. docs/P02_CONTENT_BASELINE.md 참고.
+막힌 작업과 한계: 현재 main d83f472의 AppRoot는 임시 화면이며 GameService는 계약만 있고 B02 구현·A04 acknowledge/라우팅은 미연결이다. P03·실제 저장 실패 I06·Pleos·차량 gate·release NOT RUN. 기존 Preview 첫 흰 화면 관측은 P01 문서에 유지.
+다음 작업: P02 PR 전달 후 A04/B02가 main에 연결되면 P03 실제 영수증 표시·I06·Mac 빌드 확인. 기존 P01 UI 인수 반복이나 PM의 저장/AppRoot 구현은 하지 않는다.
+시험: macOS27.2 arm64 / Python3.13.12에서 python3 scripts/check_all.py PASS, Python44개(새 회귀10개 포함), 콘텐츠3지역·9아이템·3캐릭터·15자산·6시나리오/UI샘플5개. 이번 Android 빌드·UI는 NOT RUN이며 기존 P01 근거와 구분.
