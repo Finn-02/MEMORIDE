@@ -1,6 +1,8 @@
 # 실제 개발 환경 기록
 
-2026-11-02 A01에서 Windows 11 AMD64의 debug 단위 시험·APK 빌드를 확인했다. 기준 소스는 `be98b401106d8da7ca6445d750d0e9ad62f838b3` + `part/a-a01-bootstrap`의 미커밋 A01 변경이다. 실제 SDK·에뮬레이터 화면·서명 release·다른 PC의 결과와 구분한다. 자세한 시작 방법은 [A01 실행 안내](A01_QUICKSTART.md)를 따른다.
+최신 요약 (2026-11-03): A01 구현·검증 기준은 푸시된 `993c2c681db4d69358dd283b89d21dcbf23861f2`이며 [PR #1](https://github.com/Finn-02/MEMORIDE/pull/1)은 OPEN·미병합이다. Windows 11 AMD64에서 debug 단위 시험 4개·APK 빌드·IDE Sync PASS. 일반 API37 에뮬레이터의 개발 DEMO 홈·여정 준비는 직접 화면 관찰, 메인 섬 복귀는 사용자 확인이다. 실제 Pleos/API34 설치·SDK·차량 gate, 시스템 Back·재시작/복원, 서명 release·macOS/다른 PC는 NOT RUN이다. 일반 화면 확인은 실제 주차·차량 제한 검증이 아니다. 자세한 시작 방법은 [A01 실행 안내](A01_QUICKSTART.md)를 따른다.
+
+아래는 2026-11-02의 단계별 기록이다. 각 절의 당시 NOT RUN 표시는 이후 일반 에뮬레이터 확인 기록과 구분하며, 이번 문서 보완에서 Android·UI 검사를 재실행한 것은 아니다.
 
 | 항목 | 팀 공통 실제 값 | 확인 방법 |
 |---|---|---|

@@ -96,11 +96,11 @@ A01에는 wrapper가 포함되어 있으므로 각자 기록된 JDK·SDK를 맞�
 ## 4. 매일 개발하는 순서
 
 1. `git status`로 기존 작업을 확인·보존하고 최신 main을 받습니다.
-2. `part/a-...`, `part/b-...`, `part/c-...`, `part/pm-...` 작은 브랜치를 만듭니다.
+2. 자기 파트의 기존 `part/a-...`, `part/b-...`, `part/c-...`, `part/pm-...` 브랜치를 사용합니다. 파트 브랜치는 처음 한 번만 만들고 다음 작업에도 유지합니다.
 3. [AGENTS.md](AGENTS.md) → 자기 역할 → 해당 [WBS 작업](tasks/backlog.md) → 필요한 계약만 AI와 읽습니다.
 4. 담당자가 내부 계획을 짧게 정하고 구현·시험합니다. 같은 폴더를 두 AI가 동시에 수정하지 않습니다.
 5. diff·검사 결과를 확인하고 commit·push·작은 PR을 만듭니다. 연결 예제와 NOT RUN만 짧게 적습니다.
-6. PM의 통합 순서에 따라 main에 일찍 합칩니다. 다음 작업은 최신 main에서 시작합니다.
+6. PM의 통합 순서에 따라 작은 PR을 main에 일찍 합칩니다. GitHub의 **Create a merge commit**을 사용하고 파트 브랜치를 삭제하지 않습니다. 병합 후 기존 변경을 보존하고 같은 파트 브랜치에서 `git fetch origin`, `git merge origin/main`으로 최신 공통 변경을 받아 다음 작업을 시작합니다. 이미 squash/rebase 병합했다면 다음 PR의 중복 diff를 먼저 확인하고 이력을 강제 초기화하지 않습니다.
 
 복사할 수 있는 pull·branch·commit·push 명령과 충돌 대처는 [일상 Git 안내](docs/GIT_DAILY.md)에 있습니다. 기본 교차 리뷰는 A↔PM, B↔C입니다. 모든 PR과 내부 결정에 PM 승인을 추가하지 않습니다.
 
