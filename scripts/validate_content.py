@@ -36,6 +36,9 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
     regions = unique(catalog.get('regions'), 'regions')
     items = unique(catalog.get('items'), 'items')
     characters = unique(catalog.get('characters'), 'characters')
+    require(len(regions) == 3, 'MVP requires exactly 3 regions')
+    require(len(items) == 9, 'MVP requires exactly 9 items')
+    require(len(characters) == 3, 'MVP requires exactly 3 characters')
     assets = catalog.get('assets')
     require(isinstance(assets, dict) and assets, 'assets required')
     root = root.resolve()
@@ -51,6 +54,8 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
         for segment in relative.split('/'):
             require(current.is_dir() and segment in {p.name for p in current.iterdir()}, f'asset {key}: missing file or wrong case {relative}')
             current /= segment
+        require(Path(relative).parent == Path('assets/starter') and Path(relative).suffix == '.png',
+                f'asset {key}: packaged PNG required at assets/starter/<filename>.png')
     for item_id, item in items.items():
         require(item.get('regionId') in regions, f'{item_id}: unknown region')
         require(item.get('type') in ('FOOD', 'OUTFIT', 'DECOR'), f'{item_id}: invalid type')
@@ -58,6 +63,8 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
         require(assets[item['assetKey']].get('kind') == item['type'].lower(), f'{item_id}: asset kind mismatch')
         require(isinstance(item.get('name'), str) and item['name'].strip(), f'{item_id}: name required')
     for region_id, region in regions.items():
+        for field in ('name', 'theme'):
+            require(isinstance(region.get(field), str) and region[field].strip(), f'{region_id}: {field} required')
         for field, low, high in [('latitude', -90, 90), ('longitude', -180, 180)]:
             require(number(region.get(field)) and low <= region[field] <= high, f'{region_id}: invalid {field}')
         item_ids = region.get('itemIds')
@@ -65,6 +72,7 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
         require(set(item_ids) == {i for i, v in items.items() if v['regionId'] == region_id}, f'{region_id}: inconsistent item references')
         require({items[i]['type'] for i in item_ids} == {'FOOD', 'OUTFIT', 'DECOR'}, f'{region_id}: missing item category')
     for cid, character in characters.items():
+        require(isinstance(character.get('name'), str) and character['name'].strip(), f'{cid}: name required')
         key = character.get('assetKey')
         require(key in assets and assets[key].get('kind') == 'body', f'{cid}: invalid character body')
     expressions = catalog.get('expressions', {})
@@ -72,11 +80,13 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
         key = expressions.get(state)
         require(key in assets and assets[key].get('kind') == 'face', f'{state}: missing face')
     rules = catalog.get('rules', {})
-    require(type(rules.get('dailyGrowthCap')) is int and rules['dailyGrowthCap'] >= 1, 'invalid growth cap')
+    require(type(rules.get('dailyGrowthCap')) is int and rules['dailyGrowthCap'] == 3, 'MVP growth cap must be integer 3')
     require(type(rules.get('dailyGrantLimit')) is int and rules['dailyGrantLimit'] == 1, 'MVP daily grant limit must be integer 1')
     require(rules.get('timeZone') == 'Asia/Seoul', 'unexpected time zone')
     slots = rules.get('decorationSlotIds')
-    require(isinstance(slots, list) and len(slots) == len(set(slots)) and len(slots) > 0, 'invalid decoration slots')
+    require(isinstance(slots, list) and len(slots) == 3
+            and all(isinstance(slot, str) and slot.strip() for slot in slots)
+            and len(set(slots)) == 3, 'MVP decoration slots must be 3 unique nonempty strings')
     require(type(fixtures.get('schemaVersion')) is int and fixtures['schemaVersion'] == 1, 'fixture schemaVersion must be integer 1')
     scenarios = unique(fixtures.get('scenarios'), 'scenarios')
     seen = set()
@@ -119,6 +129,7 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
             require(replay in seen, f'{sid}: replay target missing')
             require(command == scenarios[replay]['arrival'], f'{sid}: replay command differs')
             require(expected['duplicate'] and not grants and expected['growthDelta'] == 0, f'{sid}: replay must have no new effect')
+        require(command['kind'] != 'REGION' or expected['growthDelta'] == 0, f'{sid}: REGION must not expect DAILY growth')
         seen.add(sid)
         seen_journeys.add(command['journeyId'])
     return {'regions': len(regions), 'items': len(items), 'characters': len(characters), 'assets': len(assets), 'scenarios': len(scenarios)}
