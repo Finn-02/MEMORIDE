@@ -1,11 +1,19 @@
 # C 진행 상태
 
-상태: IN PROGRESS — C01 독립 화면 1차 구현·Preview 렌더링·단위 시험 완료, AppRoot 연결·기기 UI 시험 대기
-오늘 완료와 SHA: 2026-11-03, 준비 문서 보존 d6f5a93 → main 병합 29796f6(A01 a4a0010 포함) 이후 C01 코드·시험·Preview 구현. [C01 화면·연결 예제](../c01_companion.md), [C02 방문·시험 예제](../c02_visit.md), [C03 월드맵·읽기 규칙](../c03_world.md) 보존
-막힌 작업과 우회: 기본 빌드 막힘 없음. 개발 DEMO 설치·Activity 시작 성공, Computer Use 앱 접근 승인 시간 초과로 화면 관찰 NOT RUN. C01 착수와 분리
-다음 작업: A에게 C01 공개 함수·연결 예제 전달 후 AppRoot 연결 확인, C02 로컬 상태 머신·FakeClock 시험 구현
-시험: C01 추가 후 py -3 scripts/check_all.py --android exit 0(Python 34개·Android 12개 PASS). 최종 표시 조정 후 Android 12개·debug 빌드 재실행 PASS(8개 task 실행/37 UP-TO-DATE). C01 Preview 4개 렌더링 관찰. 실제 UI 상호작용·방문 상태 머신·U07~08·I01·I03·I06·S03~04·S06·S08~09·Pleos·release NOT RUN
-전달: 2026-11-03 사용자가 C01 commit·push·PR 절차 진행을 지시함. 실제 전송 결과는 PR과 검토 보고서에 기록. main 병합·C02 코드 전송은 이번 범위에 포함하지 않음
+상태: IN PROGRESS — C01 PR #3 main 병합 확인, C02·C03 독립 구현·단위 시험 완료. AppRoot 연결·기기 UI 시험 대기
+
+2026-11-04 PR #5 R1 보완: 초기화 완료 토큰을 방문 generation과 분리해 reset 진행 중 모드 전환 후에도 해당 성공 통지를 처리한다. 새 reset은 이전 토큰을 무효화하고 실패·오래된 완료·제한 gate는 계속 차단한다. 수정 전 회귀 1개 실패를 재현한 뒤 수정 후 C02 24개·전체 Android 59개·Python 44개 PASS, debug 빌드 성공(exit 0). 기존 PR #5에 일반 push로 반영하며 main 병합과 AppRoot/기기 통합은 미수행
+오늘 완료와 SHA: 2026-11-03, C01 main 병합 d83f472 확인. C02 15c4269·C03 9b240e2로 보존 후 최신 main b95e0e4를 c863644에 병합. [C01 화면·연결 예제](../c01_companion.md), [C02 구현·연결·시험](../c02_visit.md), [C03 월드맵·읽기 규칙](../c03_world.md) 보존
+막힌 작업과 우회: 기본 빌드 막힘 없음. 기존 일반 Android AVD에서 A01 DevelopmentActivity 시작·메인 섬 화면 관찰 완료. 이 화면은 A01 임시 연결 자리이며 C02/C03 실제 앱 진입 완료가 아님
+다음 작업: C01 B 교차 리뷰·A 연결, C02 VisitRoute/초기화·기기 시연, C03 로드된 게임 상태·후보/인벤토리 콜백 연결. 독립 개발은 C04 수동 시연 제어
+시험: C02 전체 py -3 scripts/check_all.py --android exit 0(Python 34개·Android 33개 PASS, C02 21개 포함), debug 빌드 PASS(9개 task 실행/36 UP-TO-DATE). 마지막 제한 문구 조정 후 Android 33개·debug 빌드 재확인 PASS(7개 task 실행/38 UP-TO-DATE). C01 Preview 4개 관찰은 앞선 결과이며 C02 Preview는 컴파일만 확인. U07~08의 C 로컬 단위 시나리오는 PASS, 실제 UI 상호작용·I01·I03·I06·S03~04·S06·S08~09·U20 전체 통합·Pleos·release NOT RUN
+전달: C01 https://github.com/Finn-02/MEMORIDE/pull/3 MERGED. 사용자가 C02·C03 commit·push와 새 PR 생성을 지시함. 실제 새 PR/SHA·최종 검사는 전달 보고서와 PR에 기록. main 병합은 통합 담당자가 수행
+
+전달 전 최신 main 재검사: `py -3 scripts/check_all.py --android` exit 0, Python 44개·Android 56개(A01 4 + PM 13 + C01 8 + C02 21 + C03 10) PASS, debug 빌드 성공(17 tasks executed / 28 up-to-date). 앱 연결·기기 통합 인수 완료를 뜻하지 않음
+
+C03 추가 검사: main 동기화 전 py -3 scripts/check_all.py --android exit 0, Python 34개·Android 43개 PASS(C03 10개 포함), debug 빌드 성공(11 tasks executed / 34 up-to-date). fresh 대화형 Preview에서 수집 0/9·미발견 3지역·상세 잠금·후보 버튼을 관찰. 이미지 디코딩·가로/큰 글자·콜백 라우팅·실제 기기 I01/I06/S03은 NOT RUN
+
+시연 추가 확인: C01 PreviewActivity에서 숨김·재표시 및 별도 UNKNOWN 샘플의 차단 안내를 관찰. C02 InteractivePreview에서 요청·카운트다운·무응답 만료·수신 시점 버튼 표시를 관찰했고 수락/거절 클릭 완료는 미확인. 실제 CompanionScreen/VisitRoute의 lifecycle 및 AppRoot 통합 검증은 별도
 
 ## 파트 C 체크리스트
 
@@ -21,7 +29,9 @@
 - [x] C01 화면 스케치·고정 슬롯·숨김·제한 시 중단 기준 준비
 - [x] C01 독립 Compose 화면·debug Preview·표시 정책 시험 8개 구현, 네 Preview 렌더링 확인
 - [x] C02 방문 상태·동의·만료·쿨다운과 시험 예제 18개 준비
+- [x] C02 독립 로컬 controller·시점 전환·카운트다운·숨김·동의 UI와 FakeClock 시험 21개 구현, 컴파일·시험·빌드 PASS
 - [x] C03 월드맵·지역 상세·수집 표시와 검증 예제 10개 준비
+- [x] C03 독립 월드맵·상세·수집·PNG 로딩/fallback·후보 콜백 구현, 단위 시험 10개·debug 빌드 PASS
 - [x] 2026-11-03 팀 회의 A안 확인: B의 오프라인 3D → PNG 공통 렌더러를 A 주입 슬롯으로 재사용, C의 별도 모델·렌더러 없음
 - [x] 각 준비 작업의 검토 ZIP 생성·무결성 확인
 
@@ -38,9 +48,10 @@
 - [x] C01: 독립 모의 내비·주입 슬롯·DEMO 표시·숨김 구현(앱 메뉴 연결은 A 대기)
 - [ ] C01: A의 AppRoot에 실제 입력·콜백 연결하고 숨김·재표시 동작 확인
 - [ ] C01: 제한·background·화면 이탈 중단, 창 크기·글자 확대 확인
-- [ ] C02: VisitController·수락·거절·철회·닫기 구현
-- [ ] C02: monotonic 만료·쿨다운·활성 1개·오래된 ID 차단, FakeClock 시험 구현·실행
-- [ ] C03: Catalog·GameSnapshot 읽기 전용 월드맵·지역 상세·수집 목록 구현
+- [x] C02: 독립 VisitController·수락·거절·철회·닫기 구현
+- [x] C02: monotonic 만료·쿨다운·활성 1개·오래된 ID 차단, FakeClock 시험 구현·실행
+- [ ] C02: A의 AppRoot·초기화 연결, 기기 시점 전환·동의·숨김·이탈/복귀·실제 Handler 동작 확인
+- [x] C03: Catalog·GameSnapshot 읽기 전용 월드맵·지역 상세·수집 목록 독립 구현
 - [ ] C03: 지역 선택 → A의 목적지 후보, 아이템 보기 → B 인벤토리 연결 확인
 - [ ] C04: A02의 포트로 수동 출발·완료·취소·같은 도착 반복 구현
 - [ ] C04: 저장 결과 await·실패 처리·전체 초기화 요청·늦은 입력 중단 확인
@@ -51,7 +62,8 @@
 ### 전달
 
 - [ ] 변경 diff·검증 결과·NOT RUN·다음 작업 확인
-- [ ] 사용자의 전달 지시 후 필요한 변경만 커밋·push·작은 PR 준비
+- [x] C01: 선별 커밋·push·PR #3 생성 및 main 병합 확인
+- [x] C02·C03: 기능별 커밋·전달 문서·기존 시험 결과 준비(최신 main 재검사·전송 결과는 전달 보고서 확인)
 - [ ] 기본 리뷰 짝 B와 검토하고 PM 통합 순서에 따라 전달
 
-A01·C01 컴파일·단위 시험·debug APK 빌드는 PASS다. C01은 독립 화면을 구현했고 실제 앱 진입·UI 흐름은 미검증이다. VisitController·실제 Pleos·release 검증은 NOT RUN이다. 다음은 C01 연결과 C02 상태 머신 구현이다.
+A01·C01·C02·C03 컴파일·단위 시험·debug 빌드는 PASS다. C 기능의 AppRoot 진입·UI 흐름, B 외형 일치, 실제 Pleos·release는 미검증이다. 다음은 A 연결·B 리뷰와 C04 독립 구현이다.

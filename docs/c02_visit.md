@@ -1,14 +1,55 @@
 # C02 가상 방문 상태·동의·시간 경계 준비
 
-상태: A01 이전 설계·시험 예제 준비 완료. VisitController·Compose·JUnit 구현과 실행은 NOT RUN.
-기준: 2026-11-02 origin/main `be98b40`, [방문 시나리오](07_simulation_visit.md), [C 역할](../roles/C.md), [UI 계약](../contracts/ui_contracts.md).
-이 문서의 내부 타입·함수 이름은 C의 설계안이며 공통 계약이나 확정 API가 아니다.
+상태: C02 독립 VisitController·Compose 화면·FakeClock 시험 구현. 실제 검사 결과는 아래 기록을 따른다. AppRoot 연결·기기 UI 흐름은 NOT RUN.
+기준: A01과 C01을 포함한 C 브랜치 `97fbd98` 이후 C02 로컬 구현, [방문 시나리오](07_simulation_visit.md), [C 역할](../roles/C.md), [UI 계약](../contracts/ui_contracts.md).
+아래 타입은 C 소유 로컬 API이며 공통 DTO·게임 저장 계약을 변경하지 않는다.
+
+## 구현과 A 연결
+
+- `feature/visit/VisitController.kt`: 한 세션의 요청·동의·종료, UUID/generation, 15초 만료·30초 쿨다운, reset 잠금. 모든 변경 이벤트를 짧은 synchronized 구간에서 처리하며 외부 job join·비동기 저장·네트워크 호출은 없다.
+- `feature/visit/VisitRuntime.kt`: Android `SystemClock.elapsedRealtime()`과 main Handler를 주입한다. 응답 대기 중 예약 콜백은 최대 1개다. 최대 1초마다 절대 만료 시각에서 남은 시간을 다시 계산하고, 수락·종료·이탈에서는 제거한다. Handler의 tick 횟수나 epoch가 만료 근거가 아니다.
+- `feature/visit/VisitScreen.kt`: `VisitRoute`가 lifecycle·최신 gate·mode·컨트롤러를 연결하고 `VisitScreen`이 순수 상태·콜백으로 그린다. 내 차/가상 앞차 시점 버튼은 같은 세션의 보기만 바꾼다. 수락·거절은 같은 크기이며 동의한 VISITING에서만 주입 슬롯을 표시한다. 캐릭터 숨김 선택은 rememberSaveable로 유지하도록 구성했다. 외형은 최신 AvatarPreview를 그대로 전달하고 슬롯은 160dp 정사각 영역이다.
+- debug 전용 `VisitPreview.kt`: 대기·방문 가로·큰 글자·UNKNOWN의 네 정적 Preview. 이 작업에서 렌더링 관찰·클릭 시험은 NOT RUN이며 컴파일과 구분한다.
+- debug 전용 `VisitInteractivePreview.kt`: 실제 controller와 연결한 IDE 체험용 화면. 명시적인 샘플 gate/외형과 진행자용 방문 재시작을 사용하며 Activity·실제 gate에 연결하지 않는다. 요청·카운트다운·무응답 만료·수신 시점 전환은 관찰했고 수락/거절 완료의 UI 인수는 남아 있다.
+- `VisitControllerTest.kt`: FakeClock/수동 scheduler로 만료·쿨다운·늦은 이벤트·동시 요청·제한/이탈/모드·초기화·표시 정책을 검증한다. 실시간 sleep은 사용하지 않는다.
+
+A는 AppRoot 등 유지되는 소유 범위에서 controller를 한 번 만들고 실제 입력을 연결한다. 아래는 문서 예제이며 AppRoot 코드를 수정하지 않았다. ViewModel 등으로 controller를 보존하면 화면 왕복 중 쿨다운도 보존할 수 있다. 단순 remember는 해당 composition 수명만 보존하므로 Activity 재생성까지 영속 보존하는 것으로 설명하지 않는다. 프로세스 재시작 후 방문은 복원하지 않는다.
+
+```kotlin
+// A의 유지되는 owner에서 한 번 생성. 화면 분기/재구성마다 생성하지 않는다.
+val visitController = remember { createVisitController() }
+// A의 방문 화면 분기에서, 높이가 제한된 컨테이너에 배치한다.
+VisitRoute(
+    controller = visitController,
+    gate = currentGate,
+    mode = currentSource,
+    avatar = currentAvatarFromB,
+    avatarSlot = avatarSlotFromA,
+    onBack = { /* A의 이전 화면 이동 */ },
+    modifier = Modifier.fillMaxSize(),
+)
+```
+
+VisitRoute는 클릭 처리 직전에 lifecycle·gate·mode를 controller에 갱신한다. 모드가 바뀐 첫 프레임은 이전 모드의 슬롯을 표시하지 않는다. lifecycle 비활성·화면 제거에서는 세션과 타이머를 취소하고 observer를 해제한다. 동일 컨텍스트의 재구성은 카운트다운 갱신을 반복 발행하지 않는다. A가 화면보다 먼저 제한/모드 전환을 처리할 때도 같은 controller의 `updateContext`/`leaveScreen`을 호출해 취소한다. 단순 화면 재진입으로 쿨다운을 비우지 않는다.
+
+전체 초기화 연결은 A가 `val resetGeneration = visitController.beginReset()`으로 방문을 먼저 차단한 뒤 자기 초기화 절차를 수행하고 `finishReset(resetGeneration, success)`로 결과를 통지하는 방식이다. 실패·오래된 세대의 성공 통지는 입력을 열지 않는다. 새 전체 초기화가 시작되면 새 토큰을 사용한다. C가 B 저장소를 직접 지우거나 A의 초기화 잠금을 보유한 채 취소를 기다리지 않는다. 이 연결은 아직 NOT RUN이다. `restartDemo()`는 진행자 C04의 명시적 방문 재시연 연결용이며 일반 VisitScreen에는 버튼을 넣지 않았다.
+
+PR #5 R1 보완(2026-11-04): 위 `resetGeneration`은 호출자가 그대로 돌려줄 불투명한 초기화 토큰이다. `VisitState.generation`/`VisitToken.generation`과 별도의 초기화 순번으로 관리하며 값을 비교하거나 대체하지 않는다. 모드 전환은 이전 방문 요청·타이머만 무효화하고 진행 중 초기화의 완료 토큰은 유지한다. 새 `beginReset()`만 이전 초기화 토큰을 무효화한다. 현재 초기화가 성공하면 차단을 해제하되 최신 gate·foreground·screenActive 조건은 계속 적용한다. 실패/이전 초기화/중복 완료는 입력을 열지 않는다. 공개 Long 토큰 서명과 A의 호출 순서는 유지했다.
+
+## 실제 검사 기록
+
+- PR #5 R1(2026-11-04): 수정 전 새 `successfulResetStillCompletesWhenModeChangesWhilePending` 회귀 시험 1개를 실행해 정상 완료 거부를 재현(exit 1). 초기화 식별자 분리 후 C02 24개 PASS(exit 0). 전체 `py -3 scripts/check_all.py --android`는 Python 44개·Android 59개 PASS, debug 빌드 성공(exit 0, 4 tasks executed / 41 up-to-date). 앱 전체 초기화의 기기 통합 시험으로 간주하지 않는다.
+- 1차 `gradlew.bat --no-daemon :app:testDebugUnitTest --tests io.kailand.feature.visit.VisitControllerTest :app:assembleDebug`: exit 0, C02 단위 시험 20개·debug 빌드 PASS(16 tasks executed / 29 up-to-date).
+- 동일 컨텍스트 재발행 방지·숨김 정책과 관련 시험을 추가한 전체 `py -3 scripts/check_all.py --android`: exit 0, Python 34개·Android 33개(A01 4+C01 8+C02 21) PASS, debug 빌드 성공(9 tasks executed / 36 up-to-date). 제한 화면 문구의 마지막 조정 후 `:app:testDebugUnitTest :app:assembleDebug`도 exit 0, Android 33개 PASS·debug 빌드 성공(7 tasks executed / 38 up-to-date).
+- 단위 시험은 Android lifecycle·Compose 클릭/회전/복원·실제 Handler 계측 시험을 대신하지 않는다. AppRoot와 B 렌더러 연결, 실제 기기 S08~09 및 전체 게임 초기화 U20 통합은 NOT RUN이다.
 
 ## 첫 구현 단위
 
 한 프로세스의 같은 VisitController를 발신·수신 화면에서 읽는다. 화면에는 개발 파트 A/B 대신 내 차·가상 앞차를 표시한다. DEMO 가상 방문이며 실제 두 차량·번호판·통신·마이크·위치 권한을 사용하지 않는다. SDK 여정의 출처를 가상 방문의 실제 통신 증거로 쓰지 않는다.
 
 첫 범위는 요청 목적, 수락·거절·철회·만료·닫기, 활성 요청 1개, 같은 대상 재요청 제한이다. 캐릭터는 A가 주입한 슬롯 또는 회색 임시 슬롯으로 표시한다. 방문 횟수·수락·종료는 GameAction·보상·GameService·저장을 호출하지 않는다.
+
+2026-11-03 팀 회의 A안에 따라 B가 사전 렌더링 PNG의 공통 렌더러를 만들고 A가 슬롯으로 연결한다. C는 별도 3D 모델·캐릭터 렌더러·PNG 세트를 만들지 않는다. 동일 AvatarPreview·avatarSlot으로 섬·동행·방문의 외형과 의상을 확인하되, 방문 캐릭터는 동의 전·거절·만료·철회 뒤 표시하지 않는다. 첫 렌더러 인수 때 작은 영역의 정렬·gate 중단과 함께 검증한다. 계약·일정 변경은 없으며 해당 화면 연결 검증은 아직 NOT RUN이다.
 
 ## 화면과 문구
 
@@ -109,8 +150,8 @@ ACCEPTED는 동의를 기록하는 짧은 내부 전이이며 별도 대기 연�
 | V17 | 만료 job을 t=14,000에 조기 실행 → t=15,000 실행 | 조기 실행은 REQUESTED 유지, 만료 경계에 EXPIRED | U07 |
 | V18 | 수락 뒤 t=15,000 요청 만료 job 실행 → 발신 철회 | 만료 job은 방문 유지, 철회로 WITHDRAWN·슬롯 제거 | U07, S08 |
 
-같은 논리 단계에서 결과 상태·활성 요청 수·캐릭터 가시성·예약 job 수·쿨다운을 함께 확인한다. 실제 Android 구현 전이므로 이 목록은 시험 실행 결과가 아니다. C05의 화면·시연 검증에서는 [품질 기준](09_quality_tests.md)의 S08~09로 연결한다.
+위 V01~18은 VisitControllerTest의 단위 시나리오에 대응한다. V16은 주입한 FakeClock의 epoch만 바꿔 monotonic 판단의 불변성을 확인하며 실제 단말 날짜 변경 시험은 아니다. V04/V11 등의 캐릭터 표시는 순수 표시 정책을 확인하며 실제 슬롯 호출 횟수·lifecycle·UI 클릭 계측은 NOT RUN이다. 방문 코드에는 저장·보상 의존성이 없지만 B와 연결한 저장 부작용 계측 시험으로 주장하지 않는다. C05의 화면·시연 검증에서는 [품질 기준](09_quality_tests.md)의 S08~09로 연결한다.
 
 ## 다음 한 작업
 
-A01 공유 후 C01을 임시 슬롯으로 구현하고, C02는 같은 공통 앱의 C 소유 feature/visit에서 내부 상태 머신과 FakeClock 시험부터 옮긴다. 공유 계약·PM fixtures·Catalog·빌드 버전은 그대로 사용한다. 공통 타입 변경 없이 연결할 수 없는 지점만 A와 영향 소비자에게 확인하며 나머지 작업은 기존 fake로 진행한다.
+A가 VisitRoute에 실제 gate·mode·외형·슬롯을 연결하고, 기기에서 내 차 요청 → 가상 앞차 수락/거절/만료 → 닫기/철회와 이탈·초기화를 확인한다. B renderer를 받을 때 섬·동행·방문의 외형·의상 일치도 확인한다. 그동안 C03 읽기 전용 월드맵은 독립 진행할 수 있다. 공통 계약·PM fixtures·Catalog·빌드 버전은 유지한다.
