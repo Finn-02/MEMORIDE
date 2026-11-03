@@ -33,7 +33,7 @@ class BGameServiceTest {
         val store = FakeStore()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val service = BGameService(store, scope)
+            val service = BGameService(store, scope) { IslandTestData.rewards }
             assertEquals(GameReadiness.READY, service.readiness.value)
             assertEquals("tori", service.state.value.avatar.characterId)
             assertEquals(0, service.state.value.dailyGrowth)
@@ -47,7 +47,7 @@ class BGameServiceTest {
         val store = FakeStore(pending = pending)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val service = BGameService(store, scope)
+            val service = BGameService(store, scope) { IslandTestData.rewards }
             assertEquals(GameReadiness.LOADING, service.readiness.value)
             assertTrue(service.completeArrival(sampleArrival) is ArrivalResult.StorageFailure)
             assertTrue(service.apply(GameAction.SelectCharacter("momo")) is MutationResult.StorageFailure)
@@ -63,7 +63,7 @@ class BGameServiceTest {
         val store = FakeStore(failRead = true)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val service = BGameService(store, scope)
+            val service = BGameService(store, scope) { IslandTestData.rewards }
             assertEquals(GameReadiness.READ_ERROR, service.readiness.value)
             assertTrue(service.completeArrival(sampleArrival) is ArrivalResult.StorageFailure)
             assertTrue(service.apply(GameAction.SelectCharacter("momo")) is MutationResult.StorageFailure)
@@ -77,7 +77,7 @@ class BGameServiceTest {
         val store = FakeStore(save = GameSave(schemaVersion = 99))
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val service = BGameService(store, scope)
+            val service = BGameService(store, scope) { IslandTestData.rewards }
             assertEquals(GameReadiness.READ_ERROR, service.readiness.value)
             assertTrue(service.resetDemoProgress() is MutationResult.StorageFailure)
             assertEquals(99, store.save?.schemaVersion)
@@ -90,7 +90,7 @@ class BGameServiceTest {
             ownedItemIds = setOf("daejeon_bread"), discoveredRegionIds = setOf("daejeon")))
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val service = BGameService(store, scope)
+            val service = BGameService(store, scope) { IslandTestData.rewards }
             assertEquals(GameReadiness.READY, service.readiness.value)
             assertEquals("momo", service.state.value.avatar.characterId)
             assertEquals(2, service.state.value.dailyGrowth)
@@ -102,7 +102,7 @@ class BGameServiceTest {
         val store = FakeStore(save = GameSave(dailyGrowth = 2), failWrite = true)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val service = BGameService(store, scope)
+            val service = BGameService(store, scope) { IslandTestData.rewards }
             assertTrue(service.resetDemoProgress() is MutationResult.StorageFailure)
             assertEquals(2, service.state.value.dailyGrowth)
             assertEquals(2, store.save?.dailyGrowth)
@@ -114,7 +114,7 @@ class BGameServiceTest {
         val store = FakeStore(save = GameSave(characterId = "lulu", dailyGrowth = 3))
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val service = BGameService(store, scope)
+            val service = BGameService(store, scope) { IslandTestData.rewards }
             assertEquals(MutationResult.Success, service.resetDemoProgress())
             assertEquals(0, service.state.value.dailyGrowth)
             assertEquals("tori", store.save?.characterId)

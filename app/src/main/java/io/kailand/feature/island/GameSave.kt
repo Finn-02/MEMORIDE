@@ -27,6 +27,16 @@ internal data class GameSave(
         check(schemaVersion == SAVE_SCHEMA_VERSION) { "Unsupported game save schemaVersion" }
         check(dailyGrowth in 0..3) { "Invalid saved dailyGrowth" }
         check(characterId.isNotBlank()) { "Invalid saved characterId" }
+        // Validate historical receipts too: acknowledging must not hide corrupt entries.
+        processedReceipts.forEach { (id, receipt) ->
+            check(id == receipt.journeyId && id.isNotBlank()) { "Mismatched receipt ID" }
+            check(receipt.growthBefore in 0..3 && receipt.growthAfter in 0..3)
+            check(receipt.completedAtEpochMs >= 0)
+            check(receipt.elapsedSeconds == null || receipt.elapsedSeconds >= 0)
+            check(receipt.distanceMeters == null ||
+                (receipt.distanceMeters.isFinite() && receipt.distanceMeters >= 0))
+            receipt.toContract() // Includes persisted enum validation.
+        }
         val pending = pendingReceiptId?.let { id ->
             val receipt = checkNotNull(processedReceipts[id]) {
                 "pendingReceiptId does not reference an original receipt"

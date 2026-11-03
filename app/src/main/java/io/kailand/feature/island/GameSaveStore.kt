@@ -52,7 +52,7 @@ internal class PreferencesGameSaveStore(
             val current = preferences[saveKey]?.let(GameSaveCodec::decode) ?: GameSave()
             val next = transform(current)
             next.toSnapshot() // Validate the new state before persisting it.
-            preferences[saveKey] = GameSaveCodec.encode(next)
+            if (next != current) preferences[saveKey] = GameSaveCodec.encode(next)
             committed = next
         }
         return checkNotNull(committed)
