@@ -3,7 +3,7 @@
 ## Goal and scope
 Build a small Android vehicle-game prototype in 14 days with no new paid services.
 Concept Baseline 1.2 preserves the frozen 1.1 feature scope. The display name is MEMORIDE; keep io.kailand, content IDs and save keys.
-This package is planning and seed material, not a runnable Android app yet.
+The shared A01 Android scaffold is present and its debug build and development DEMO were verified on A's Windows PC. Game storage/rewards and actual vehicle/Pleos integration are not implemented yet; other PCs and release remain unverified.
 
 ## Read a small working set
 - Start with README.md and docs/FIRST_TASKS.md for onboarding and your first task.
@@ -49,7 +49,7 @@ This package is planning and seed material, not a runnable Android app yet.
 - UTF-8 and repository .gitattributes. No case-only duplicate paths, personal SDK/JDK paths or secrets.
 
 ## Git and cost
-- Work on a small part branch, submit a PR, keep main runnable; no shared force push or automatic merge.
+- Keep the agreed branch per part and submit small PRs. Use Create a merge commit, retain the part branch, then fetch and merge origin/main into it after preserving local work. Keep main runnable; no shared force push or automatic merge.
 - Keep Actions disabled by default; repository settings must be verified separately. The committed workflow is manual only.
 - Manual Ubuntu checks only when enabled and spending is controlled; no AI workflows.
 - No new API keys, paid dependency, remote build service or repeated full-repo model reviews.
