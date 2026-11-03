@@ -54,6 +54,8 @@ def validate_samples(catalog: dict, document: dict) -> int:
         require(found is None or (found == region and found in discovered), f'{sid}: receipt discovery mismatch')
         before, after = receipt.get('growthBefore'), receipt.get('growthAfter')
         require(type(before) is int and type(after) is int and 0 <= before <= after <= catalog['rules']['dailyGrowthCap'], f'{sid}: receipt growth invalid')
+        require(receipt['kind'] != 'REGION' or before == after, f'{sid}: REGION receipt must not show DAILY growth')
+        require(receipt['kind'] != 'DAILY' or after - before <= 1, f'{sid}: DAILY receipt growth must be 0 or 1')
         require(after == growth, f'{sid}: preview pending growth mismatch')
         require(type(receipt.get('completedAtEpochMs')) is int and receipt['completedAtEpochMs'] > 0, f'{sid}: invalid receipt time')
         for field in ['elapsedSeconds', 'distanceMeters']:
