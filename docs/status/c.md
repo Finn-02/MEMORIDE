@@ -1,6 +1,8 @@
 # C 진행 상태
 
 상태: IN PROGRESS — C01 PR #3 main 병합 확인, C02·C03 독립 구현·단위 시험 완료. AppRoot 연결·기기 UI 시험 대기
+
+2026-11-04 PR #5 R1 보완: 초기화 완료 토큰을 방문 generation과 분리해 reset 진행 중 모드 전환 후에도 해당 성공 통지를 처리한다. 새 reset은 이전 토큰을 무효화하고 실패·오래된 완료·제한 gate는 계속 차단한다. 수정 전 회귀 1개 실패를 재현한 뒤 수정 후 C02 24개·전체 Android 59개·Python 44개 PASS, debug 빌드 성공(exit 0). 기존 PR #5에 일반 push로 반영하며 main 병합과 AppRoot/기기 통합은 미수행
 오늘 완료와 SHA: 2026-11-03, C01 main 병합 d83f472 확인. C02 15c4269·C03 9b240e2로 보존 후 최신 main b95e0e4를 c863644에 병합. [C01 화면·연결 예제](../c01_companion.md), [C02 구현·연결·시험](../c02_visit.md), [C03 월드맵·읽기 규칙](../c03_world.md) 보존
 막힌 작업과 우회: 기본 빌드 막힘 없음. 기존 일반 Android AVD에서 A01 DevelopmentActivity 시작·메인 섬 화면 관찰 완료. 이 화면은 A01 임시 연결 자리이며 C02/C03 실제 앱 진입 완료가 아님
 다음 작업: C01 B 교차 리뷰·A 연결, C02 VisitRoute/초기화·기기 시연, C03 로드된 게임 상태·후보/인벤토리 콜백 연결. 독립 개발은 C04 수동 시연 제어

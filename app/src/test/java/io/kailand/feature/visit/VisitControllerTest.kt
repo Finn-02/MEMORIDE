@@ -296,6 +296,58 @@ class VisitControllerTest {
         assertTrue(f.controller.request() is VisitRequestResult.Rejected)
     }
 
+    @Test fun successfulResetStillCompletesWhenModeChangesWhilePending() {
+        val f = Fixture()
+        val oldVisit = f.request()
+        val oldTimeout = f.scheduler.entries.last()
+        val reset = f.controller.beginReset()
+        f.controller.updateContext(f.allowed.copy(mode = DataSource.PLEOS))
+        assertFalse(f.state.interactionAllowed)
+        assertTrue(f.controller.finishReset(reset, true))
+        assertTrue(f.state.interactionAllowed)
+        val current = f.request()
+        assertFalse(f.controller.accept(oldVisit))
+        f.scheduler.fire(oldTimeout, true)
+        assertEquals(current, f.state.request!!.token)
+        assertEquals(1, f.scheduler.pending)
+    }
+
+    @Test fun modeChangesDoNotAllowFailedOrSupersededResetToUnlockInput() {
+        val f = Fixture()
+        f.request()
+        val oldReset = f.controller.beginReset()
+        f.controller.updateContext(f.allowed.copy(mode = DataSource.PLEOS))
+        assertFalse(f.controller.finishReset(oldReset, false))
+        assertFalse(f.state.interactionAllowed)
+        assertTrue(f.controller.request() is VisitRequestResult.Rejected)
+        val currentReset = f.controller.beginReset()
+        f.controller.updateContext(f.allowed)
+        assertFalse(f.controller.finishReset(oldReset, true))
+        assertFalse(f.controller.finishReset(currentReset, false))
+        assertFalse(f.controller.restartDemo())
+        assertTrue(f.controller.request() is VisitRequestResult.Rejected)
+        assertTrue(f.controller.finishReset(currentReset, true))
+        assertTrue(f.state.interactionAllowed)
+        assertTrue(f.controller.request() is VisitRequestResult.Created)
+        assertFalse(f.controller.finishReset(currentReset, true))
+    }
+
+    @Test fun resetSuccessAfterModeChangeCannotOverrideRestrictedGate() {
+        for (gate in listOf(GateState.UNKNOWN, GateState.RESTRICTED)) {
+            val f = Fixture()
+            val oldVisit = f.request()
+            val reset = f.controller.beginReset()
+            f.controller.updateContext(f.allowed.copy(mode = DataSource.PLEOS, gate = InteractionGate(gate)))
+            assertTrue(f.controller.finishReset(reset, true))
+            assertFalse(f.state.interactionAllowed)
+            assertTrue(f.controller.request() is VisitRequestResult.Rejected)
+            f.controller.updateContext(f.allowed.copy(mode = DataSource.PLEOS))
+            assertTrue(f.state.interactionAllowed)
+            assertFalse(f.controller.accept(oldVisit))
+            assertEquals(VisitPhase.IDLE, f.state.phase)
+        }
+    }
+
     @Test fun completedConversationCannotBeReopenedByDuplicateEvents() {
         val f = Fixture()
         val token = f.request()

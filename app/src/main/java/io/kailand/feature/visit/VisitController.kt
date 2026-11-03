@@ -76,6 +76,8 @@ class VisitController(
     val state: StateFlow<VisitState> = mutableState.asStateFlow()
     private var context = VisitContext()
     private var generation = 0L
+    // Whole-game reset identity is independent of mode changes invalidating visit requests.
+    private var resetSequence = 0L
     private var resetBlocked = false
     private var timeout: VisitCancellation? = null
     private val cooldownUntil = mutableMapOf<String, Long>()
@@ -228,14 +230,15 @@ class VisitController(
     @Synchronized
     fun beginReset(): Long {
         resetBlocked = true
+        resetSequence++
         generation++
         end(VisitPhase.CANCELLED, VisitCancelReason.RESET)
-        return generation
+        return resetSequence
     }
 
     @Synchronized
     fun finishReset(resetGeneration: Long, success: Boolean): Boolean {
-        if (!resetBlocked || resetGeneration != generation || !success) return false
+        if (!resetBlocked || resetGeneration != resetSequence || !success) return false
         resetBlocked = false
         cooldownUntil.clear()
         publish(VisitState())

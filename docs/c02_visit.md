@@ -34,8 +34,11 @@ VisitRoute는 클릭 처리 직전에 lifecycle·gate·mode를 controller에 갱
 
 전체 초기화 연결은 A가 `val resetGeneration = visitController.beginReset()`으로 방문을 먼저 차단한 뒤 자기 초기화 절차를 수행하고 `finishReset(resetGeneration, success)`로 결과를 통지하는 방식이다. 실패·오래된 세대의 성공 통지는 입력을 열지 않는다. 새 전체 초기화가 시작되면 새 토큰을 사용한다. C가 B 저장소를 직접 지우거나 A의 초기화 잠금을 보유한 채 취소를 기다리지 않는다. 이 연결은 아직 NOT RUN이다. `restartDemo()`는 진행자 C04의 명시적 방문 재시연 연결용이며 일반 VisitScreen에는 버튼을 넣지 않았다.
 
+PR #5 R1 보완(2026-11-04): 위 `resetGeneration`은 호출자가 그대로 돌려줄 불투명한 초기화 토큰이다. `VisitState.generation`/`VisitToken.generation`과 별도의 초기화 순번으로 관리하며 값을 비교하거나 대체하지 않는다. 모드 전환은 이전 방문 요청·타이머만 무효화하고 진행 중 초기화의 완료 토큰은 유지한다. 새 `beginReset()`만 이전 초기화 토큰을 무효화한다. 현재 초기화가 성공하면 차단을 해제하되 최신 gate·foreground·screenActive 조건은 계속 적용한다. 실패/이전 초기화/중복 완료는 입력을 열지 않는다. 공개 Long 토큰 서명과 A의 호출 순서는 유지했다.
+
 ## 실제 검사 기록
 
+- PR #5 R1(2026-11-04): 수정 전 새 `successfulResetStillCompletesWhenModeChangesWhilePending` 회귀 시험 1개를 실행해 정상 완료 거부를 재현(exit 1). 초기화 식별자 분리 후 C02 24개 PASS(exit 0). 전체 `py -3 scripts/check_all.py --android`는 Python 44개·Android 59개 PASS, debug 빌드 성공(exit 0, 4 tasks executed / 41 up-to-date). 앱 전체 초기화의 기기 통합 시험으로 간주하지 않는다.
 - 1차 `gradlew.bat --no-daemon :app:testDebugUnitTest --tests io.kailand.feature.visit.VisitControllerTest :app:assembleDebug`: exit 0, C02 단위 시험 20개·debug 빌드 PASS(16 tasks executed / 29 up-to-date).
 - 동일 컨텍스트 재발행 방지·숨김 정책과 관련 시험을 추가한 전체 `py -3 scripts/check_all.py --android`: exit 0, Python 34개·Android 33개(A01 4+C01 8+C02 21) PASS, debug 빌드 성공(9 tasks executed / 36 up-to-date). 제한 화면 문구의 마지막 조정 후 `:app:testDebugUnitTest :app:assembleDebug`도 exit 0, Android 33개 PASS·debug 빌드 성공(7 tasks executed / 38 up-to-date).
 - 단위 시험은 Android lifecycle·Compose 클릭/회전/복원·실제 Handler 계측 시험을 대신하지 않는다. AppRoot와 B 렌더러 연결, 실제 기기 S08~09 및 전체 게임 초기화 U20 통합은 NOT RUN이다.
