@@ -1,7 +1,32 @@
 # C03 월드맵·지역 상세·수집 목록 준비
 
-상태: A01 이전 화면·읽기 규칙·시험 예제 준비. Android 구현·렌더링·연결 시험 NOT RUN.
-기준: `be98b40`의 [화면 명세](05_ui_storyboard.md), [최종 연결 경계](18_final_review.md), [UI 계약](../contracts/ui_contracts.md), [Catalog](../content/catalog.json).
+상태: 2026-11-03 C03 독립 화면·읽기 표시·후보 전달·시험 구현 완료. 실제 앱 연결·기기 통합 시험은 NOT RUN.
+기준: C 브랜치 `97fbd98` 이후 로컬 구현, [화면 명세](05_ui_storyboard.md), [최종 연결 경계](18_final_review.md), [UI 계약](../contracts/ui_contracts.md), [Catalog](../content/catalog.json).
+
+## 구현·연결·실제 검사
+
+- `feature/world/WorldScreen.kt`: 공개 WorldScreen과 C 내부 상세 선택. 미발견 콘텐츠 잠금, 발견 지역의 기념품 목록·보유 여부, 카탈로그 오류·빈 목록·이용 제한, 가로/세로 재배치를 구현했다. 상세 뒤로는 로컬 선택만 닫고 최상위 뒤로는 A 라우터에 맡긴다. 새 onBack 계약은 추가하지 않았다.
+- `WorldPresentation.kt`: 등록된 아이템 ID 기준 수집 수, 지역 발견과 아이템 소유의 분리, 누락·중복·소속 오류·좌표 오류·이미지 경로 검사를 한다. 콘텐츠 오류가 있는 목적지 후보는 비활성화한다. 지역 ID와 좌표를 새로 만들거나 게임 상태를 변경하지 않는다.
+- `WorldItemImage.kt`: Catalog의 assetKey로 얻은 PNG 경로만 IO dispatcher에서 읽고 로딩·누락·디코드 실패를 구분한다. 경로가 바뀌면 이전 이미지 상태를 재사용하지 않는다. 파일 경로를 아이템 ID로 합성하지 않으며 새 이미지 에셋은 만들지 않았다.
+- `WorldPresentationTest.kt` 10개: 실제 저장소 Catalog와 UI fixtures를 읽어 W01~08의 읽기·후보 콜백·오류 경계를 시험한다. 파생 테스트 입력 외에 별도 콘텐츠 목록을 작성하지 않았다.
+- debug `WorldPreview.kt`: 실제 패키지 Catalog/fixtures를 IO에서 읽는 Preview 4개 정의. 정적 Preview는 비동기 로딩 문구에 머무를 수 있어 Interactive Mode로 샘플 로드를 확인한다. fresh 대화형 Preview에서 0/9·3지역 잠금과 카드 선택 후 잠긴 상세·활성 여정 준비 버튼을 관찰했다. 나머지 Preview의 화면 인수와 실제 앱 연결은 구분한다.
+
+검사: Windows에서 `gradlew.bat --no-daemon :app:testDebugUnitTest --tests io.kailand.feature.world.WorldPresentationTest :app:assembleDebug` exit 0, C03 10개 PASS·debug 빌드 성공(12 tasks executed / 33 up-to-date). 최종 코드의 `py -3 scripts/check_all.py --android` exit 0, Python 34개·Android 43개(A01 4+C01 8+C02 21+C03 10) PASS, debug 빌드 성공(11 tasks executed / 34 up-to-date).
+
+A는 B의 로드된 실제 상태와 Catalog를 아래 공개 함수에 연결한다. WorldScreen은 자체 스크롤을 가지므로 높이가 제한된 컨테이너에 배치한다. 로딩/읽기 실패는 기존 A 경계에서 처리하고 기본 snapshot이나 Preview로 대체하지 않는다. 아래는 문서 예제이며 AppRoot·Manifest·계약·테마·의존성·Catalog·fixtures는 수정하지 않았다.
+
+```kotlin
+WorldScreen(
+    snapshot = loadedGameSnapshotFromB,
+    catalog = loadedCatalog,
+    gate = currentGate,
+    onSelectRegion = { regionId -> /* A가 S03 목적지 후보만 채움 */ },
+    onOpenItems = { /* A가 B 인벤토리로 이동 */ },
+    modifier = Modifier.fillMaxSize(),
+)
+```
+
+클릭 순간 최신 gate·foreground·Catalog를 재검사한다. 공개 계약에 foreground를 추가하지 않고 lifecycle에서 관찰하며 화면 제거 시 observer와 이미지 로딩 효과를 해제한다. 실제 lifecycle·이미지 디코딩·뒤로/회전·콜백 이동의 기기 시험은 NOT RUN이다. 사용자 C03 push 지시 전에는 로컬 변경으로 보존한다.
 
 ## 범위와 데이터
 
@@ -60,7 +85,7 @@ GameSnapshot에는 여정 source나 방문 날짜가 없다. 아이템 보유를
 
 ## 구현 후 확인할 입력 예제
 
-현재 모두 NOT RUN. 아래는 [기존 UI 샘플](../fixtures/ui_samples.json)을 참고하는 검증 설계이며 fixtures를 추가·수정하지 않는다.
+아래는 [기존 UI 샘플](../fixtures/ui_samples.json)을 사용하는 검증 설계다. W01·02·05·06·08의 읽기 계산과 W03·04·07의 명령 경계는 단위 시험 10개로 확인했다. W03·04의 AppRoot 이동, W07 실제 lifecycle/gate 전환, W09 기기 크기/접근성, W10 A의 로딩/읽기 실패 경계는 NOT RUN이다. fixtures는 추가·수정하지 않았다.
 
 | 예제 | 입력·행동 | 기대 결과 |
 |---|---|---|
@@ -79,4 +104,4 @@ W02·W08은 I01의 저장 상태 연결, W03은 I06의 목적지 후보 연결, 
 
 ## 다음 한 작업
 
-A01 공유 시 문서 준비 확장을 멈추고 공통 환경·실제 계약을 확인해 C01 구현부터 진행한다. C03은 B의 완성을 기다리지 않고 분리된 Preview 샘플로 구현하되 실제 앱은 B의 읽기 상태를 받는다. 이 문서만으로 C03 완료 처리하지 않는다.
+A가 실제 로드된 B snapshot과 Catalog 및 두 콜백을 연결한 뒤 I01·I06과 상세 뒤로/회전·제한 흐름을 확인한다. 실제 PNG 표시·누락 fallback은 기기에서 검증한다. 독립 후속 작업은 C04 JourneyPort/DemoControlPort 기반 수동 시연 제어이며 A의 포트 실제 구현 전에는 기존 fake로 검증한다. C03 전체 인수 완료는 연결 후 판정한다.
