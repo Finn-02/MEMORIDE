@@ -26,7 +26,7 @@ WorldScreen(
 )
 ```
 
-클릭 순간 최신 gate·foreground·Catalog를 재검사한다. 공개 계약에 foreground를 추가하지 않고 lifecycle에서 관찰하며 화면 제거 시 observer와 이미지 로딩 효과를 해제한다. 실제 lifecycle·이미지 디코딩·뒤로/회전·콜백 이동의 기기 시험은 NOT RUN이다. 사용자 C03 push 지시 전에는 로컬 변경으로 보존한다.
+클릭 순간 최신 gate·foreground·Catalog를 재검사한다. 공개 계약에 foreground를 추가하지 않고 lifecycle에서 관찰하며 화면 제거 시 observer와 이미지 로딩 효과를 해제한다. 실제 lifecycle·이미지 디코딩·뒤로/회전·콜백 이동의 기기 시험은 NOT RUN이다. 사용자 지시에 따라 C02·C03을 기존 파트 브랜치로 공유하며 실제 전송 결과는 전달 보고서와 PR에 기록한다.
 
 ## 범위와 데이터
 

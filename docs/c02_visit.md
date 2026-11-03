@@ -10,6 +10,7 @@
 - `feature/visit/VisitRuntime.kt`: Android `SystemClock.elapsedRealtime()`과 main Handler를 주입한다. 응답 대기 중 예약 콜백은 최대 1개다. 최대 1초마다 절대 만료 시각에서 남은 시간을 다시 계산하고, 수락·종료·이탈에서는 제거한다. Handler의 tick 횟수나 epoch가 만료 근거가 아니다.
 - `feature/visit/VisitScreen.kt`: `VisitRoute`가 lifecycle·최신 gate·mode·컨트롤러를 연결하고 `VisitScreen`이 순수 상태·콜백으로 그린다. 내 차/가상 앞차 시점 버튼은 같은 세션의 보기만 바꾼다. 수락·거절은 같은 크기이며 동의한 VISITING에서만 주입 슬롯을 표시한다. 캐릭터 숨김 선택은 rememberSaveable로 유지하도록 구성했다. 외형은 최신 AvatarPreview를 그대로 전달하고 슬롯은 160dp 정사각 영역이다.
 - debug 전용 `VisitPreview.kt`: 대기·방문 가로·큰 글자·UNKNOWN의 네 정적 Preview. 이 작업에서 렌더링 관찰·클릭 시험은 NOT RUN이며 컴파일과 구분한다.
+- debug 전용 `VisitInteractivePreview.kt`: 실제 controller와 연결한 IDE 체험용 화면. 명시적인 샘플 gate/외형과 진행자용 방문 재시작을 사용하며 Activity·실제 gate에 연결하지 않는다. 요청·카운트다운·무응답 만료·수신 시점 전환은 관찰했고 수락/거절 완료의 UI 인수는 남아 있다.
 - `VisitControllerTest.kt`: FakeClock/수동 scheduler로 만료·쿨다운·늦은 이벤트·동시 요청·제한/이탈/모드·초기화·표시 정책을 검증한다. 실시간 sleep은 사용하지 않는다.
 
 A는 AppRoot 등 유지되는 소유 범위에서 controller를 한 번 만들고 실제 입력을 연결한다. 아래는 문서 예제이며 AppRoot 코드를 수정하지 않았다. ViewModel 등으로 controller를 보존하면 화면 왕복 중 쿨다운도 보존할 수 있다. 단순 remember는 해당 composition 수명만 보존하므로 Activity 재생성까지 영속 보존하는 것으로 설명하지 않는다. 프로세스 재시작 후 방문은 복원하지 않는다.
