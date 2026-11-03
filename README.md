@@ -8,7 +8,7 @@
 
 **이 README가 개발 시작 설명서입니다.** 초대 수락 → 공통 준비 → 파트 선택 → 자기 AI와 세부 설계·개발 → 작은 PR 순서로 진행합니다. 이미 파트를 정했다면 공통 준비를 마친 뒤 해당 파트 링크로 이동하세요.
 
-현재는 **개발 착수 자료 v1.2이며 실행 가능한 Android 앱·Gradle wrapper·APK는 아직 없습니다.** 파트 1의 A01이 첫 공용 앱을 만드는 작업입니다. 앱 기반을 각자 따로 만들지 않습니다. 모든 라이브러리 버전과 네 PC 실행을 이미 맞췄다는 뜻이 아닙니다.
+**A01 공용 앱 골격과 Gradle wrapper를 추가했고 Windows에서 debug 단위 시험·APK 빌드를 확인했습니다.** [A01 실행 안내](docs/A01_QUICKSTART.md)에 따라 같은 프로젝트를 사용하세요. 화면은 아직 파트별 임시 연결 자리이며 게임 저장·여정·실제 Pleos·release·다른 PC 실행은 확인 전입니다. 앱 기반을 각자 따로 만들지 않습니다.
 
 ## 1. 모두 공통으로 준비하기
 
@@ -73,7 +73,7 @@ PM이 큰 기능 경계·목표·연결 계약을 정했습니다. **각 담당�
 | Gradle 실행 JDK major·min/compile/target SDK | CPU에 맞는 AVD 이미지·debug 서명키 |
 | UTF-8·줄바꿈·파일명 규칙 | 선택한 AI 도구·편집기 UI |
 
-A가 [A01 전달 기준](docs/BOOTSTRAP_HANDOFF.md)에 따라 실제 호환되는 프로젝트를 생성·debug 빌드하고 버전을 [toolchain](config/toolchain.json)과 [실제 환경 기록](docs/ENVIRONMENT.md)에 남깁니다. 그 뒤 전원이 main을 받아 **같은 빌드 파일·wrapper를 사용**합니다. `toolchain.json`은 기록이며 버전을 자동 설치하는 프로그램이 아닙니다. 현재 null·`verified: false`는 아직 검증 전이라는 뜻입니다.
+A가 [A01 전달 기준](docs/BOOTSTRAP_HANDOFF.md)에 따라 실제 호환되는 프로젝트를 생성·debug 빌드하고 버전을 [toolchain](config/toolchain.json)과 [실제 환경 기록](docs/ENVIRONMENT.md)에 남깁니다. 그 뒤 전원이 main을 받아 **같은 빌드 파일·wrapper를 사용**합니다. `toolchain.json`은 기록이며 버전을 자동 설치하는 프로그램이 아닙니다. A01의 `verified: true`는 기록된 Windows의 기본 debug 빌드 확인을 뜻하며 실제 SDK·모든 PC·release 성공 인증이 아닙니다.
 
 A01 전에는 B·C·PM도 계약·샘플·상태 예제·화면 스케치를 준비할 수 있습니다. 실제 Compose 컴파일·Preview는 공통 프로젝트를 받은 뒤 합니다. 파트별 Android 프로젝트 생성이나 개인별 Gradle 업그레이드는 하지 않습니다.
 
@@ -91,16 +91,16 @@ python3 scripts/check_all.py --android
 py -3 scripts/check_all.py --android
 ```
 
-현재 wrapper가 없으므로 Android 검사는 NOT RUN으로 차단됩니다. 정적 검사 PASS·debug 빌드 PASS·Pleos 설치/SDK PASS·release 설치 PASS는 서로 다른 결과입니다. OS별 실제 결과를 [환경 기록](docs/ENVIRONMENT.md)에 따로 남깁니다.
+A01에는 wrapper가 포함되어 있으므로 각자 기록된 JDK·SDK를 맞춘 뒤 Android 검사를 실행합니다. 정적 검사 PASS·debug 빌드 PASS·Pleos 설치/SDK PASS·release 설치 PASS는 서로 다른 결과입니다. OS별 실제 결과를 [환경 기록](docs/ENVIRONMENT.md)에 따로 남깁니다.
 
 ## 4. 매일 개발하는 순서
 
 1. `git status`로 기존 작업을 확인·보존하고 최신 main을 받습니다.
-2. `part/a-...`, `part/b-...`, `part/c-...`, `part/pm-...` 작은 브랜치를 만듭니다.
+2. 자기 파트의 기존 `part/a-...`, `part/b-...`, `part/c-...`, `part/pm-...` 브랜치를 사용합니다. 파트 브랜치는 처음 한 번만 만들고 다음 작업에도 유지합니다.
 3. [AGENTS.md](AGENTS.md) → 자기 역할 → 해당 [WBS 작업](tasks/backlog.md) → 필요한 계약만 AI와 읽습니다.
 4. 담당자가 내부 계획을 짧게 정하고 구현·시험합니다. 같은 폴더를 두 AI가 동시에 수정하지 않습니다.
 5. diff·검사 결과를 확인하고 commit·push·작은 PR을 만듭니다. 연결 예제와 NOT RUN만 짧게 적습니다.
-6. PM의 통합 순서에 따라 main에 일찍 합칩니다. 다음 작업은 최신 main에서 시작합니다.
+6. PM의 통합 순서에 따라 작은 PR을 main에 일찍 합칩니다. GitHub의 **Create a merge commit**을 사용하고 파트 브랜치를 삭제하지 않습니다. 병합 후 기존 변경을 보존하고 같은 파트 브랜치에서 `git fetch origin`, `git merge origin/main`으로 최신 공통 변경을 받아 다음 작업을 시작합니다. 이미 squash/rebase 병합했다면 다음 PR의 중복 diff를 먼저 확인하고 이력을 강제 초기화하지 않습니다.
 
 복사할 수 있는 pull·branch·commit·push 명령과 충돌 대처는 [일상 Git 안내](docs/GIT_DAILY.md)에 있습니다. 기본 교차 리뷰는 A↔PM, B↔C입니다. 모든 PR과 내부 결정에 PM 승인을 추가하지 않습니다.
 
@@ -120,7 +120,7 @@ D1 공용 기반 → D3 한 지역 전체 흐름 → D8 첫 release 설치 → D
 
 Actions에는 push/PR 자동 트리거가 없고 수동 실행만 있습니다. 로컬 검사가 기본이며 새 유료 서버·API·자산·AI Actions를 도입하지 않습니다. Actions 비활성화·계정 비용 통제·병합 규칙은 별도 설정으로, 파일이 있다고 자동 적용되지는 않습니다. [PM 저장소 설정](REPO_SETUP.md)을 참고하세요.
 
-현재 APK는 없습니다. A가 서명 release를 실제 설치한 뒤 이 절에 APK 또는 Release 링크·검증 커밋·환경을 기록합니다. 심사용 private 접근과 공식 제출은 [인수 확인표](templates/acceptance_checklist.md)로 확인합니다.
+제출용 서명 release APK는 아직 없습니다. A01의 개발용 debug APK는 로컬 빌드 출력이며 제출 후보가 아닙니다. A가 서명 release를 실제 설치한 뒤 이 절에 APK 또는 Release 링크·검증 커밋·환경을 기록합니다. 심사용 private 접근과 공식 제출은 [인수 확인표](templates/acceptance_checklist.md)로 확인합니다.
 
 ## 필요한 문서만 찾아보기
 

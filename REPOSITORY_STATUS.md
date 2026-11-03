@@ -1,5 +1,11 @@
 # 저장소 초기 반영 상태
 
+## A01 로컬 작업 브랜치 — 2026-11-02
+
+`part/a-a01-bootstrap`에 단일 app·공통 계약·wrapper·임시 라우터·debug 전용 개발 샘플을 추가했다. Windows에서 단위 시험과 debug APK 빌드를 확인했다. 이 절은 A01 PR 전달용 변경을 설명하며 아래 초기 등록 기록과 구분한다. 실제 공유·main 반영 여부는 GitHub PR 상태로 확인한다. 실행 방법은 [A01 안내](docs/A01_QUICKSTART.md), 실제 버전·검증 범위는 [환경 기록](docs/ENVIRONMENT.md)을 따른다. 실제 Pleos·release·다른 PC는 NOT RUN이다.
+
+## 초기 자료 반영 당시 기록 (A01 이전)
+
 2026년 11월 1일 Finn-02/MEMORIDE의 private main에 개발 착수 자료 v1.2를 반영했다.
 
 - 최초 README 커밋: fae16ffc1dd7f2628bf641e49330ffdefc32bd3c
