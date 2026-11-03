@@ -1,13 +1,38 @@
 # C01 동행 모의 화면 준비
 
-상태: A01 이전 준비 완료, Android 구현·컴파일·실행 NOT RUN.
-기준: 2026-11-02 확인한 origin/main `be98b40`. 이 문서는 C 내부 화면 설계와 입력 예제이며 공통 계약을 추가하거나 변경하지 않는다.
+상태: 2026-11-03 C01 독립 화면 1차 구현·컴파일·단위 시험 완료. A의 AppRoot 연결과 기기 UI 흐름은 NOT RUN.
+기준: A01 포함 C 브랜치 `29796f6` 이후 C01 구현. 아래 초기 설계는 유지하며 공통 계약을 추가하거나 변경하지 않는다.
+
+## 구현과 A 연결 예제
+
+- 실행 코드: [CompanionScreen](../app/src/main/java/io/kailand/feature/companion/CompanionScreen.kt), [C 내부 표시 변환](../app/src/main/java/io/kailand/feature/companion/CompanionPresentation.kt).
+- Debug 전용 [CompanionPreview](../app/src/debug/java/io/kailand/feature/companion/CompanionPreview.kt): 세로 360×800, 가로 800×480, 320×800·fontScale 1.3, UNKNOWN 차단. IDE에서 네 Preview 렌더링 완료와 세로 표시를 관찰했다. 실제 클릭·회전·background 흐름 검증은 아니다.
+- [CompanionPresentationTest](../app/src/test/java/io/kailand/feature/companion/CompanionPresentationTest.kt) 8개 PASS: gate·source·phase 조합, background, 숨김 입력 유지, null·0·비정상 측정값, 누적값 출처, 도착과 보상 구분. 실제 UI 상태 복원·lifecycle observer 계측 시험으로 표현하지 않는다.
+- 전체 `py -3 scripts/check_all.py --android` exit 0: Python 34개와 Android 12개(A01 4+C01 8) PASS. 이 전체 호출의 APK 빌드 작업은 UP-TO-DATE였다. 이후 작은 창용 숨김 버튼을 지도 앞에 배치한 최종 코드를 `:app:testDebugUnitTest :app:assembleDebug`로 재확인했다: Android 12개 실제 실행 PASS, BUILD SUCCESSFUL(8개 task 실행·37개 UP-TO-DATE).
+- push 전 재검사: C 브랜치 HEAD와 C01 선별 파일만 복사한 임시 검증 사본에서 `py -3 scripts/check_all.py --android` exit 0. Python 34개·Android 12개 PASS, debug 빌드 성공(45개 task 모두 실행). 진행 중인 C02 코드와 다른 미커밋 문서는 이 사본에 포함하지 않았다.
+
+A는 기존 AppRoot의 C01 진입 자리에 아래 호출을 연결한다. `journeyFromA`, `avatarFromB`, `currentGate`, `avatarSlotFromA`는 실제 런타임 입력을 뜻하며 아래는 연결용 문서 예제다. C는 AppRoot·Manifest·공통 DTO·테마·의존성·PM fixtures를 수정하지 않았다.
+
+```kotlin
+CompanionScreen(
+    journey = journeyFromA,
+    avatar = avatarFromB,
+    gate = currentGate,
+    avatarSlot = avatarSlotFromA,
+    onBack = { /* A의 이전 화면 이동 */ },
+    onHideChanged = { hidden -> /* 필요한 C 화면 가시성 알림만 수신, 게임 저장 없음 */ },
+    modifier = Modifier.fillMaxSize(),
+)
+```
+
+이 화면은 자체 세로 스크롤을 가지므로 A는 높이가 제한된 화면 컨테이너에 배치한다. 숨김은 rememberSaveable로 창 크기 변경에 유지한다. lifecycle observer는 RESUMED 여부를 관찰하고 화면 제거 시 해제하며, background·gate 제한에서는 슬롯을 구성하지 않는다. 타이머·이동 애니메이션·저장 명령은 없다. 현재 앱 메뉴는 A01 임시 화면 그대로이며, 이 구현을 앱 통합 완료로 기록하지 않는다.
 
 ## 범위와 연결
 
 - S04는 실제 주차·이용 허용 상태에서 보는 자체 도형 지도다. 실제 내비 오버레이·길 안내·GPS·지도 API를 구현하지 않는다.
 - [UI 계약](../contracts/ui_contracts.md)의 CompanionScreen 입력인 JourneySnapshot, AvatarPreview, gate, avatarSlot과 출력 onBack, onHideChanged를 그대로 따른다. 공개 함수의 이름·패키지 확정은 A01 이후 A와 맞춘다.
 - AppRoot가 B의 캐릭터를 슬롯으로 전달한다. C는 B 패키지·저장소·GameService를 참조하지 않는다. 처음에는 같은 정사각 영역의 회색 임시 슬롯을 사용한다.
+- 2026-11-03 팀 회의 A안 반영: B가 오프라인 3D 제작물을 공통 256×256 투명 PNG 레이어로 출력하고 공통 렌더러를 만든다. C는 모델·별도 캐릭터 PNG·렌더러를 제작하지 않고 기존 AvatarPreview와 A 주입 avatarSlot을 유지한다. 런타임 3D 의존성·계약·C01~C05 범위·일정은 바꾸지 않는다. B의 첫 렌더러 전달 시 섬과 동행의 캐릭터·의상 일치, 작은 슬롯 정렬·숨김·제한 중단을 함께 확인한다. 아직 이 연결 시험은 NOT RUN이다.
 - 첫 범위는 모의 지도, 여정 문구, 고정 슬롯, 숨김·다시 표시, 제한·화면 이탈 시 중단이다. 방문은 C02, 월드맵은 C03, 출발·완료·반복·초기화 패널은 C04다.
 
 ## 화면 스케치
@@ -108,7 +133,7 @@ val previewGate = InteractionGate(GateState.PARKED_ALLOWED)
 
 ## 구현 후 검증할 목록
 
-현재 전 항목 NOT RUN. 문서 검토나 Python 정적 검사로 아래 Android 시험을 PASS 처리하지 않는다.
+표시 정책 단위 시험 8개와 네 Preview 렌더링은 위 구현 기록처럼 확인했다. 아래 항목의 앱 통합·상호작용·실제 기기 시험은 아직 NOT RUN이며 단위 시험이나 Preview만으로 PASS 처리하지 않는다.
 
 | 확인 | 입력과 기대 결과 | 관련 기준 |
 |---|---|---|
@@ -123,4 +148,4 @@ val previewGate = InteractionGate(GateState.PARKED_ALLOWED)
 
 ## 다음 한 작업
 
-A01이 main에 공유되면 현재 브랜치 작업을 보존하고 공통 기반을 받아, 실제 core/contract·wrapper·기록된 JDK를 확인한다. 그다음 C 소유 feature/companion에서 위 화면을 Compose로 구현하고 임시 슬롯으로 검증한다. C01 전체 완료는 이 구현·검증 후 판정한다.
+A에게 위 공개 화면과 연결 예제를 전달하고 AppRoot에서 실제 입력으로 연결한 뒤 숨김·화면 이탈·제한·창 크기 흐름을 확인한다. B의 첫 renderer 인수 시 외형 일치 I03을 함께 확인한다. 그동안 C02 로컬 방문 상태 구현은 독립 진행할 수 있다. C01 전체 완료는 남은 연결·UI 검증 후 판정한다.
