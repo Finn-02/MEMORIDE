@@ -5,6 +5,7 @@
   <application>
     <activity
         android:name="io.kailand.app.DevelopmentGameActivity"
+        android:taskAffinity="io.kailand.development"
         android:exported="false"
         android:label="MEMORIDE 실제 저장 개발 화면" />
     <activity
@@ -13,6 +14,7 @@
         android:label="MEMORIDE A03 SDK 진단" />
     <activity
         android:name="io.kailand.app.DevelopmentActivity"
+        android:taskAffinity="io.kailand.development"
         android:exported="true"
         android:label="MEMORIDE 개발 DEMO">
       <intent-filter>

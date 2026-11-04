@@ -8,7 +8,7 @@
 
 **이 README가 개발 시작 설명서입니다.** 초대 수락 → 공통 준비 → 파트 선택 → 자기 AI와 세부 설계·개발 → 작은 PR 순서로 진행합니다. 이미 파트를 정했다면 공통 준비를 마친 뒤 해당 파트 링크로 이동하세요.
 
-**A01 공용 앱 골격과 Gradle wrapper를 추가했고 Windows에서 debug 단위 시험·APK 빌드를 확인했습니다.** [A01 실행 안내](docs/A01_QUICKSTART.md)에 따라 같은 프로젝트를 사용하세요. 화면은 아직 파트별 임시 연결 자리이며 게임 저장·여정·실제 Pleos·release·다른 PC 실행은 확인 전입니다. 앱 기반을 각자 따로 만들지 않습니다.
+**공통 앱에 저장된 섬·인벤토리·월드와 DEMO 저장·브리핑·동행·방문·시연을 연결했습니다.** Windows에서 Python44개·JUnit223개와 debug/unsigned release 빌드를 확인했습니다. [A04 실행·검증 범위](docs/A04_4_SIMULATION_AND_RESET.md)를 참고하세요. 실제 사용자 확인 도착 저장·PLEOS 최종도착·서명 release 설치·다른 PC 인수는 남아 있습니다. 최초 환경 준비는 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따르며 같은 Android 프로젝트를 사용합니다.
 
 ## 1. 모두 공통으로 준비하기
 

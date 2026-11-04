@@ -10,7 +10,7 @@
 | A01 | 공용 앱 기반 main 반영 | 유지 |
 | A02 | DEMO 여정 상태·명령 main 반영 | 실제 저장 연결은 A04 |
 | A03 | 차량 gate·SDK 요청/조회/취소 검증 main 반영 | 자동 최종도착 식별 미해결, 사용자 확인 초안은 검증 완료·저장 미연결 |
-| A04 | 명령 기반·저장 화면·DEMO 저장/브리핑·C 동행 연결 | Runner/방문·모드 전환·초기화·사용자 확인 저장 |
+| A04 | 저장 화면·DEMO/브리핑·C 동행/방문/Runner·모드/reset 연결 | 사용자 확인 저장 계약·실제 오류 UI/차량 인수 보완 |
 | A05 | 미완료 | 서명 release와 다른 PC 설치 검증 |
 | A06 | 미완료 | 제한·재시작·화면 이동·I03/I06/U20 최종 통합 인수 |
 
@@ -56,6 +56,6 @@ NOT RUN: 이번 coordinator의 실제 B/DataStore 연동·화면·기기·Runner
 
 - A04-2: 단일 B 서비스·Catalog와 실제 섬/인벤토리/월드·오류/로딩/제한 화면 연결 완료. AvatarSlot의 C 화면 연결은 후속. [결과](A04_2_SAVED_GAME_SCREENS.md).
 - A04-3 완료: 기존 DEMO 여정→실제 저장→pendingReceipt·PM 브리핑→ack 이동 및 C 동행 AvatarSlot 연결. Python44/JUnit215/debug/unsigned release PASS, 기기9사례 확인. [결과](A04_3_DEMO_ARRIVAL_BRIEFING.md).
-- A04-4: Runner·방문 정리·mode 전환·전체 reset generation 연결과 경쟁 시험.
+- A04-4 완료: Runner·방문 정리·mode 전환·reset generation 및 U20 소프트웨어 경쟁 검사. [실제 결과](A04_4_SIMULATION_AND_RESET.md). Python44/JUnit223/debug/unsigned release PASS, 기기9사례와 Pleos P 경계 확인. 다음은 A04 PR 검토와 A05/A06이다.
 - 사용자 확인 출처 계약은 B 확인·공통 타입 반영 뒤 별도로 연결하고 원본 저장/복원 시험을 수행한다.
 - B의 갤러리 Composable 도착 시 준비된 debug 호스트에 연결해 36조합을 시험한다.

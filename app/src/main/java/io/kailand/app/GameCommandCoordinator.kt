@@ -16,7 +16,7 @@ data class GameCommandContext(
     val journey: JourneySnapshot? = null,
 )
 
-enum class GameCommandPhase { ACTIVE, RESETTING, RESET_FAILED }
+enum class GameCommandPhase { ACTIVE, RESETTING, RESET_FAILED, CHANGING_MODE, MODE_FAILED }
 data class GameCommandSession(val generation: Long = 0, val phase: GameCommandPhase = GameCommandPhase.ACTIVE)
 
 /** A's write boundary. One coordinator wraps the app's one GameService.
@@ -65,11 +65,13 @@ class GameCommandCoordinator(
     /** Stop jobs/listeners OUTSIDE the write mutex. The hook must not join its own calling job.
      * Reset failure/cancellation keeps inputs blocked; a fresh explicit reset is the only retry.
      */
-    suspend fun resetDemo(generation: Long, stopOldWork: suspend () -> Unit): MutationResult {
+    suspend fun resetDemo(
+        generation: Long, callerIsCurrent: () -> Boolean = { true }, stopOldWork: suspend () -> Unit,
+    ): MutationResult {
         val resetGeneration = mutex.withLock {
             val current = mutable.value
-            if (generation != current.generation || current.phase == GameCommandPhase.RESETTING ||
-                !inputsAllowed() || context().mode != DataSource.DEMO) return rejected()
+            if (generation != current.generation || current.phase !in setOf(GameCommandPhase.ACTIVE, GameCommandPhase.RESET_FAILED) ||
+                !callerIsCurrent() || !inputsAllowed() || context().mode != DataSource.DEMO) return rejected()
             val next = current.generation + 1
             mutable.value = GameCommandSession(next, GameCommandPhase.RESETTING)
             next
@@ -77,7 +79,7 @@ class GameCommandCoordinator(
         try {
             stopOldWork()
             return mutex.withLock {
-                if (!inputsAllowed() || context().mode != DataSource.DEMO) {
+                if (!callerIsCurrent() || !inputsAllowed() || context().mode != DataSource.DEMO) {
                     mutable.value = GameCommandSession(resetGeneration, GameCommandPhase.RESET_FAILED)
                     return@withLock rejected()
                 }
@@ -92,6 +94,45 @@ class GameCommandCoordinator(
         } catch (_: Exception) {
             blockFailedReset(resetGeneration)
             return MutationResult.StorageFailure("초기화를 마치지 못했어요. 다시 시도해 주세요.")
+        }
+    }
+
+    /** Non-destructive session change. The new source is committed only after old work is stopped. */
+    suspend fun changeMode(
+        generation: Long, callerIsCurrent: () -> Boolean, stopOldWork: suspend () -> Unit,
+        commitMode: () -> Unit,
+    ): MutationResult {
+        val next = mutex.withLock {
+            val current = mutable.value
+            if (generation != current.generation || current.phase !in setOf(GameCommandPhase.ACTIVE, GameCommandPhase.MODE_FAILED) ||
+                !callerIsCurrent() || !inputsAllowed()) return rejected()
+            (current.generation + 1).also { mutable.value = GameCommandSession(it, GameCommandPhase.CHANGING_MODE) }
+        }
+        try {
+            stopOldWork()
+            return mutex.withLock {
+                if (!callerIsCurrent() || !inputsAllowed()) {
+                    mutable.value = GameCommandSession(next, GameCommandPhase.MODE_FAILED)
+                    return@withLock rejected()
+                }
+                commitMode()
+                mutable.value = GameCommandSession(next)
+                MutationResult.Success
+            }
+        } catch (cancelled: CancellationException) {
+            blockFailedMode(next)
+            throw cancelled
+        } catch (_: Exception) {
+            blockFailedMode(next)
+            return MutationResult.StorageFailure("모드 전환을 마치지 못했어요. 다시 선택해 주세요.")
+        }
+    }
+
+    private suspend fun blockFailedMode(generation: Long) = withContext(NonCancellable) {
+        mutex.withLock {
+            if (mutable.value == GameCommandSession(generation, GameCommandPhase.CHANGING_MODE)) {
+                mutable.value = GameCommandSession(generation, GameCommandPhase.MODE_FAILED)
+            }
         }
     }
 
