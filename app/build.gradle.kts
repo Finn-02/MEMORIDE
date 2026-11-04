@@ -7,6 +7,7 @@ plugins {
 }
 
 android {
+    useLibrary("android.car", false)
     namespace = "io.kailand"
     compileSdk {
         version = release(37) { minorApiLevel = 0 }
@@ -63,5 +64,7 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.serialization.json)
     debugImplementation(libs.compose.tooling)
+    // A03 runtime probe; production integration follows verified platform behavior.
+    debugImplementation("ai.pleos.playground:NaviHelper:3.0.5")
     testImplementation(libs.junit)
 }
