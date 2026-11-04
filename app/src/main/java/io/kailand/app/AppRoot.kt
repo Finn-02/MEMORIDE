@@ -36,10 +36,23 @@ private enum class BootstrapRoute(val label: String, val owner: String) {
 
 /** A-owned placeholders. Each owner replaces its screen at this composition boundary. */
 @Composable
-fun AppRoot(gate: InteractionGate, developmentEntry: Boolean) {
+fun AppRoot(
+    gate: InteractionGate,
+    developmentEntry: Boolean,
+    journeyScreen: (@Composable (() -> Unit, () -> Unit) -> Unit)? = null,
+    companionScreen: (@Composable (() -> Unit) -> Unit)? = null,
+) {
     var route by rememberSaveable { mutableStateOf(BootstrapRoute.HOME.name) }
     val selected = BootstrapRoute.valueOf(route)
     BackHandler(enabled = route != BootstrapRoute.HOME.name) { route = BootstrapRoute.HOME.name }
+    if (gate.canInteract && selected == BootstrapRoute.JOURNEY && journeyScreen != null) {
+        journeyScreen({ route = BootstrapRoute.HOME.name }, { route = BootstrapRoute.COMPANION.name })
+        return
+    }
+    if (gate.canInteract && selected == BootstrapRoute.COMPANION && companionScreen != null) {
+        companionScreen { route = BootstrapRoute.JOURNEY.name }
+        return
+    }
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
