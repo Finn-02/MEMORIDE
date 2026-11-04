@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -96,6 +97,7 @@ internal fun CompanionContent(
     Surface(modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth >= 640.dp && fontScale <= 1.2f
+            val mapHeight = if (hidden) (maxHeight * 0.5f).coerceIn(240.dp, 480.dp) else 176.dp
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -122,14 +124,15 @@ internal fun CompanionContent(
                     Text(view.destination, style = MaterialTheme.typography.titleLarge)
                     Text(view.phase, style = MaterialTheme.typography.titleMedium)
                     Text(view.notice)
-                    if (wide) {
+                    if (wide && view.showAvatar) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             JourneyMap(view, Modifier.weight(1f))
                             AvatarPanel(view, avatar, avatarSlot, Modifier.weight(0.55f))
                         }
                     } else {
-                        JourneyMap(view, Modifier.fillMaxWidth())
-                        AvatarPanel(view, avatar, avatarSlot, Modifier.fillMaxWidth())
+                        // Hidden companions do not reserve a card or a column in the layout.
+                        JourneyMap(view, Modifier.fillMaxWidth(), mapHeight)
+                        if (view.showAvatar) AvatarPanel(view, avatar, avatarSlot, Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -138,14 +141,14 @@ internal fun CompanionContent(
 }
 
 @Composable
-private fun JourneyMap(view: CompanionPresentation, modifier: Modifier) {
+private fun JourneyMap(view: CompanionPresentation, modifier: Modifier, mapHeight: Dp = 176.dp) {
     val road = MaterialTheme.colorScheme.primary
     val land = MaterialTheme.colorScheme.tertiaryContainer
     Card(modifier) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("모의 경로 예시", style = MaterialTheme.typography.titleMedium)
             Canvas(
-                Modifier.fillMaxWidth().height(176.dp).semantics {
+                Modifier.fillMaxWidth().height(mapHeight).semantics {
                     contentDescription = "실제 위치와 연결되지 않은 정적 도형 경로"
                 },
             ) {
