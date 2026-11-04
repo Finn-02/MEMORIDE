@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.kailand.BuildConfig
@@ -22,8 +23,13 @@ open class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MemorideTheme { AppRoot(gate, developmentEntry) }
+            MemorideTheme { AppContent(gate) }
         }
+    }
+
+    @Composable
+    protected open fun AppContent(gate: InteractionGate) {
+        AppRoot(gate, developmentEntry)
     }
 
     override fun onResume() {
