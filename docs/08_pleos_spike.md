@@ -105,3 +105,11 @@ Virtual Console의 Gear Selection으로 P/R/N/D를 설정해 실제 gate 변화�
 - 실행은 `adb devices -l`과 `adb -s <serial> emu avd name`으로 Pleos를 식별한 뒤 `adb -s <serial> shell am start -W -n io.kailand/io.kailand.app.PleosProbeActivity`. 이 시험의 실행 serial은 emulator-5554였으며 이전 절의 5556을 고정값으로 가정하지 않는다. P·UX 허용 상태에서만 버튼이 활성화된다.
 - 자동 검사: `py -3 scripts/check_all.py --android` exit0, Python44개·JUnit121개·debug 빌드 PASS. 처음 발견된 probe CRLF를 UTF-8/LF로 수정한 뒤 재검사했다. Back 명시 종료 보완 후 debug 재빌드와 기기 종료·재진입 시험 PASS. 다른 파트 통합 전 결과이며 최신 main 반영 후 결과는 아래 절에 기록한다.
 - 로컬 근거: tmp/a03-preflight의 `navi-commands.log`, `navi-final-check.log`, `navi-lifecycle-build.log`, `navi-guidance.png`, `navi-commands-evidence.png`, `navi-after-query.xml`, `navi-final-reopened.xml`. 좌표·이름·주소의 SDK 응답 payload는 로그에 남기지 않는다. 기존 이미지에 표시된 시간·거리는 내비 예상값이며 실제 도착 영수증이 아니다.
+
+## 8 11 최신 main 통합 및 A03 전달 기준 — 2026-11-04 KST
+
+- origin/main `18f10a1`에서 A02 PR #10, B03 PR #9, C04 PR #8 및 C01 패널 PR #11 병합을 확인했다. A03 소스는 `4997a00`으로 보존하고 같은 A 파트 브랜치에 main을 merge했다(`baf56f1`). 충돌 없음. 다른 소유자의 파일은 수정하지 않았다.
+- 통합 상태 `py -3 scripts/check_all.py --android` exit0: Python44개·JUnit169개, 실패/오류/skip0, debug 빌드 PASS(45 task 중12 실행·33 up-to-date). `:app:compileReleaseKotlin` PASS(8 task 중1 실행·7 up-to-date). 로그는 tmp/a03-preflight/latest-main-check.log 및 latest-main-release-compile.log.
+- 통합 APK를 현재 Pleos emulator-5554에 설치해 gate=PARKED_ALLOWED·SDK 연결과 버튼 활성화, 목적지 조회 콜백1건, Back 종료의 listener 제거·SDK release 성공을 확인했다. 정식 MainActivity의 실제 P 허용 화면도 확인했다. latest-main-probe.xml / latest-main-navi.log / latest-main-home.xml에 로컬 근거를 남겼다. 이전 P/D/P·generic 기기 시험은8.9의 결과이며 이번 재검사를 모든 기기·모든 시나리오 재실행으로 확대해 해석하지 않는다.
+- A03 기본 SDK 기술 검증과 플랫폼 gate 구현은 전달 가능하다. 정식 S03의 PLEOS 여정 포트·자동 도착 처리는 아직 연결하지 않았으며 NaviHelper는 debug 진단에만 포함된다. 최종 도착의 여정 일치·단위/결측 해석, 실제 서비스 장애 주입·N/R·실차, A04 저장/브리핑/I06/U20, 서명 release 설치는 미검증이다.
+- 지원 API의 실제 응답·오류를 UI에 표시하지만 실제 onError/연결 실패를 강제로 발생시킨 시험은 NOT RUN이다. 필수 DEMO 흐름은 A04에서 단일 B GameService·readiness·pendingReceipt·acknowledge 성공 후 이동·reset generation과 연결한다. 이 기록은 최종 제품 인수나 실차 안전 검증이 아니다.

@@ -1,6 +1,6 @@
 # 실제 개발 환경 기록
 
-최신 요약 (2026-11-04 KST): A01 병합 완료, A02 PR #10의 검토·병합 요청 전달. Windows 11 AMD64의 `part/a-a01-bootstrap`, A02 `bf8dd1f` 위 로컬 A03 변경에서 Python44개·Android121개·debug 빌드 PASS. Pleos2.1.0 API34 x86_64 부팅·앱 설치, NaviHelper3.0.5 실제 접속·목적지 조회 콜백, 실제 P 허용→D 제한→P 복귀와 화면 이탈·복귀 확인. 일반 API37 개발 DEMO 실행·정식 UNKNOWN 유지도 확인. A03은 아직 commit/push 전이며 목적지 요청·최종 도착, 실제 서비스 장애 주입·실차·A04 저장 통합·서명 release 설치·macOS/다른 PC는 NOT RUN이다. release Kotlin 컴파일 PASS와 release 설치는 구분한다. 근거는 [Pleos 실험 8.8~8.9](08_pleos_spike.md)에 기록했다.
+최신 요약 (2026-11-04 KST): A01·A02 main 병합 확인. Windows 11 AMD64의 part/a-a01-bootstrap에서 A03 소스4997a00과 main18f10a1을 baf56f1로 통합해 Python44개·Android169개·debug 빌드·release Kotlin 컴파일 PASS. Pleos2.1.0 API34 x86_64의 실제 P/D/P gate, NaviHelper3.0.5 debug 진단의 목적지 요청·조회·취소·SDK 정리 확인. 통합 APK에서도 SDK 접속·조회·정리·정식 P 화면을 확인했다. generic 개발 DEMO 실행·정식 UNKNOWN은 앞선 A03 기기 시험에서 확인했다. 정식 S03 PLEOS 여정 연결·최종 도착 식별, 실제 서비스 장애·N/R·실차·A04 저장 통합·서명 release 설치·다른 PC는 미검증이다. release Kotlin 컴파일과 release 설치는 구분한다. [Pleos 실험8.8~8.11](08_pleos_spike.md)에 단계별 근거와 한계를 기록했다.
 
 아래 환경 표는 최신 확인값이며, 이후의 단계별 기록은 각 절에 적힌 당시 결과다. 과거 NOT RUN 표시는 위 최신 요약 및 A03 실험 기록과 구분한다.
 
@@ -14,7 +14,7 @@
 | Activity / coroutines | 1.12.3 / 1.10.2 | 공통 정의·의존성 해결 |
 | minSdk | 28 | app 빌드 파일 |
 | compileSdk와 targetSdk | 37.0 / 37 | compileSdk release(37), minorApiLevel=0 / Build-Tools 36.0.0 |
-| NaviHelper | 3.0.5, debug 진단 연결 | 실제 접속·getDestinationInfo 콜백 PASS. 요청·최종 도착은 미검증 |
+| NaviHelper | 3.0.5, debug 진단 연결 | 실제 접속·요청·목적지 조회 일치·취소·release 확인. 최종 도착·정식 여정 포트는 미검증 |
 | Pleos Emulator | 2.1.0 / API34 x86_64 / RAM4GB / Cold boot | Android Emulator37.2.13·WHPX, AVD 부팅·debug 설치 실행 PASS |
 | applicationId | io.kailand | A01 빌드 |
 | JVM criteria 사용 여부 | false | wrapper는 이번 명령의 JAVA_HOME을 사용 |
