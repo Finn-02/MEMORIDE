@@ -2,7 +2,6 @@ package io.kailand.feature.island
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +29,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import io.kailand.core.contract.AvatarPreview
 import io.kailand.core.contract.Catalog
 import io.kailand.core.contract.GameAction
 import io.kailand.core.contract.GameSnapshot
@@ -67,7 +67,7 @@ fun IslandScreen(
 
                 val scene: @Composable (Modifier) -> Unit = { sceneModifier ->
                     Column(sceneModifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        IslandAvatar(view.characterName, actions.eating)
+                        IslandAvatar(snapshot.avatar, catalog, view.characterName, actions.eating)
                         Text("의상 · ${view.outfitStatus}")
                         IslandGrowthCard(view.growth)
                         Card(Modifier.fillMaxWidth()) {
@@ -136,15 +136,17 @@ private fun IslandNavigation(label: String, enabled: Boolean, onClick: () -> Uni
     }
 }
 
-/** Temporary Compose renderer kept separate for the B04 avatar replacement. */
 @Composable
-private fun IslandAvatar(characterName: String, eating: Boolean) {
+private fun IslandAvatar(avatar: AvatarPreview, catalog: Catalog, characterName: String, eating: Boolean) {
     Card(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 120.dp).padding(20.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(characterName, style = MaterialTheme.typography.headlineMedium)
-                Text(if (eating) "냠냠 · 식사 중" else "나의 캐릭터")
-            }
+        Column(
+            Modifier.fillMaxWidth().padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AvatarView(avatar, catalog, if (eating) "eat" else "idle")
+            Text(characterName, style = MaterialTheme.typography.headlineMedium)
+            Text(if (eating) "냠냠 · 식사 중" else "나의 캐릭터")
         }
     }
 }
