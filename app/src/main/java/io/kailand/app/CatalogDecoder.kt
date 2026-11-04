@@ -32,3 +32,13 @@ internal fun decodeCatalog(text: String): Catalog {
         },
     )
 }
+
+/** The fixed D03 timestamp and measurements are DEMO inputs, never real vehicle measurements. */
+internal fun decodeDemoCompletion(text: String): DemoInput.Complete {
+    val scenario = Json.parseToJsonElement(text).jsonObject.getValue("scenarios").jsonArray
+        .single { it.jsonObject.getValue("id").jsonPrimitive.content == "D03" }.jsonObject
+    val arrival = scenario.getValue("arrival").jsonObject
+    require(arrival.getValue("source").jsonPrimitive.content == DataSource.DEMO.name)
+    return DemoInput.Complete(arrival.getValue("completedAtEpochMs").jsonPrimitive.long,
+        arrival["elapsedSeconds"]?.jsonPrimitive?.longOrNull, arrival["distanceMeters"]?.jsonPrimitive?.doubleOrNull)
+}

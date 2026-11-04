@@ -1,6 +1,6 @@
 # A04 실제 저장·화면 연결 진행
 
-2026-11-04 KST / Windows11 AMD64 / part/a-a01-bootstrap.
+최신 갱신: 2026-11-05 KST / Windows11 AMD64 / part/a-a01-bootstrap.
 작업 전 HEAD d8c0d09, 최신 origin/main ab2281b 확인. 이전 B04 개발 호스트 로컬 변경과 개인 문서 2개를 보존했다. 아래 코드는 아직 커밋·push하지 않은 로컬 변경이다.
 
 ## A 전체 단계
@@ -10,13 +10,15 @@
 | A01 | 공용 앱 기반 main 반영 | 유지 |
 | A02 | DEMO 여정 상태·명령 main 반영 | 실제 저장 연결은 A04 |
 | A03 | 차량 gate·SDK 요청/조회/취소 검증 main 반영 | 자동 최종도착 식별 미해결, 사용자 확인 초안은 검증 완료·저장 미연결 |
-| A04 | 명령 조정 기반·단일 서비스·섬/인벤토리/월드 연결 | 도착·브리핑·C 동행/방문·모드 전환·초기화 통합 |
+| A04 | 명령 기반·저장 화면·DEMO 저장/브리핑·C 동행 연결 | Runner/방문·모드 전환·초기화·사용자 확인 저장 |
 | A05 | 미완료 | 서명 release와 다른 PC 설치 검증 |
 | A06 | 미완료 | 제한·재시작·화면 이동·I03/I06/U20 최종 통합 인수 |
 
 현재 A04-1 등의 세부 번호는 A 내부 작업 분할이다. 팀의 A01~A06 우선순위를 바꾸지 않는다.
 
-## 이번 A04-1 구현
+## A04-1 당시 구현과 검사
+
+아래 A04-1 기록은 당시 상태다. 최신 연결 결과는 [A04-3](A04_3_DEMO_ARRIVAL_BRIEFING.md)을 따른다. A04-1·2는 후속 작업 전 05bb2a9로 로컬 보존하고 main edea1fd를 f0c52c8로 merge했다.
 
 `app/GameCommandCoordinator.kt`는 호출자가 주입한 단일 GameService를 감싸는 A 소유 명령 경계다. 보상·저장 로직을 다시 구현하지 않는다.
 
@@ -53,7 +55,7 @@ NOT RUN: 이번 coordinator의 실제 B/DataStore 연동·화면·기기·Runner
 ## 다음 순서
 
 - A04-2: 단일 B 서비스·Catalog와 실제 섬/인벤토리/월드·오류/로딩/제한 화면 연결 완료. AvatarSlot의 C 화면 연결은 후속. [결과](A04_2_SAVED_GAME_SCREENS.md).
-- A04-3: 기존 DEMO 여정을 실제 저장에 연결하고 저장된 pendingReceipt·PM 브리핑·ack 이동 연결.
+- A04-3 완료: 기존 DEMO 여정→실제 저장→pendingReceipt·PM 브리핑→ack 이동 및 C 동행 AvatarSlot 연결. Python44/JUnit215/debug/unsigned release PASS, 기기9사례 확인. [결과](A04_3_DEMO_ARRIVAL_BRIEFING.md).
 - A04-4: Runner·방문 정리·mode 전환·전체 reset generation 연결과 경쟁 시험.
 - 사용자 확인 출처 계약은 B 확인·공통 타입 반영 뒤 별도로 연결하고 원본 저장/복원 시험을 수행한다.
 - B의 갤러리 Composable 도착 시 준비된 debug 호스트에 연결해 36조합을 시험한다.

@@ -8,13 +8,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.kailand.core.contract.*
+import io.kailand.core.ui.AvatarSlot
+import io.kailand.app.journey.JourneyPreparationScreen
+import io.kailand.feature.briefing.BriefingScreen
+import io.kailand.feature.companion.CompanionScreen
 import io.kailand.feature.island.*
 import io.kailand.feature.world.WorldScreen
 
-private enum class GameRoute { ISLAND, WORLD, PREPARATION, DEMO }
+private enum class GameRoute { ISLAND, WORLD, PREPARATION, COMPANION, DEMO }
 private class GameScreenLease { var active = true }
 
-/** A04-2: real saved state and B/C screens. Arrival/briefing integration follows separately. */
+/** Real saved state, DEMO arrival and receipt-driven briefing; platform permission remains external. */
 @Composable
 fun GameAppRoot(gate: InteractionGate, app: GameAppSession, owner: Any, developmentEntry: Boolean) {
     val readiness by app.game.readiness.collectAsState()
@@ -46,19 +50,15 @@ fun GameAppRoot(gate: InteractionGate, app: GameAppSession, owner: Any, developm
         GameMessage("게임 기록을 정리하고 있어요", "정리가 끝날 때까지 기다려 주세요.")
         return
     }
-    // Never drop or acknowledge a persisted receipt merely because its screen is not wired yet.
-    if (snapshot.pendingReceipt != null) {
-        GameMessage("확인할 여정 기록이 있어요", "기록은 저장돼 있습니다. 결과 화면 연결을 준비하고 있어요.")
-        return
-    }
     key(session.generation) {
-        SavedGameScreens(app, owner, loaded.catalog, snapshot, gate, session.generation, developmentEntry)
+        SavedGameScreens(app, owner, loaded.catalog, loaded.demoCompletion, snapshot, gate,
+            session.generation, developmentEntry)
     }
 }
 
 @Composable
 private fun SavedGameScreens(
-    app: GameAppSession, owner: Any, catalog: Catalog, snapshot: GameSnapshot,
+    app: GameAppSession, owner: Any, catalog: Catalog, completion: DemoInput.Complete, snapshot: GameSnapshot,
     gate: InteractionGate, generation: Long, developmentEntry: Boolean,
 ) {
     var routeName by rememberSaveable { mutableStateOf(GameRoute.ISLAND.name) }
@@ -69,8 +69,22 @@ private fun SavedGameScreens(
     DisposableEffect(lease) { onDispose { lease.active = false } }
     val route = GameRoute.valueOf(routeName)
     fun allowed() = lease.active && app.canUse(owner) && app.commands.session.value.generation == generation
+    val closer = remember(app, owner, generation, lease) {
+        ReceiptCloseCoordinator(app.game, app.commands, generation) { allowed() }
+    }
+    val heldReceipt by closer.heldReceipt.collectAsState()
+    val adapter = remember(app, owner, catalog, generation, developmentEntry) {
+        if (developmentEntry) app.demoJourney(owner, catalog) else null
+    }
+    val journeySnapshot = adapter?.state?.collectAsState()?.value
     val callbackRoute = routeName
     val callbackVersion = navigationVersion
+    val demoControls = remember(adapter, callbackVersion, lease) {
+        adapter?.let { app.screenDemoControls(it) {
+            allowed() && routeName == GameRoute.PREPARATION.name && navigationVersion == callbackVersion &&
+                app.game.state.value.pendingReceipt == null && closer.heldReceipt.value == null
+        } }
+    }
     fun navigate(target: GameRoute) {
         if (allowed()) {
             navigationVersion++
@@ -82,7 +96,15 @@ private fun SavedGameScreens(
         app.commands.apply(generation, action) {
             allowed() && routeName == callbackRoute && navigationVersion == callbackVersion &&
                 (route != GameRoute.WORLD || itemsOpen)
+                && app.game.state.value.pendingReceipt == null && closer.heldReceipt.value == null
         }
+    }
+    val receipt = snapshot.pendingReceipt ?: heldReceipt
+    if (receipt != null) {
+        BriefingScreen(receipt, catalog, snapshot.avatar, gate,
+            onDismiss = { closer.close(receipt) { navigate(GameRoute.ISLAND) } },
+            onOpenItems = { closer.close(receipt) { navigate(GameRoute.ISLAND); itemsOpen = true } })
+        return
     }
     BackHandler(enabled = route != GameRoute.ISLAND && !itemsOpen) {
         navigate(GameRoute.ISLAND)
@@ -104,11 +126,23 @@ private fun SavedGameScreens(
                             selectedRegion = id; navigate(GameRoute.PREPARATION)
                         }
                     }, onOpenItems = { if (allowed()) itemsOpen = true })
-                GameRoute.PREPARATION -> GameMessage("여정 준비", selectedRegion?.let { id ->
-                    "선택한 지역 · ${catalog.regions.single { it.id == id }.name}"
-                } ?: "목적지를 선택할 여정을 준비하고 있어요.") {
-                    Text("여정 시작 기능은 아직 연결 전입니다.")
+                GameRoute.PREPARATION -> if (demoControls != null) {
+                    JourneyPreparationScreen(demoControls, demoControls,
+                        catalog.regions.map { DestinationSpec(it.id, it.name, it.latitude, it.longitude) },
+                        gate, completion, onBack = { navigate(GameRoute.ISLAND) },
+                        onOpenCompanion = { navigate(GameRoute.COMPANION) },
+                        initialRegionId = selectedRegion,
+                        developmentControls = { Text("DEMO 날짜·시간·거리로 실제 로컬 진행을 저장합니다.") })
+                } else {
+                    GameMessage("여정 준비", "실제 차량 여정 연결을 준비하고 있어요.")
                 }
+                GameRoute.COMPANION -> if (journeySnapshot != null) {
+                    val avatarSlot: AvatarSlot = { avatar, expression, modifier ->
+                        AvatarView(avatar, catalog, expression, modifier)
+                    }
+                    CompanionScreen(journeySnapshot, snapshot.avatar, gate, avatarSlot,
+                        onBack = { navigate(GameRoute.PREPARATION) }, onHideChanged = {})
+                } else GameMessage("동행 화면", "먼저 여정을 준비해 주세요.")
                 GameRoute.DEMO -> GameMessage("DEMO", "시연 제어 화면은 아직 연결 전입니다.")
             }
         }

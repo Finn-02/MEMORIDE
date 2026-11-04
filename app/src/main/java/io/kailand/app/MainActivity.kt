@@ -12,6 +12,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import io.kailand.BuildConfig
 import io.kailand.core.contract.GateState
 import io.kailand.core.contract.InteractionGate
@@ -25,7 +27,8 @@ open class MainActivity : ComponentActivity() {
     private var gate by mutableStateOf(InteractionGate(GateState.UNKNOWN))
     private var vehicleGateMonitor: VehicleGateMonitor? = null
     private var foreground = false
-    protected val gameOwner = Any()
+    private val entryModel by lazy { ViewModelProvider(this)[GameEntryModel::class.java] }
+    protected val gameOwner: Any get() = entryModel.owner
     protected val gameSession: GameAppSession
         get() = (application as MemorideApplication).gameSession
 
@@ -86,4 +89,9 @@ open class MainActivity : ComponentActivity() {
         )
         publishGameContext()
     }
+}
+
+/** Stable through configuration recreation, distinct for another Activity or a process restart. */
+class GameEntryModel : ViewModel() {
+    val owner = Any()
 }

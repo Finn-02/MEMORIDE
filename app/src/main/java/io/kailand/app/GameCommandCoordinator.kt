@@ -42,20 +42,24 @@ class GameCommandCoordinator(
     }
 
     /** Only a caller-validated arrival may enter here; no SDK event is converted to evidence here. */
-    suspend fun completeArrival(generation: Long, command: ArrivalCommand): ArrivalResult = mutex.withLock {
-        if (!allowed(generation) || !currentArrival(command)) {
+    suspend fun completeArrival(
+        generation: Long, command: ArrivalCommand, callerIsCurrent: () -> Boolean = { true },
+    ): ArrivalResult = mutex.withLock {
+        if (!allowed(generation) || !callerIsCurrent() || !currentArrival(command)) {
             return@withLock ArrivalResult.Rejected("현재 여정과 이용 상태를 다시 확인해 주세요.")
         }
         game.completeArrival(command)
     }
 
-    suspend fun acknowledge(generation: Long, journeyId: String): MutationResult = mutex.withLock {
-        if (!allowed(generation) || game.state.value.pendingReceipt?.journeyId != journeyId) {
+    suspend fun acknowledge(
+        generation: Long, journeyId: String, callerIsCurrent: () -> Boolean = { true },
+    ): MutationResult = mutex.withLock {
+        if (!allowed(generation) || !callerIsCurrent() || game.state.value.pendingReceipt?.journeyId != journeyId) {
             return@withLock rejected()
         }
         val result = game.acknowledgeReceipt(journeyId)
         // Persistence may succeed while the app leaves the foreground. Do not permit stale routing.
-        if (result == MutationResult.Success && !allowed(generation)) rejected() else result
+        if (result == MutationResult.Success && (!allowed(generation) || !callerIsCurrent())) rejected() else result
     }
 
     /** Stop jobs/listeners OUTSIDE the write mutex. The hook must not join its own calling job.
