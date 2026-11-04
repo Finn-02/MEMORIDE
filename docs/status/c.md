@@ -2,6 +2,8 @@
 
 상태: IN PROGRESS — C01~C04 main 병합. C01~C03 그래픽·C01 패널 접기, C05 로컬 검증과 A02/C04 저장 경계 검증 기록을 기존 C 브랜치 전달 대상으로 정리. 실제 A04 통합·release 백업 인수 대기
 
+2026-11-05 C05 추가 진행: 최신 main `edea1fd`를 C 브랜치에 병합하고 C01 중복 접기 충돌에서 기존 자연색 디자인·동작을 보존했다. Python 44개·Android 195개·debug 빌드 PASS. 별도 일반 Android AVD의 임시 앱 조립 화면에서 B04 토리+빵모자의 섬/C01/C02 공통 슬롯 표시, 수신 수락 뒤 VISITING, 모모/루루+빵모자 표시, 거절 뒤 REJECTED·캐릭터 없음 관찰. C feature의 B 직접 import/AppRoot 수정 없음. I03 실제 저장 일치·A04 전체 초기화/U20/S09·A05 release 백업 설치는 대기한다. 환경 문서 수정은 제외하고 새 PR은 생성하지 않는다. [최신 인수 결과](../c05_acceptance.md#2026-11-05-최신-main과-b04-슬롯-인수)
+
 최신 전달: 2026-11-04 사용자 push 지시. 완료한 변경을 디자인·C05 검증·전달 문서로 나누어 커밋하고 기존 part/c-c01-companion에 일반 push한다. 새 PR·main 병합은 수행하지 않는다. 환경 문서의 별도 로컬 수정·tmp 검증 하네스·검토 ZIP은 제외한다. 최종 SHA·실제 push 결과는 이번 전달 ZIP에 기록한다. 아래 기록의 미push/PR 대기 표시는 각 작업 당시의 상태다.
 
 2026-11-04 최신 main `b8faf56` 반영: A02/B03/C04 병합분을 기존 C 브랜치에 fast-forward하고 로컬 디자인·C05를 복원했다. C04/A02/B 실제 파일 DataStore를 조립한 별도 임시 경계 시험 5개 PASS(D01~D06, 원본 반복/재시도, 취소/UNKNOWN). 공통 검사 Python 44개·Android 165개 및 debug 빌드 PASS. 실제 AppRoot의 C04·저장·전체 초기화 조립과 U20·기기 전체 시연은 미실행이다. C04 PR #8은 main 병합됐으며 이번 검증에는 새 commit/push/PR 변경 없음. [세부 경계 검증](../c04_demo.md#a02-main-병합-후-로컬-경계-검증)
