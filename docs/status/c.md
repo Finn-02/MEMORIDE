@@ -1,13 +1,15 @@
 # C 진행 상태
 
-상태: IN PROGRESS — C01 PR #3 main 병합 확인, C02·C03 독립 구현·단위 시험 완료. AppRoot 연결·기기 UI 시험 대기
+상태: IN PROGRESS — C01~C03 main 병합 확인, C04 독립 수동 시연 패널·Runner·시험 구현 완료. AppRoot 연결·기기 UI 시험 대기
+
+2026-11-04 C04: PR #5 병합 main 8c78b8e(B 저장 기반 포함)를 기존 파트 브랜치에 반영했다. DemoScenarioRunner·DemoPanel·PM fixtures 읽기 구현, C04 23개·전체 Android 106개·Python 44개 PASS, debug 빌드 성공(exit 0). C04를 같은 브랜치에 commit·push하고 새 PR은 사용자 확인 후 생성한다. 실제 A02/A04 포트·일상 목적지·전체 초기화 연결과 기기 인수는 NOT RUN. [C04 연결·검증](../c04_demo.md)
 
 2026-11-04 PR #5 R1 보완: 초기화 완료 토큰을 방문 generation과 분리해 reset 진행 중 모드 전환 후에도 해당 성공 통지를 처리한다. 새 reset은 이전 토큰을 무효화하고 실패·오래된 완료·제한 gate는 계속 차단한다. 수정 전 회귀 1개 실패를 재현한 뒤 수정 후 C02 24개·전체 Android 59개·Python 44개 PASS, debug 빌드 성공(exit 0). 기존 PR #5에 일반 push로 반영하며 main 병합과 AppRoot/기기 통합은 미수행
 오늘 완료와 SHA: 2026-11-03, C01 main 병합 d83f472 확인. C02 15c4269·C03 9b240e2로 보존 후 최신 main b95e0e4를 c863644에 병합. [C01 화면·연결 예제](../c01_companion.md), [C02 구현·연결·시험](../c02_visit.md), [C03 월드맵·읽기 규칙](../c03_world.md) 보존
 막힌 작업과 우회: 기본 빌드 막힘 없음. 기존 일반 Android AVD에서 A01 DevelopmentActivity 시작·메인 섬 화면 관찰 완료. 이 화면은 A01 임시 연결 자리이며 C02/C03 실제 앱 진입 완료가 아님
-다음 작업: C01 B 교차 리뷰·A 연결, C02 VisitRoute/초기화·기기 시연, C03 로드된 게임 상태·후보/인벤토리 콜백 연결. 독립 개발은 C04 수동 시연 제어
+다음 작업: A의 C01~C04 AppRoot·포트·초기화 연결 및 B 실제 상태/renderer 연결 후 C05 기기 반복·백업 설치 인수. C04 독립 구현 PR은 사용자 확인 후 생성
 시험: C02 전체 py -3 scripts/check_all.py --android exit 0(Python 34개·Android 33개 PASS, C02 21개 포함), debug 빌드 PASS(9개 task 실행/36 UP-TO-DATE). 마지막 제한 문구 조정 후 Android 33개·debug 빌드 재확인 PASS(7개 task 실행/38 UP-TO-DATE). C01 Preview 4개 관찰은 앞선 결과이며 C02 Preview는 컴파일만 확인. U07~08의 C 로컬 단위 시나리오는 PASS, 실제 UI 상호작용·I01·I03·I06·S03~04·S06·S08~09·U20 전체 통합·Pleos·release NOT RUN
-전달: C01 https://github.com/Finn-02/MEMORIDE/pull/3 MERGED. 사용자가 C02·C03 commit·push와 새 PR 생성을 지시함. 실제 새 PR/SHA·최종 검사는 전달 보고서와 PR에 기록. main 병합은 통합 담당자가 수행
+전달: C01 PR #3·C02/C03 PR #5 MERGED 확인. C04 일반 push까지 진행하고 새 PR/병합은 별도 사용자 지시를 따른다. 실제 SHA와 전송 결과는 작업 보고서에 기록
 
 전달 전 최신 main 재검사: `py -3 scripts/check_all.py --android` exit 0, Python 44개·Android 56개(A01 4 + PM 13 + C01 8 + C02 21 + C03 10) PASS, debug 빌드 성공(17 tasks executed / 28 up-to-date). 앱 연결·기기 통합 인수 완료를 뜻하지 않음
 
@@ -53,8 +55,9 @@ C03 추가 검사: main 동기화 전 py -3 scripts/check_all.py --android exit 
 - [ ] C02: A의 AppRoot·초기화 연결, 기기 시점 전환·동의·숨김·이탈/복귀·실제 Handler 동작 확인
 - [x] C03: Catalog·GameSnapshot 읽기 전용 월드맵·지역 상세·수집 목록 독립 구현
 - [ ] C03: 지역 선택 → A의 목적지 후보, 아이템 보기 → B 인벤토리 연결 확인
-- [ ] C04: A02의 포트로 수동 출발·완료·취소·같은 도착 반복 구현
-- [ ] C04: 저장 결과 await·실패 처리·전체 초기화 요청·늦은 입력 중단 확인
+- [x] C04: 공통 JourneyPort/DemoControlPort 기반 수동 요청·READY 확인·출발·완료·취소·원본 반복 독립 구현
+- [x] C04: 가짜 포트로 저장 결과 await·실패/원본 재시도·전체 초기화·늦은 입력 중단 시험
+- [ ] C04: A02/A04 실제 포트·일상 목적지·GameSnapshot 공급자·초기화 콜백 연결, 기기 수동 시연 확인
 - [ ] C05: U07~08·S08~09, 화면 이탈·타이머 종료·초기화 반복 검증
 - [ ] 연결: B 의상 → A 주입 슬롯 → C 동일 외형(I03), 월드맵 후보 이동(I06) 확인
 - [ ] C 백업 PC에서 A의 release APK 설치·핵심 시연 확인
@@ -64,6 +67,8 @@ C03 추가 검사: main 동기화 전 py -3 scripts/check_all.py --android exit 
 - [ ] 변경 diff·검증 결과·NOT RUN·다음 작업 확인
 - [x] C01: 선별 커밋·push·PR #3 생성 및 main 병합 확인
 - [x] C02·C03: 기능별 커밋·전달 문서·기존 시험 결과 준비(최신 main 재검사·전송 결과는 전달 보고서 확인)
+- [x] C04: 독립 구현·시험·연결 문서 준비(검사·push SHA는 작업 보고서 확인)
+- [ ] C04: 사용자 확인 후 새 PR 생성
 - [ ] 기본 리뷰 짝 B와 검토하고 PM 통합 순서에 따라 전달
 
-A01·C01·C02·C03 컴파일·단위 시험·debug 빌드는 PASS다. C 기능의 AppRoot 진입·UI 흐름, B 외형 일치, 실제 Pleos·release는 미검증이다. 다음은 A 연결·B 리뷰와 C04 독립 구현이다.
+A01·C01~C04 컴파일·단위 시험·debug 빌드는 PASS다. C 기능의 AppRoot 진입·실제 UI 흐름, B 외형 일치, 실제 Pleos·release는 미검증이다. 다음은 A/B 연결과 C05 기기·반복 인수다.
