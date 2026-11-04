@@ -13,6 +13,10 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import ai.pleos.playground.navi.constants.NaviErrorCode
 import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.DestinationInfo
@@ -24,6 +28,12 @@ import io.kailand.core.contract.DestinationSpec
 import io.kailand.core.contract.GateState
 import io.kailand.core.contract.InteractionGate
 import io.kailand.core.platform.VehicleGateMonitor
+import io.kailand.core.contract.JourneyKind
+import io.kailand.core.contract.RequestResult
+import io.kailand.core.ui.MemorideTheme
+import io.kailand.app.journey.ManualArrivalController
+import io.kailand.app.journey.ManualJourneyConfirmationPanel
+import io.kailand.app.journey.ManualReviewReason
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -49,6 +59,7 @@ class PleosProbeActivity : ComponentActivity() {
     private var operation = 0L
     private var expected: DestinationSpec? = null
     private var destinations = emptyList<DestinationSpec>()
+    private var manual: ManualArrivalController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +69,10 @@ class PleosProbeActivity : ComponentActivity() {
         output = TextView(this).apply { textSize = 15f }
         column.addView(status)
         column.addView(commands)
+        val manualView = ComposeView(this).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        }
+        column.addView(manualView)
         column.addView(ScrollView(this).apply { addView(output) }, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(column)
         // Explicitly finish the probe so Back releases its SDK, including when this is a root task.
@@ -76,9 +91,19 @@ class PleosProbeActivity : ComponentActivity() {
                     DestinationSpec(r.getString("id"), r.getString("name"), r.getDouble("latitude"), r.getDouble("longitude"))
                 }
             }
+            val controller = ViewModelProvider(this@PleosProbeActivity)[ManualJourneyProbeModel::class.java]
+                .controller(destinations.mapNotNull { it.regionId }.toSet())
+            manual = controller
+            manualView.setContent { MemorideTheme { ManualJourneyConfirmationPanel(controller, destinations) } }
+            updateControls()
             destinations.forEach { target ->
                 button("${target.label} 목적지 요청") {
                     runCommand("requestRoute:${target.regionId}") { sdk ->
+                        val selected = controller.begin(target, JourneyKind.REGION)
+                        if (selected is RequestResult.Failed) {
+                            record("REJECTED: ${selected.message}")
+                            return@runCommand
+                        }
                         expected = target
                         sdk.requestRoute(RouteInfo(
                             latitude = target.latitude, longitude = target.longitude,
@@ -117,9 +142,20 @@ class PleosProbeActivity : ComponentActivity() {
             }
             override fun onRouteStarted(routeStartInfo: RouteStartInfo) = post { record("CALLBACK onRouteStarted: route search only (payload omitted)") }
             override fun onRoutingCompleted() = post { record("CALLBACK onRoutingCompleted: not arrival") }
-            override fun onDestinationChanged() = post { record("CALLBACK onDestinationChanged: not arrival") }
-            override fun onRouteCancelled() = post { record("CALLBACK onRouteCancelled") }
+            override fun onDestinationChanged() = post {
+                manual?.navigationDestinationChanged()
+                record("CALLBACK onDestinationChanged: not arrival")
+            }
+            override fun onRouteCancelled() = post {
+                manual?.requestReview(ManualReviewReason.NAVIGATION_ENDED)
+                record("CALLBACK onRouteCancelled: user review hint only")
+            }
+            override fun onRouteEnded() = post {
+                manual?.requestReview(ManualReviewReason.NAVIGATION_ENDED)
+                record("CALLBACK onRouteEnded: user review hint only")
+            }
             override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) = post {
+                manual?.requestReview(ManualReviewReason.NAVIGATION_ARRIVAL)
                 record("CALLBACK onDestinationArrived: UNVERIFIED identity; no game command (payload omitted)")
             }
             override fun onError(errorCode: NaviErrorCode) = post { record("SDK_ERROR: $errorCode") }
@@ -189,6 +225,7 @@ class PleosProbeActivity : ComponentActivity() {
 
     private fun updateControls() {
         val enabled = foreground && connected && gate.canInteract
+        manual?.setInteractionAllowed(foreground && gate.canInteract)
         buttons.forEach { it.isEnabled = enabled }
         status.text = "A03 SDK 진단 · gate=${gate.state} · SDK=$connected · foreground=$foreground"
     }
@@ -199,4 +236,11 @@ class PleosProbeActivity : ComponentActivity() {
         output.text = events.joinToString("\n\n")
         Log.i("MemoridePleosProbe", event)
     }
+}
+
+/** Keeps only the user-selected in-memory journey across configuration changes. */
+class ManualJourneyProbeModel : ViewModel() {
+    private var current: ManualArrivalController? = null
+    fun controller(regionIds: Set<String>): ManualArrivalController =
+        current ?: ManualArrivalController(regionIds).also { current = it }
 }
