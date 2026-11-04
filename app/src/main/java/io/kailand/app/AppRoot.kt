@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.kailand.core.contract.AvatarPreview
+import io.kailand.core.contract.GateState
 import io.kailand.core.contract.InteractionGate
 import io.kailand.core.ui.AvatarSlot
 
@@ -62,9 +63,12 @@ fun AppRoot(
             Text("Ride Becomes a Memory")
             if (developmentEntry) Text("DEMO · A01 개발 샘플 · 게임 저장/보상 없음")
             if (!gate.canInteract) {
-                Text("이용 상태 미확인", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    if (gate.state == GateState.RESTRICTED) "지금은 이용할 수 없어요" else "이용 상태 미확인",
+                    style = MaterialTheme.typography.titleLarge,
+                )
                 Text(gate.reason ?: "이용 가능 상태를 확인하고 있습니다.")
-                Text("A03에서 실제 플랫폼 입력을 연결합니다.")
+                Text("주차 상태와 이용 허용을 확인한 뒤 이용해 주세요.")
             } else {
                 Text(selected.label, style = MaterialTheme.typography.titleLarge)
                 val avatarSlot: AvatarSlot = { avatar, _, modifier ->

@@ -1,8 +1,8 @@
 # 실제 개발 환경 기록
 
-최신 요약 (2026-11-03): A01 구현·검증 기준은 푸시된 `993c2c681db4d69358dd283b89d21dcbf23861f2`이며 [PR #1](https://github.com/Finn-02/MEMORIDE/pull/1)은 OPEN·미병합이다. Windows 11 AMD64에서 debug 단위 시험 4개·APK 빌드·IDE Sync PASS. 일반 API37 에뮬레이터의 개발 DEMO 홈·여정 준비는 직접 화면 관찰, 메인 섬 복귀는 사용자 확인이다. 실제 Pleos/API34 설치·SDK·차량 gate, 시스템 Back·재시작/복원, 서명 release·macOS/다른 PC는 NOT RUN이다. 일반 화면 확인은 실제 주차·차량 제한 검증이 아니다. 자세한 시작 방법은 [A01 실행 안내](A01_QUICKSTART.md)를 따른다.
+최신 요약 (2026-11-04 KST): A01 병합 완료, A02 PR #10의 검토·병합 요청 전달. Windows 11 AMD64의 `part/a-a01-bootstrap`, A02 `bf8dd1f` 위 로컬 A03 변경에서 Python44개·Android121개·debug 빌드 PASS. Pleos2.1.0 API34 x86_64 부팅·앱 설치, NaviHelper3.0.5 실제 접속·목적지 조회 콜백, 실제 P 허용→D 제한→P 복귀와 화면 이탈·복귀 확인. 일반 API37 개발 DEMO 실행·정식 UNKNOWN 유지도 확인. A03은 아직 commit/push 전이며 목적지 요청·최종 도착, 실제 서비스 장애 주입·실차·A04 저장 통합·서명 release 설치·macOS/다른 PC는 NOT RUN이다. release Kotlin 컴파일 PASS와 release 설치는 구분한다. 근거는 [Pleos 실험 8.8~8.9](08_pleos_spike.md)에 기록했다.
 
-아래는 2026-11-02의 단계별 기록이다. 각 절의 당시 NOT RUN 표시는 이후 일반 에뮬레이터 확인 기록과 구분하며, 이번 문서 보완에서 Android·UI 검사를 재실행한 것은 아니다.
+아래 환경 표는 최신 확인값이며, 이후의 단계별 기록은 각 절에 적힌 당시 결과다. 과거 NOT RUN 표시는 위 최신 요약 및 A03 실험 기록과 구분한다.
 
 | 항목 | 팀 공통 실제 값 | 확인 방법 |
 |---|---|---|
@@ -10,15 +10,15 @@
 | Gradle 실행 JDK | JetBrains JBR 25.0.4 | wrapper --version의 Launcher/Daemon JVM |
 | AGP와 Gradle wrapper | 9.1.1 / 9.3.1 | 공통 빌드 파일·wrapper 실제 실행 |
 | Kotlin과 Compose | 내장 Kotlin 2.2.10 / BOM 2026.01.00 | 버전 카탈로그·실제 컴파일. Gradle embedded Kotlin 2.2.21과 별개 |
-| DataStore / serialization | 1.2.0 / 1.9.0 | 공통 정의에 고정, B의 실제 저장 구현은 아직 없음 |
+| DataStore / serialization | 1.2.0 / 1.9.0 | 공통 정의에 고정, A04 실제 앱 저장 연결은 별도 |
 | Activity / coroutines | 1.12.3 / 1.10.2 | 공통 정의·의존성 해결 |
 | minSdk | 28 | app 빌드 파일 |
 | compileSdk와 targetSdk | 37.0 / 37 | compileSdk release(37), minorApiLevel=0 / Build-Tools 36.0.0 |
-| NaviHelper | 계획 3.0.5, 미연결 | A03에서 실제 해결·호출 검증 |
-| Pleos Emulator | 계획 2.1.0 API 34, NOT RUN | AVD와 앱 설치 별도 |
+| NaviHelper | 3.0.5, debug 진단 연결 | 실제 접속·getDestinationInfo 콜백 PASS. 요청·최종 도착은 미검증 |
+| Pleos Emulator | 2.1.0 / API34 x86_64 / RAM4GB / Cold boot | Android Emulator37.2.13·WHPX, AVD 부팅·debug 설치 실행 PASS |
 | applicationId | io.kailand | A01 빌드 |
 | JVM criteria 사용 여부 | false | wrapper는 이번 명령의 JAVA_HOME을 사용 |
-| 주차·제한 입력의 실제 근거 | 미확인 | SDK 또는 플랫폼 API와 상태 매핑 |
+| 주차·제한 입력의 실제 근거 | GEAR_SELECTION=P + CarUxRestrictions DO=false/flags0 | 실제 P/D/P와 화면 이탈·복귀 PASS. 속도0으로 주차 추정하지 않음 |
 
 ## 공통 버전과 개인 설정의 관계
 
