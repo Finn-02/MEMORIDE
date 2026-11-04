@@ -3,12 +3,19 @@ package io.kailand.feature.world
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -81,7 +88,15 @@ internal fun WorldContent(
                                         latest.catalog.regions.count { it.id == region.id } == 1) selectedId = region.id
                                 }, enabled = region.id.isNotBlank() && view.regions.count { it.id == region.id } == 1,
                                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-                                    Text("${region.name.ifBlank { "지역 이름 오류" }} · ${if (region.discovered) "발견함" else "미발견 · 상세 잠금"}")
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically) {
+                                        RegionArtwork(region.discovered)
+                                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text(region.name.ifBlank { "지역 이름 오류" }, style = MaterialTheme.typography.titleMedium)
+                                            Text(if (region.discovered) "발견함" else "미발견 · 상세 잠금")
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -97,6 +112,32 @@ internal fun WorldContent(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Identical generic island silhouette for every Catalog region; never reveals locked content. */
+@Composable
+private fun RegionArtwork(discovered: Boolean) {
+    Canvas(Modifier.size(width = 88.dp, height = 72.dp).clip(RoundedCornerShape(16.dp))) {
+        val w = size.width
+        val h = size.height
+        val ink = Color(0xFF344B52)
+        drawRect(Color(0xFF8CC6D7).copy(alpha = .28f))
+        drawOval(Color(0xFFD8BA91), Offset(w * .12f, h * .36f), Size(w * .76f, h * .48f))
+        drawOval(if (discovered) Color(0xFF9AC9A1) else Color(0xFFD6DDD4),
+            Offset(w * .12f, h * .26f), Size(w * .76f, h * .48f))
+        drawOval(Color(0xFFF4E7D1), Offset(w * .32f, h * .43f), Size(w * .36f, h * .17f))
+        if (discovered) {
+            drawCircle(ink, 9.dp.toPx(), Offset(w * .50f, h * .37f))
+            drawLine(Color(0xFFF4E7D1), Offset(w * .45f, h * .37f), Offset(w * .49f, h * .42f), 2.dp.toPx())
+            drawLine(Color(0xFFF4E7D1), Offset(w * .49f, h * .42f), Offset(w * .56f, h * .32f), 2.dp.toPx())
+        } else {
+            // Visible text also states the lock; color is never the sole status indication.
+            drawArc(ink, 180f, 180f, false, Offset(w * .43f, h * .25f), Size(w * .14f, h * .24f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+            drawRoundRect(ink, Offset(w * .40f, h * .35f), Size(w * .20f, h * .20f),
+                androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
         }
     }
 }

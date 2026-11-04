@@ -35,6 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -42,6 +45,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -96,6 +100,7 @@ internal fun CompanionContent(
     Surface(modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val wide = maxWidth >= 640.dp && fontScale <= 1.2f
+            val mapHeight = if (hidden) (maxHeight * 0.5f).coerceIn(240.dp, 480.dp) else 200.dp
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -122,14 +127,15 @@ internal fun CompanionContent(
                     Text(view.destination, style = MaterialTheme.typography.titleLarge)
                     Text(view.phase, style = MaterialTheme.typography.titleMedium)
                     Text(view.notice)
-                    if (wide) {
+                    if (wide && view.showAvatar) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             JourneyMap(view, Modifier.weight(1f))
                             AvatarPanel(view, avatar, avatarSlot, Modifier.weight(0.55f))
                         }
                     } else {
-                        JourneyMap(view, Modifier.fillMaxWidth())
-                        AvatarPanel(view, avatar, avatarSlot, Modifier.fillMaxWidth())
+                        // Unmount the whole avatar panel while hidden; no empty slot reserves space.
+                        JourneyMap(view, Modifier.fillMaxWidth(), mapHeight)
+                        if (view.showAvatar) AvatarPanel(view, avatar, avatarSlot, Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -138,30 +144,63 @@ internal fun CompanionContent(
 }
 
 @Composable
-private fun JourneyMap(view: CompanionPresentation, modifier: Modifier) {
-    val road = MaterialTheme.colorScheme.primary
-    val land = MaterialTheme.colorScheme.tertiaryContainer
+private fun JourneyMap(view: CompanionPresentation, modifier: Modifier, mapHeight: Dp = 200.dp) {
     Card(modifier) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("모의 경로 예시", style = MaterialTheme.typography.titleMedium)
             Canvas(
-                Modifier.fillMaxWidth().height(176.dp).semantics {
+                Modifier.fillMaxWidth().height(mapHeight).clip(RoundedCornerShape(20.dp)).semantics {
                     contentDescription = "실제 위치와 연결되지 않은 정적 도형 경로"
                 },
             ) {
-                drawCircle(land, size.minDimension * 0.30f, Offset(size.width * 0.3f, size.height * 0.4f))
-                drawCircle(land, size.minDimension * 0.23f, Offset(size.width * 0.75f, size.height * 0.7f))
-                val start = Offset(size.width * 0.12f, size.height * 0.82f)
-                val end = Offset(size.width * 0.86f, size.height * 0.18f)
-                val path = Path().apply {
-                    moveTo(start.x, start.y)
-                    lineTo(size.width * 0.4f, size.height * 0.65f)
-                    lineTo(size.width * 0.4f, size.height * 0.35f)
-                    lineTo(end.x, end.y)
+                // C-owned static map artwork only. B's suggested art colors do not replace the theme.
+                val water = Color(0xFF8CC6D7)
+                val meadow = Color(0xFF9AC9A1)
+                val cream = Color(0xFFF4E7D1)
+                val sand = Color(0xFFD8BA91)
+                val ink = Color(0xFF344B52)
+                val leaf = Color(0xFF5A8264)
+                val coral = Color(0xFFEE967B)
+                val w = size.width
+                val h = size.height
+                drawRect(water.copy(alpha = 0.35f))
+                // A quiet shoreline and large soft shapes; no geographic or current-position claim.
+                val shore = Path().apply {
+                    moveTo(-w * .05f, h * .08f)
+                    cubicTo(w * .25f, -h * .12f, w * .50f, h * .16f, w * .73f, h * .06f)
+                    cubicTo(w * 1.08f, -h * .04f, w * 1.05f, h * .58f, w * .88f, h * .76f)
+                    cubicTo(w * .75f, h * 1.10f, w * .38f, h * .88f, -w * .05f, h * 1.08f)
+                    close()
                 }
-                drawPath(path, road, style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round))
-                drawCircle(road, 9.dp.toPx(), start)
-                drawCircle(road, 9.dp.toPx(), end)
+                drawPath(shore, cream, style = Stroke(width = 13.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(shore, meadow)
+                drawOval(leaf.copy(alpha = .10f), Offset(w * .04f, h * .17f), Size(w * .38f, h * .50f))
+                drawOval(leaf.copy(alpha = .10f), Offset(w * .61f, h * .42f), Size(w * .28f, h * .37f))
+                val start = Offset(w * .15f, h * .76f)
+                val end = Offset(w * .79f, h * .23f)
+                val route = Path().apply {
+                    moveTo(start.x, start.y)
+                    cubicTo(w * .58f, h * .80f, w * .27f, h * .30f, w * .53f, h * .32f)
+                    cubicTo(w * .64f, h * .34f, w * .66f, h * .20f, end.x, end.y)
+                }
+                drawPath(route, sand, style = Stroke(width = 22.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(route, cream, style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round))
+                // Fixed landscape marks, not collectible items, growth state or interactive map points.
+                for (point in listOf(Offset(w * .20f, h * .29f), Offset(w * .70f, h * .66f), Offset(w * .81f, h * .53f))) {
+                    drawRoundRect(sand, point + Offset(-2.dp.toPx(), 0f), Size(4.dp.toPx(), 20.dp.toPx()), CornerRadius(2.dp.toPx()))
+                    drawCircle(leaf, 12.dp.toPx(), point)
+                    drawCircle(meadow, 7.dp.toPx(), point + Offset(-4.dp.toPx(), -4.dp.toPx()))
+                }
+                drawCircle(ink, 11.dp.toPx(), start)
+                drawCircle(cream, 6.dp.toPx(), start)
+                drawLine(ink, end + Offset(0f, 9.dp.toPx()), end + Offset(0f, -21.dp.toPx()), 3.dp.toPx(), StrokeCap.Round)
+                val flag = Path().apply {
+                    moveTo(end.x, end.y - 21.dp.toPx())
+                    lineTo(end.x + 18.dp.toPx(), end.y - 15.dp.toPx())
+                    lineTo(end.x, end.y - 8.dp.toPx())
+                    close()
+                }
+                drawPath(flag, coral)
             }
             view.distance?.let { Text(it) }
             view.elapsed?.let { Text(it) }
