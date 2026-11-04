@@ -154,7 +154,7 @@ class RegionArrivalTest {
         assertEquals("2026-11-01", store.save!!.lastDailyGrantDate)
     }
 
-    @Test fun invalidInputAndUnimplementedFeaturesNeverWrite() = withService { service, store ->
+    @Test fun invalidArrivalAndUnknownCharacterNeverWrite() = withService { service, store ->
         val invalid = listOf(
             d03.copy(journeyId = "invalid"), d03.copy(routeRevision = -1),
             d03.copy(source = DataSource.PLEOS), d03.copy(evidence = ArrivalEvidence.PLEOS_FINAL_DESTINATION),
@@ -164,7 +164,7 @@ class RegionArrivalTest {
             d03.copy(regionId = ""),
         )
         invalid.forEach { assertTrue("Must reject $it", service.completeArrival(it) is ArrivalResult.Rejected) }
-        assertTrue(service.apply(GameAction.SelectCharacter("momo")) is MutationResult.Rejected)
+        assertTrue(service.apply(GameAction.SelectCharacter("unknown")) is MutationResult.Rejected)
         assertNull(store.save)
         assertTrue(store.commits.isEmpty())
     }

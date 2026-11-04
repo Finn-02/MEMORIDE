@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.kailand.core.contract.ArrivalResult
+import io.kailand.core.contract.GameAction
 import io.kailand.core.contract.MutationResult
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +15,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -26,6 +28,48 @@ import org.junit.rules.TemporaryFolder
  */
 class GameSaveDataStoreTest {
     @get:Rule val temp = TemporaryFolder()
+
+    @Test fun gameActionsPersistAcrossRealFileAndServiceRecreation() = runBlocking {
+        val file = File(temp.root, "actions.preferences_pb")
+
+        suspend fun <T> session(block: suspend (BGameService, PreferencesGameSaveStore) -> T): T {
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            try {
+                val backend = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
+                val store = PreferencesGameSaveStore(backend)
+                val service = BGameService(store, scope) { IslandTestData.rewards }
+                assertEquals(GameReadiness.READY, service.readiness.first { it != GameReadiness.LOADING })
+                return block(service, store)
+            } finally { scope.coroutineContext[Job]?.cancelAndJoin() }
+        }
+
+        val expected = session { service, store ->
+            assertTrue(service.completeArrival(IslandTestData.arrival("D01")) is ArrivalResult.Applied)
+            assertTrue(service.completeArrival(IslandTestData.arrival("D03")) is ArrivalResult.Applied)
+            val rewarded = store.read()!!
+            val actions = listOf(GameAction.SelectCharacter("momo"), GameAction.EquipOutfit("daejeon_hat"),
+                GameAction.PlaceDecoration("slot_left", "daejeon_sign"))
+            for (action in actions) assertEquals(MutationResult.Success, service.apply(action))
+            val changed = rewarded.copy(characterId = "momo", equippedOutfitId = "daejeon_hat",
+                decorationSlots = mapOf("slot_left" to "daejeon_sign"))
+            assertEquals(changed, store.read())
+            val bytes = file.readBytes()
+            for (action in actions + GameAction.Eat("daejeon_bread")) {
+                assertEquals(MutationResult.Success, service.apply(action))
+            }
+            assertTrue(service.apply(GameAction.PlaceDecoration("slot_right", "daejeon_sign")) is MutationResult.Rejected)
+            assertArrayEquals(bytes, file.readBytes())
+            changed
+        }
+
+        session { service, store ->
+            assertEquals(expected, store.read())
+            assertEquals(expected.toSnapshot(), service.state.value)
+            val receipt = expected.processedReceipts.getValue(IslandTestData.arrival("D03").journeyId).toContract()
+            assertEquals(ArrivalResult.AlreadyApplied(receipt), service.completeArrival(IslandTestData.arrival("D04")))
+            assertEquals(expected, store.read())
+        }
+    }
 
     @Test fun dailyDatesAndD06NullOriginalsSurviveRealFileRecreation() = runBlocking {
         val file = File(temp.root, "daily.preferences_pb")
@@ -170,6 +214,9 @@ class GameSaveDataStoreTest {
             )
             for (invalid in corruptInputs) {
                 backend.edit { it[key] = invalid }
+                val previous = service.state.value
+                assertTrue(service.apply(GameAction.SelectCharacter("momo")) is MutationResult.StorageFailure)
+                assertEquals(previous, service.state.value)
                 val recreated = BGameService(store, scope) { IslandTestData.rewards }
                 assertEquals(GameReadiness.READ_ERROR, recreated.readiness.first { it != GameReadiness.LOADING })
                 assertTrue(recreated.completeArrival(d03) is ArrivalResult.StorageFailure)

@@ -9,6 +9,7 @@ import io.kailand.core.contract.DataSource
 import io.kailand.core.contract.GameAction
 import io.kailand.core.contract.GameService
 import io.kailand.core.contract.GameSnapshot
+import io.kailand.core.contract.ItemType
 import io.kailand.core.contract.JourneyKind
 import io.kailand.core.contract.MutationResult
 import java.time.Instant
@@ -156,12 +157,60 @@ class BGameService internal constructor(
         else -> null
     }
 
-    /** B03 implements item/character mutations. No speculative writes in B01. */
     override suspend fun apply(action: GameAction): MutationResult {
         if (_readiness.value != GameReadiness.READY) {
             return MutationResult.StorageFailure("Game save is not ready")
         }
-        return MutationResult.Rejected("B03 action handling is not implemented")
+        return mutationMutex.withLock {
+            if (_readiness.value != GameReadiness.READY) {
+                return@withLock MutationResult.StorageFailure("Game save is not ready")
+            }
+            try {
+                val committed = store.update { current -> applyToSave(current, action) }
+                _state.value = committed.toSnapshot()
+                MutationResult.Success
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (rejected: RejectedAction) {
+                MutationResult.Rejected(rejected.reason)
+            } catch (_: Exception) {
+                MutationResult.StorageFailure("Game action could not be completed")
+            }
+        }
+    }
+
+    private fun applyToSave(current: GameSave, action: GameAction): GameSave = when (action) {
+        is GameAction.SelectCharacter -> {
+            if (action.characterId !in regionRewards.characterIds) throw RejectedAction("Unknown character")
+            current.copy(characterId = action.characterId)
+        }
+        is GameAction.EquipOutfit -> {
+            action.itemId?.let { requireOwnedItem(current, it, ItemType.OUTFIT) }
+            current.copy(equippedOutfitId = action.itemId)
+        }
+        is GameAction.Eat -> {
+            requireOwnedItem(current, action.itemId, ItemType.FOOD)
+            current // The UI uses Success to play the temporary expression.
+        }
+        is GameAction.PlaceDecoration -> {
+            if (action.slotId !in regionRewards.decorationSlotIds) throw RejectedAction("Unknown decoration slot")
+            val itemId = action.itemId
+            if (itemId == null) {
+                current.copy(decorationSlots = current.decorationSlots - action.slotId)
+            } else {
+                requireOwnedItem(current, itemId, ItemType.DECOR)
+                if (current.decorationSlots.any { (slot, item) -> slot != action.slotId && item == itemId }) {
+                    throw RejectedAction("Decoration is already placed in another slot")
+                }
+                current.copy(decorationSlots = current.decorationSlots + (action.slotId to itemId))
+            }
+        }
+    }
+
+    private fun requireOwnedItem(save: GameSave, itemId: String, expectedType: ItemType) {
+        val type = regionRewards.itemTypes[itemId] ?: throw RejectedAction("Unknown item")
+        if (type != expectedType) throw RejectedAction("Wrong item type")
+        if (itemId !in save.ownedItemIds) throw RejectedAction("Item is not owned")
     }
 
     /** Clear only the matching pending pointer, keeping all original receipts. */
@@ -218,5 +267,6 @@ class BGameService internal constructor(
 }
 
 private class ReceiptMismatch : Exception()
+private class RejectedAction(val reason: String) : Exception(reason)
 
 private val JOURNEY_ID = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
