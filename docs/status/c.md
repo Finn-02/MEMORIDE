@@ -1,6 +1,12 @@
 # C 진행 상태
 
-상태: IN PROGRESS — C01~C03 main 병합 확인, C04 독립 수동 시연 패널·Runner·시험 구현 완료. AppRoot 연결·기기 UI 시험 대기
+상태: IN PROGRESS — C01~C04 main 병합. C01~C03 그래픽·C01 패널 접기, C05 로컬 검증과 A02/C04 저장 경계 검증 기록을 기존 C 브랜치 전달 대상으로 정리. 실제 A04 통합·release 백업 인수 대기
+
+최신 전달: 2026-11-04 사용자 push 지시. 완료한 변경을 디자인·C05 검증·전달 문서로 나누어 커밋하고 기존 part/c-c01-companion에 일반 push한다. 새 PR·main 병합은 수행하지 않는다. 환경 문서의 별도 로컬 수정·tmp 검증 하네스·검토 ZIP은 제외한다. 최종 SHA·실제 push 결과는 이번 전달 ZIP에 기록한다. 아래 기록의 미push/PR 대기 표시는 각 작업 당시의 상태다.
+
+2026-11-04 최신 main `b8faf56` 반영: A02/B03/C04 병합분을 기존 C 브랜치에 fast-forward하고 로컬 디자인·C05를 복원했다. C04/A02/B 실제 파일 DataStore를 조립한 별도 임시 경계 시험 5개 PASS(D01~D06, 원본 반복/재시도, 취소/UNKNOWN). 공통 검사 Python 44개·Android 165개 및 debug 빌드 PASS. 실제 AppRoot의 C04·저장·전체 초기화 조립과 U20·기기 전체 시연은 미실행이다. C04 PR #8은 main 병합됐으며 이번 검증에는 새 commit/push/PR 변경 없음. [세부 경계 검증](../c04_demo.md#a02-main-병합-후-로컬-경계-검증)
+
+2026-11-04 C05 착수: 수락/거절 경쟁·수락/reset 경쟁·3회 reset 후 이전 요청/콜백 재유입 시험 3개 추가 PASS. C02 총 27개·C04 23개 집중 시험, 전체 Python 44개·Android 123개 및 debug 빌드 PASS. 별도 C05 검사 화면에서 실제 Handler 만료·쿨다운 거부·Android 홈 background 후 취소/비재개·reset 실패 차단/성공 통지를 관찰했다. 초기화 통지는 방문 대역뿐이며 A/B 전체 초기화가 아니다. C05 전체 완료·release 인수는 미완료. 로컬 C01~C03 디자인과 C05 변경은 commit/push하지 않았다. [C05 결과·백업 체크리스트](../c05_acceptance.md)
 
 2026-11-04 C04: PR #5 병합 main 8c78b8e(B 저장 기반 포함)를 기존 파트 브랜치에 반영했다. DemoScenarioRunner·DemoPanel·PM fixtures 읽기 구현, C04 23개·전체 Android 106개·Python 44개 PASS, debug 빌드 성공(exit 0). C04를 같은 브랜치에 commit·push하고 새 PR은 사용자 확인 후 생성한다. 실제 A02/A04 포트·일상 목적지·전체 초기화 연결과 기기 인수는 NOT RUN. [C04 연결·검증](../c04_demo.md)
 
