@@ -4,6 +4,10 @@
   <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
   <application>
     <activity
+        android:name="io.kailand.app.DevelopmentGameActivity"
+        android:exported="false"
+        android:label="MEMORIDE 실제 저장 개발 화면" />
+    <activity
         android:name="io.kailand.app.PleosProbeActivity"
         android:exported="true"
         android:label="MEMORIDE A03 SDK 진단" />
