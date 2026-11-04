@@ -113,3 +113,15 @@ Virtual Console의 Gear Selection으로 P/R/N/D를 설정해 실제 gate 변화�
 - 통합 APK를 현재 Pleos emulator-5554에 설치해 gate=PARKED_ALLOWED·SDK 연결과 버튼 활성화, 목적지 조회 콜백1건, Back 종료의 listener 제거·SDK release 성공을 확인했다. 정식 MainActivity의 실제 P 허용 화면도 확인했다. latest-main-probe.xml / latest-main-navi.log / latest-main-home.xml에 로컬 근거를 남겼다. 이전 P/D/P·generic 기기 시험은8.9의 결과이며 이번 재검사를 모든 기기·모든 시나리오 재실행으로 확대해 해석하지 않는다.
 - A03 기본 SDK 기술 검증과 플랫폼 gate 구현은 전달 가능하다. 정식 S03의 PLEOS 여정 포트·자동 도착 처리는 아직 연결하지 않았으며 NaviHelper는 debug 진단에만 포함된다. 최종 도착의 여정 일치·단위/결측 해석, 실제 서비스 장애 주입·N/R·실차, A04 저장/브리핑/I06/U20, 서명 release 설치는 미검증이다.
 - 지원 API의 실제 응답·오류를 UI에 표시하지만 실제 onError/연결 실패를 강제로 발생시킨 시험은 NOT RUN이다. 필수 DEMO 흐름은 A04에서 단일 B GameService·readiness·pendingReceipt·acknowledge 성공 후 이동·reset generation과 연결한다. 이 기록은 최종 제품 인수나 실차 안전 검증이 아니다.
+
+## 8 12 최종 도착 재현 추가 실험 — 2026-11-04 KST
+
+- 목표: 정상 도착을 먼저 관찰하고, 성공한 재현 경로를 사용해 목적지 변경·취소 후 늦은 도착을 시험한다. 게임 보상·ArrivalCommand 연결은 하지 않는다.
+- 공식 Virtual Console/에뮬레이터 문서 및 내비 공개 설정을 확인했지만 최종 도착 직접 발생·내비 경로 재생 절차는 찾지 못했다. 이는 해당 기능이 없다는 확정 판단이 아니다.
+- Android Emulator가 안내하는 `geo fix <longitude> <latitude>`로 모의 위치를 대전 목적지 근처→목적지로 이동시켰다. 원래 에뮬레이터 GPS를 로컬에 보존하고 좌표는 보고서·로그 출력에서 생략했다.
+- Android dumpsys location에서 주입 목적지 좌표 반영은 확인했다. 그러나 내비 화면은 기존 위치/대전 약141km 경로를 유지했다. 공식 Virtual Console로 D·속도0 상태에서도 짧게 추가 관찰했지만 최종 도착 callback은 관찰하지 못했다. 모의 GPS를 이용한 기술 시험이며 실제 이동·도착 인증이 아니다.
+- 결과: 정상 최종 도착은 **재현 미성공**. 목적지 변경·취소 후 늦은 도착 식별은 선행 재현이 없어 **NOT RUN**. Android GPS와 내비 위치의 연결·유효성 처리 원인은 미확정이며, 관찰 기간 전체의 listener 연속성도 별도 입증하지 않았으므로 SDK가 도착 이벤트를 지원하지 않는다고 결론 내리지 않는다.
+- 복원: 원래 GPS 재주입 및 현재 관측값 일치 확인. Virtual Console P 복원 후 DrivingState=0, DO=false/flags0 및 앱 PARKED_ALLOWED 확인. 시험 경로 취소 callback·Catalog 일치 없음 확인. 진단 인스턴스 정리 후 앱 프로세스를 정상 재실행해 메인 화면 확인. 첫 am start 응답은 timeout이었으나 후속 UI dump에서 메인 화면 표시를 확인했다.
+- 콘솔 탭 연결 오류는 새 탭으로 복구해 P를 복원했다. restriction bypass·DO 선언·overlay·숨겨진 차량 입력은 사용하지 않았다. 제품 소스·공통 계약·보상 규칙은 변경하지 않았다.
+- 로컬 근거: tmp/a03-preflight/arrival-normal.log, arrival-normal.xml, arrival-drive-observation.xml/png, arrival-cleanup.log, arrival-restored-probe.xml, arrival-final-state.xml, arrival-restored.png. 위치 원본과 dumpsys는 복원용 로컬 임시 자료이며 커밋·외부 첨부하지 않는다.
+- 결정: 실제 자동 도착은 계속 보류한다. 플랫폼 제공자의 공식 도착/위치 재현 절차를 확보한 뒤 재시험한다. A04는 독립적인 DEMO 완료→실제 B 저장→pendingReceipt→브리핑/acknowledge 경로로 진행할 수 있다. 이번에는 문서만 변경했으므로 Android 빌드·169개 단위 시험을 재실행하지 않았다.
