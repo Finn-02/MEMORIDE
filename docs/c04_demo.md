@@ -58,3 +58,11 @@ gate UNKNOWN/RESTRICTED, 비foreground, 화면 이탈, mode 변경에서는 세�
 NOT RUN: A02/A04 포트와 AppRoot 연결, 실제 B 저장·브리핑, 일상 목적지 공급, reset 조정, 기기 클릭/뒤로/회전/background·모드 전환·접근성 및 S09/U20 통합, Pleos·release·운전 안전 시험. 이 작업에서는 Preview/기기 시연을 새로 수행하지 않는다.
 
 다음: A가 위 owner·읽기 공급자·두 포트·전체 초기화 경로를 연결한 뒤 D01~D06과 D03 직후 D04를 반복한다. 독립 C04는 push하되 새 PR은 사용자 확인 후 생성한다. C05는 연결된 기기 흐름·백업 설치와 반복 인수를 이어간다.
+
+## 저장 없는 UI 시연
+
+`src/debug/.../demo/DemoPanelPreview.kt`는 별도 PreviewActivity에서 실행하는 격리 샘플이다. 실제 packaged Catalog/시나리오를 읽고 가짜 JourneyPort로 D03 목적지 요청·READY·출발을 보여 준다. 초기화 확인은 샘플 여정만 비우며 GameService나 파일을 사용하지 않는다. 완료·저장 재시도는 의도적으로 Failed를 반환하므로 완료/지급 성공을 꾸미지 않는다. DAILY 목적지는 공급하지 않는다. AppRoot, 실제 gate, A/B 구현에는 연결하지 않는다.
+
+Android Studio의 Layoutlib에서는 `Asset repository is not set`으로 자산 로드가 실패할 수 있다. 이 경우 Run Preview 또는 기존 에뮬레이터의 PreviewActivity로 실행한다. 이 시연은 실제 A/B 통합 인수와 구분한다.
+
+2026-11-04 Windows의 기존 API 37 에뮬레이터에서 debug APK 설치 및 PreviewActivity 실행 성공. D03 선택 → 초기화 확인 → 목적지 요청 → READY 수동 확인 → 모의 출발 → 완료 요청을 직접 클릭했다. `ui-sample-1`이 유지되며 완료 요청은 연결 대기 오류와 같은 도착 저장 재시도 단계로 표시됐다. 실제 게임 저장·보상은 호출하지 않았다. 실제 A/B 통합, 차량·Pleos·release·안전 시험은 여전히 NOT RUN이다.
