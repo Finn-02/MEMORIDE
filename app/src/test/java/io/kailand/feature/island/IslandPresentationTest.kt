@@ -1,6 +1,7 @@
 package io.kailand.feature.island
 
 import io.kailand.core.contract.AvatarPreview
+import io.kailand.core.contract.AssetDefinition
 import io.kailand.core.contract.Catalog
 import io.kailand.core.contract.CharacterDefinition
 import io.kailand.core.contract.GameAction
@@ -121,10 +122,13 @@ internal val islandTestSnapshot = GameSnapshot(
     mapOf("slot_left" to "daejeon_sign"), null,
 )
 
+internal val islandTestRoot: File by lazy {
+    generateSequence(File(checkNotNull(System.getProperty("user.dir")))) { it.parentFile }
+        .first { File(it, "content/catalog.json").isFile }
+}
+
 internal val islandTestCatalog: Catalog by lazy {
-    val file = generateSequence(File(checkNotNull(System.getProperty("user.dir")))) { it.parentFile }
-        .map { File(it, "content/catalog.json") }.first { it.isFile }
-    val root = Json.parseToJsonElement(file.readText(Charsets.UTF_8)).jsonObject
+    val root = Json.parseToJsonElement(islandTestRoot.resolve("content/catalog.json").readText(Charsets.UTF_8)).jsonObject
     val rules = root.getValue("rules").jsonObject
     Catalog(
         root.getValue("contentVersion").jsonPrimitive.content, "", root.getValue("characters").jsonArray.map {
@@ -132,7 +136,12 @@ internal val islandTestCatalog: Catalog by lazy {
             CharacterDefinition(entry.getValue("id").jsonPrimitive.content, entry.getValue("name").jsonPrimitive.content,
                 entry.getValue("assetKey").jsonPrimitive.content)
         },
-        emptyMap(), emptyMap(), emptyList(),
+        root.getValue("expressions").jsonObject.mapValues { it.value.jsonPrimitive.content },
+        root.getValue("assets").jsonObject.mapValues { (_, value) ->
+            val asset = value.jsonObject
+            AssetDefinition(asset.getValue("path").jsonPrimitive.content, asset.getValue("kind").jsonPrimitive.content)
+        },
+        emptyList(),
         root.getValue("items").jsonArray.map {
             val entry = it.jsonObject
             ItemDefinition(entry.getValue("id").jsonPrimitive.content, entry.getValue("regionId").jsonPrimitive.content,

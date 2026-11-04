@@ -4,6 +4,8 @@ import android.app.UiModeManager
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Build
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
@@ -14,14 +16,23 @@ import io.kailand.BuildConfig
 import io.kailand.core.contract.GateState
 import io.kailand.core.contract.InteractionGate
 import io.kailand.core.platform.developmentGate
+import io.kailand.core.platform.VehicleGateMonitor
 import io.kailand.core.ui.MemorideTheme
 
 open class MainActivity : ComponentActivity() {
     protected open val developmentEntry: Boolean = false
     private var gate by mutableStateOf(InteractionGate(GateState.UNKNOWN))
+    private var vehicleGateMonitor: VehicleGateMonitor? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!developmentEntry && Build.VERSION.SDK_INT >= 29 &&
+            packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) {
+            vehicleGateMonitor = VehicleGateMonitor(this) {
+                gate = it
+                if (BuildConfig.DEBUG) Log.i("MemorideVehicleGate", "gate=${it.state}")
+            }
+        }
         setContent {
             MemorideTheme { AppContent(gate) }
         }
@@ -34,12 +45,20 @@ open class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateGate(foreground = true)
+        val monitor = vehicleGateMonitor
+        if (monitor != null) monitor.start() else updateGate(foreground = true)
     }
 
     override fun onPause() {
+        vehicleGateMonitor?.stop()
         updateGate(foreground = false)
         super.onPause()
+    }
+
+    override fun onDestroy() {
+        vehicleGateMonitor?.stop()
+        vehicleGateMonitor = null
+        super.onDestroy()
     }
 
     private fun updateGate(foreground: Boolean) {
