@@ -123,6 +123,8 @@ internal fun BriefingSampleHost(sampleId: String, variant: String = "") {
                         receipt = original.receipt?.copy(regionId = "missing", discoveredRegionId = "missing", grantedItemIds = listOf("missing")),
                     )
                     "revisit" -> original.copy(receipt = original.receipt?.copy(discoveredRegionId = null, grantedItemIds = emptyList()))
+                    "time_only" -> original.copy(receipt = original.receipt?.copy(distanceMeters = null))
+                    "distance_only" -> original.copy(receipt = original.receipt?.copy(elapsedSeconds = null))
                     else -> original
                 }
             }
@@ -175,6 +177,14 @@ internal fun DailyBriefingPreview() = BriefingSampleHost("daily")
 @Preview(name = "P01 Missing metrics", showBackground = true)
 @Composable
 internal fun MissingMetricsBriefingPreview() = BriefingSampleHost("missing_metrics")
+
+@Preview(name = "P01 Time only", showBackground = true, widthDp = 480, heightDp = 960)
+@Composable
+internal fun TimeOnlyMetricsBriefingPreview() = BriefingSampleHost("regional", "time_only")
+
+@Preview(name = "P01 Distance only", showBackground = true, widthDp = 480, heightDp = 960)
+@Composable
+internal fun DistanceOnlyMetricsBriefingPreview() = BriefingSampleHost("regional", "distance_only")
 
 @Preview(name = "P01 Restricted", showBackground = true)
 @Composable
