@@ -8,7 +8,7 @@
 
 **이 README가 개발 시작 설명서입니다.** 초대 수락 → 공통 준비 → 파트 선택 → 자기 AI와 세부 설계·개발 → 작은 PR 순서로 진행합니다. 이미 파트를 정했다면 공통 준비를 마친 뒤 해당 파트 링크로 이동하세요.
 
-**공통 앱에 저장된 섬·인벤토리·월드와 DEMO 저장·브리핑·동행·방문·시연을 연결했습니다.** A05 팀 서명 후보의 A/C 별도 Windows PC 설치·업데이트를 확인했고, 현재 [A06 통합 검증](docs/A06_INTEGRATION_VERIFICATION.md)을 진행 중입니다. Windows에서 Python59개·JUnit235개와 debug 빌드를 확인했습니다. 실제 사용자 확인 도착 저장·PLEOS 최종도착·게임 기록의 APK 업데이트 보존·최종 UI 인수는 남아 있습니다. 최초 환경 준비는 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따르며 같은 Android 프로젝트를 사용합니다.
+**공통 앱에 저장된 섬·인벤토리·월드와 DEMO 저장·브리핑·동행·방문·시연을 연결했습니다.** A05 팀 서명 후보의 A/C 별도 Windows PC 설치·업데이트와 [Pleos의 실제 게임 기록 복원 사례](docs/A06_SIGNED_PLEOS_ACCEPTANCE.md)를 확인했고, 현재 [A06 통합 검증](docs/A06_INTEGRATION_VERIFICATION.md)을 진행 중입니다. Windows에서 Python59개·JUnit235개와 debug 빌드를 확인했습니다. 실제 사용자 확인 도착 저장·PLEOS 최종도착·최종 UI/최종 SHA 후보 인수는 남아 있습니다. 최초 환경 준비는 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따르며 같은 Android 프로젝트를 사용합니다.
 
 ## 1. 모두 공통으로 준비하기
 
@@ -125,7 +125,8 @@ Actions에는 push/PR 자동 트리거가 없고 수동 실행만 있습니다. 
 A05의 [중간 release 서명·검증·C PC 전달 절차](docs/A05_RELEASE_HANDOFF.md)를 준비했습니다.
 첫 팀 키로 서명한 중간 후보(versionCode 2/3)의 로컬 설치·동일 키 업데이트를 확인했습니다.
 빌드 소스는 `ee3ed0f`이며, [C의 다른 Windows PC 설치·업데이트도 확인](docs/A05_C_ACCEPTANCE_REVIEW.md)했습니다.
-Pleos release/X03·게임 기록 보존/S10 전체·최종 UI/A06은 아직 남아 있습니다.
+이후 [새 Pleos에서 중간 서명 후보의 설치·진행 복원](docs/A06_SIGNED_PLEOS_ACCEPTANCE.md)도 확인했습니다.
+전체 저장 호환 행렬·최종 UI/A06·최종 SHA 후보 인수는 아직 남아 있습니다.
 키 없는 unsigned 빌드나 debug 키 검증을 서명 release 인수 완료로 표시하지 않습니다.
 
 ## 필요한 문서만 찾아보기

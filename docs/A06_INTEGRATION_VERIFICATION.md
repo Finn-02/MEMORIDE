@@ -4,6 +4,9 @@
 기준 main `a04b3c5`(A05 PR #18 병합 `507b987`, 브리핑 PR #19 포함),
 작업 브랜치 `part/a-a01-bootstrap`. **A06 진행 중이며 최종 인수 완료가 아니다.**
 
+후속 기기 검증: [A05 중간 서명 APK의 Pleos 설치·진행 복원](A06_SIGNED_PLEOS_ACCEPTANCE.md)을 수행했다.
+아래 첫 회귀 실행 기록과 최신 기기 인수 범위를 구분한다.
+
 ## 이번 검증
 
 앱/저장 구현은 변경하지 않고 A 소유 통합시험 `PersistedArrivalBoundaryTest` 2개를 추가했다.
@@ -34,8 +37,8 @@ A 조정자 → 실제 BGameService → PreferencesGameSaveStore → 임시 파�
 | I05 | GameSimulationRuntimeTest: 모드 변경 시 저장 보존·옛 토큰 거부 | 실제 SDK 늦은 최종도착은 미실행 |
 | I06 | ArrivalBriefingIntegrationTest, ReceiptCloseCoordinatorTest, AdmittedGameWriteTest | 섬/월드 준비 이동은 A04 UI 근거, 최종 디자인 인수는 후속 |
 | I03 | [A04-6 실제 UI 근거](A04_6_AVATAR_GALLERY.md) | 이번에 외형 UI를 재실행하지 않음 |
-| S02, S10 | 파일 재생성은 복원 경계 보강. A05는 같은 서명 설치·appId 유지 확인 | **기기 재시작/업데이트 후 실제 진행 보존은 아직 미검증** |
-| X03 | A05 서명 APK 존재, 일반 Android A/C 교차 설치 완료 | 서명 release의 기준 Pleos 설치/기본 시연은 미실행 |
+| S02, S10 | 파일 재생성은 복원 경계 보강. A05는 같은 서명 설치·appId 유지 확인 | 후속 Pleos에서 모모·빵모자·세 보상 종류·성장1·브리핑 확인 상태의 재시작/업데이트 보존 확인. 전체 저장 행렬은 후속 |
+| X03 | A05 서명 APK 존재, 일반 Android A/C 교차 설치 완료 | 후속 새 Pleos에서 중간 서명 후보 설치·기본 DEMO 저장/표시 확인. 최종 SHA 후보는 후속 |
 
 ## 실행 명령과 실제 결과
 
@@ -50,10 +53,9 @@ A 조정자 → 실제 BGameService → PreferencesGameSaveStore → 임시 파�
 
 ## 다음 단계와 미완료
 
-1. 기존 Pleos debug 데이터와 분리된 시험 환경에서 서명 release X03을 수행한다.
-   기존 debug를 팀 서명 APK로 덮을 수 있다고 가정하지 않으며, 기존 앱 삭제로 환경을 맞추지 않는다.
-2. 실제 게임 진행을 만든 기기에서 재실행/업데이트 보존(S02/S10)을 확인한다.
-   일반 Android 정식 UNKNOWN을 우회하지 않는다. 허용 가능한 실제 환경의 확보가 필요하다.
+1. 중간 후보의 Pleos X03과 진행 보존 사례는 후속 기기 검증에서 확인했다.
+   기존 debug AVD와 분리한 새 Pleos를 사용했고 UNKNOWN이나 실제 제한을 우회하지 않았다.
+2. 최종 SHA 후보와 전체 저장 호환 행렬의 S02/S10 인수는 남아 있다.
 3. C 시연/방문 UI의 남은 행렬, 창 크기·글자 크기·복귀·3회 시연을 최종 대상 APK에서 확인한다.
 4. USER_CONFIRMED는 B05 변경과 원본 복원/하향 호환 근거를 확인한 후 A 수동 여정에 연결한다.
    현재 main의 BService와 A 쓰기 경계는 아직 신규 출처 연결 준비 상태다.
