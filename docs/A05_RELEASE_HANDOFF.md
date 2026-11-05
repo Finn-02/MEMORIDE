@@ -18,6 +18,22 @@ USER_CONFIRMED enum이나 저장 활성화와 독립적이다.
 
 ## A의 로컬 빌드
 
+기존 키와 공개 인증서 지문이 확인되면, 아래 보조 명령을 **담당자 개인 터미널에서 직접** 실행할 수 있다.
+입력한 비밀번호는 숨기며 부모 셸의 환경 변수를 바꾸지 않는다. 빌드 입력이 커밋된 상태인지 확인하고,
+서명 빌드 → 인증서/패키지 검증 → 해시가 일치하는 APK 복사 → 공개 RELEASE.json 생성을 수행한다.
+키를 생성하거나 기기에 설치하지 않는다. AI 실행 콘솔처럼 대화형 터미널이 아니면 비밀번호 질문 전에 중단한다.
+
+```powershell
+python scripts/build_signed_release.py --version-code 2 `
+    --build-tools "$env:ANDROID_HOME/build-tools/36.0.0" `
+    --expected-cert-sha256 '<팀이 확인한 공개 인증서 SHA-256>'
+```
+
+keystore 경로·별칭을 입력하고 비밀번호 두 개를 숨김 입력한다. 성공 시 `tmp/a05-candidates/` 아래
+후보 폴더에 `MEMORIDE.apk`와 `RELEASE.json`만 만든다. 이 두 파일과 공개 지문/빌드 메모를 C에게 전달한다.
+실제 팀 키가 미확인이면 이 명령을 실행하거나 임의 키를 만들지 않는다. C 설치 결과는 별도로 받아야 한다.
+아래는 같은 작업의 환경 변수·수동 명령 설명이다.
+
 `app/build.gradle.kts`는 다음 **프로세스 환경 변수** 네 개가 모두 있을 때만 release를 서명한다.
 
 | 변수 | 로컬 입력 |
