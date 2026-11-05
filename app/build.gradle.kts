@@ -6,6 +6,25 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Team secrets stay in the signing operator's process, never in tracked properties.
+val releaseSigningNames = listOf(
+    "MEMORIDE_KEYSTORE_FILE", "MEMORIDE_KEYSTORE_PASSWORD", "MEMORIDE_KEY_ALIAS", "MEMORIDE_KEY_PASSWORD",
+)
+val releaseSigningValues = releaseSigningNames.associateWith { providers.environmentVariable(it).orNull }
+val hasReleaseSigning = releaseSigningValues.values.any { !it.isNullOrBlank() }
+if (hasReleaseSigning) {
+    val missing = releaseSigningNames.filter { releaseSigningValues[it].isNullOrBlank() }
+    require(missing.isEmpty()) { "Incomplete release signing environment: ${missing.joinToString()}" }
+    require(!releaseSigningValues.getValue("MEMORIDE_KEY_ALIAS").equals("androiddebugkey", ignoreCase = true)) {
+        "A team release key is required; the Android debug alias is not allowed."
+    }
+}
+val candidateVersionCode = providers.gradleProperty("memorideVersionCode").orNull?.let {
+    requireNotNull(it.toIntOrNull()?.takeIf { code -> code in 1..2_100_000_000 }) {
+        "memorideVersionCode must be an integer from 1 to 2100000000."
+    }
+} ?: 1
+
 android {
     useLibrary("android.car", false)
     namespace = "io.kailand"
@@ -16,12 +35,28 @@ android {
         applicationId = "io.kailand"
         minSdk = 28
         targetSdk = 37
-        versionCode = 1
+        versionCode = candidateVersionCode
         versionName = "0.1.0"
+    }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("teamRelease") {
+                val keyFile = rootProject.file(releaseSigningValues.getValue("MEMORIDE_KEYSTORE_FILE")!!)
+                require(keyFile.isFile) { "The configured team keystore file does not exist." }
+                storeFile = keyFile
+                storeType = "PKCS12"
+                storePassword = releaseSigningValues.getValue("MEMORIDE_KEYSTORE_PASSWORD")
+                keyAlias = releaseSigningValues.getValue("MEMORIDE_KEY_ALIAS")
+                keyPassword = releaseSigningValues.getValue("MEMORIDE_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         release {
             isMinifyEnabled = false
+            isDebuggable = false
+            // With no credentials this remains unsigned, never silently debug-signed.
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("teamRelease")
         }
     }
     compileOptions {
