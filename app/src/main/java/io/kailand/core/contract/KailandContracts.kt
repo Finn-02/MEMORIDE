@@ -4,12 +4,13 @@ import kotlinx.coroutines.flow.StateFlow
 
 // A01 executable contract. These are app contracts, not Pleos SDK API signatures.
 // Keep feature implementations out of this file. GameSave is B's internal storage model.
-enum class DataSource { DEMO, PLEOS }
+// USER_CONFIRMED is a user declaration, never SDK arrival or verified visitation.
+enum class DataSource { DEMO, PLEOS, USER_CONFIRMED }
 enum class JourneyKind { DAILY, REGION }
 enum class JourneyPhase { IDLE, PREPARING, READY, TRAVELLING, ARRIVED, CANCELLED, ERROR }
 enum class ItemType { FOOD, OUTFIT, DECOR }
 enum class GateState { UNKNOWN, RESTRICTED, PARKED_ALLOWED }
-enum class ArrivalEvidence { DEMO_FINAL_DESTINATION, PLEOS_FINAL_DESTINATION }
+enum class ArrivalEvidence { DEMO_FINAL_DESTINATION, PLEOS_FINAL_DESTINATION, USER_CONFIRMED_DESTINATION }
 
 data class Catalog(
     val contentVersion: String,
@@ -68,6 +69,9 @@ data class JourneySnapshot(
     val errorMessage: String? = null,
 )
 
+/** Source/evidence pairs must match. USER_CONFIRMED always has both measurements null.
+ * B implementations must validate these invariants before storage; enum supply does not enable A's arrival input.
+ */
 data class ArrivalCommand(
     val journeyId: String,
     val source: DataSource,

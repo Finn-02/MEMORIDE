@@ -16,6 +16,9 @@
 
 기본 서비스 표면은 아래 정도로 제한한다. StateFlow는 최신 상태 읽기용이며 공개 mutable 상태를 노출하지 않는다. 화면 내부 함수와 UI 구성은 각 담당자가 설계한다.
 
+USER_CONFIRMED 타입 공급과 B05 후속 저장 검증의 적용 상태는
+[공통 계약 전달 문서](USER_CONFIRMED_CONTRACT_HANDOFF.md)를 따른다. enum 제공만으로 실제 저장 입력을 활성화하지 않는다.
+
 | 호출 | 소유자 | 결과와 의미 |
 |---|---|---|
 | JourneyPort.requestDestination | A | 요청 접수 또는 실패, 도착 성공을 뜻하지 않음 |
@@ -36,7 +39,7 @@ PM 화면의 최소 입력은 ArrivalReceipt, 읽기용 카탈로그, AvatarPrev
 | contentVersion | 문자열, 초기 1.1.0 | 콘텐츠 묶음 버전, 앱 버전과 별개 |
 | profileId | 문자열, 초기 local-player | 로그인 계정 아님, 차량·인물 식별값 아님 |
 | journeyId | 앱이 생성한 UUID 문자열 | 한 번의 여정 동안 유지, 콜백마다 재생성 금지 |
-| source | DEMO 또는 PLEOS | 시작 시 고정, 중간 소스 전환 불가 |
+| source | DEMO, PLEOS 또는 USER_CONFIRMED | 시작 시 고정. USER_CONFIRMED는 사용자 선언이며 실제 방문 인증이 아님 |
 | journeyKind | DAILY 또는 REGION | 시연 시나리오 태그, 실제 행동 자동 분류 아님 |
 | regionId | 등록 ID 또는 null | null은 미등록 지역, 방문 보상 없음 |
 | routeRevision | 0 이상 정수 | 목적지 변경 때 증가, 오래된 입력 거부 |

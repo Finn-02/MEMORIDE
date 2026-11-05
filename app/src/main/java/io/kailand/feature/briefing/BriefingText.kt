@@ -75,6 +75,7 @@ fun formatBriefing(receipt: ArrivalReceipt, catalog: Catalog, avatar: AvatarPrev
         source = when (receipt.source) {
             DataSource.DEMO -> "DEMO · 모의 여정"
             DataSource.PLEOS -> "PLEOS · 여정 기록"
+            DataSource.USER_CONFIRMED -> "사용자 확인 완료 · 실제 방문 인증 아님"
         },
         title = when (receipt.kind) {
             JourneyKind.DAILY -> "일상의 이동이 추억으로"
