@@ -122,6 +122,12 @@ Actions에는 push/PR 자동 트리거가 없고 수동 실행만 있습니다. 
 
 제출용 서명 release APK는 아직 없습니다. A01의 개발용 debug APK는 로컬 빌드 출력이며 제출 후보가 아닙니다. A가 서명 release를 실제 설치한 뒤 이 절에 APK 또는 Release 링크·검증 커밋·환경을 기록합니다. 심사용 private 접근과 공식 제출은 [인수 확인표](templates/acceptance_checklist.md)로 확인합니다.
 
+A05의 [중간 release 서명·검증·C PC 전달 절차](docs/A05_RELEASE_HANDOFF.md)를 준비했습니다.
+첫 팀 키로 서명한 중간 후보(versionCode 2/3)의 로컬 설치·동일 키 업데이트를 확인했습니다.
+빌드 소스는 `ee3ed0f`이며, [C의 다른 Windows PC 설치·업데이트도 확인](docs/A05_C_ACCEPTANCE_REVIEW.md)했습니다.
+Pleos release/X03·게임 기록 보존/S10 전체·최종 UI/A06은 아직 남아 있습니다.
+키 없는 unsigned 빌드나 debug 키 검증을 서명 release 인수 완료로 표시하지 않습니다.
+
 ## 필요한 문서만 찾아보기
 
 | 목적 | 문서 |
