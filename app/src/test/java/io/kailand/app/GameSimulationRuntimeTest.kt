@@ -197,6 +197,35 @@ class GameSimulationRuntimeTest {
         } finally { p.scope.cancel() }
     }
 
+    @Test fun cancelledResetScreenAfterCommitStillFinishesSnapshotGenerationRunnerAndVisit() = runBlocking {
+        withTimeout(5000) {
+            val p = Pipeline()
+            try {
+                assertEquals(RequestResult.Accepted, p.runtime.journey.requestDestination(p.destination, JourneyKind.REGION))
+                assertEquals(RequestResult.Accepted, p.runtime.demo.dispatch(DemoInput.Complete(1234, null, null)))
+                val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+                p.store.afterNextCommit = { entered.complete(Unit); release.await() }
+                val screen = launch(start = CoroutineStart.UNDISPATCHED) { p.runtime.runner.resetConfirmed() }
+                entered.await()
+                assertEquals(GameSave(), p.store.save)
+                assertNotNull(p.game.state.value.pendingReceipt)
+                p.host = false
+                p.runtime.updateHost(GameCommandContext(InteractionGate(GateState.UNKNOWN), false))
+                screen.cancel()
+                release.complete(Unit); screen.join()
+                assertEquals(p.store.save.toSnapshot(), p.game.state.value)
+                assertEquals(GameCommandSession(1), p.commands.session.value)
+                assertFalse(p.runtime.runner.state.value.resetBlocked)
+                assertFalse(p.runtime.runner.state.value.busy)
+                assertEquals(VisitPhase.IDLE, p.runtime.visit.state.value.phase)
+                p.host = true
+                p.runtime.updateHost(GameCommandContext(parked, true))
+                assertTrue(p.runtime.runner.resetConfirmed())
+                assertEquals(GameCommandSession(2), p.commands.session.value)
+            } finally { p.scope.cancel() }
+        }
+    }
+
     private inner class Pipeline {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val store = Store()
@@ -248,11 +277,14 @@ class GameSimulationRuntimeTest {
         var save = GameSave()
         var failNext = false
         var beforeNextUpdate: (suspend () -> Unit)? = null
+        var afterNextCommit: (suspend () -> Unit)? = null
         override suspend fun read() = save
         override suspend fun update(transform: (GameSave) -> GameSave): GameSave {
             val before = beforeNextUpdate; beforeNextUpdate = null; before?.invoke()
             if (failNext) { failNext = false; throw IOException("simulated storage failure") }
-            return transform(save).also { save = it }
+            val result = transform(save).also { save = it }
+            val after = afterNextCommit; afterNextCommit = null; after?.invoke()
+            return result
         }
     }
 }

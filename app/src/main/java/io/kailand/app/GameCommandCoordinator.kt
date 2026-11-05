@@ -3,6 +3,8 @@ package io.kailand.app
 import io.kailand.core.contract.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -37,38 +39,45 @@ class GameCommandCoordinator(
         action: GameAction,
         callerIsCurrent: () -> Boolean = { true },
     ): MutationResult = mutex.withLock {
+        currentCoroutineContext().ensureActive()
         if (!allowed(generation) || !callerIsCurrent()) return@withLock rejected()
-        game.apply(action)
+        // Once admitted, finish B's disk transaction AND its snapshot publication.
+        // Screen cancellation cannot split those two steps; UI routing remains cancellable.
+        withContext(NonCancellable) { game.apply(action) }
     }
 
     /** Only a caller-validated arrival may enter here; no SDK event is converted to evidence here. */
     suspend fun completeArrival(
         generation: Long, command: ArrivalCommand, callerIsCurrent: () -> Boolean = { true },
     ): ArrivalResult = mutex.withLock {
+        currentCoroutineContext().ensureActive()
         if (!allowed(generation) || !callerIsCurrent() || !currentArrival(command)) {
             return@withLock ArrivalResult.Rejected("현재 여정과 이용 상태를 다시 확인해 주세요.")
         }
-        game.completeArrival(command)
+        withContext(NonCancellable) { game.completeArrival(command) }
     }
 
     suspend fun acknowledge(
         generation: Long, journeyId: String, callerIsCurrent: () -> Boolean = { true },
     ): MutationResult = mutex.withLock {
+        currentCoroutineContext().ensureActive()
         if (!allowed(generation) || !callerIsCurrent() || game.state.value.pendingReceipt?.journeyId != journeyId) {
             return@withLock rejected()
         }
-        val result = game.acknowledgeReceipt(journeyId)
+        val result = withContext(NonCancellable) { game.acknowledgeReceipt(journeyId) }
         // Persistence may succeed while the app leaves the foreground. Do not permit stale routing.
         if (result == MutationResult.Success && (!allowed(generation) || !callerIsCurrent())) rejected() else result
     }
 
     /** Stop jobs/listeners OUTSIDE the write mutex. The hook must not join its own calling job.
-     * Reset failure/cancellation keeps inputs blocked; a fresh explicit reset is the only retry.
+     * After admission, finish reset bookkeeping despite screen cancellation. Recheck permission
+     * before B's write; actual reset failure keeps inputs blocked until an explicit retry.
      */
     suspend fun resetDemo(
         generation: Long, callerIsCurrent: () -> Boolean = { true }, stopOldWork: suspend () -> Unit,
     ): MutationResult {
         val resetGeneration = mutex.withLock {
+            currentCoroutineContext().ensureActive()
             val current = mutable.value
             if (generation != current.generation || current.phase !in setOf(GameCommandPhase.ACTIVE, GameCommandPhase.RESET_FAILED) ||
                 !callerIsCurrent() || !inputsAllowed() || context().mode != DataSource.DEMO) return rejected()
@@ -76,26 +85,32 @@ class GameCommandCoordinator(
             mutable.value = GameCommandSession(next, GameCommandPhase.RESETTING)
             next
         }
-        try {
-            stopOldWork()
-            return mutex.withLock {
-                if (!callerIsCurrent() || !inputsAllowed() || context().mode != DataSource.DEMO) {
-                    mutable.value = GameCommandSession(resetGeneration, GameCommandPhase.RESET_FAILED)
-                    return@withLock rejected()
+        return withContext(NonCancellable) {
+            try {
+                stopOldWork()
+                mutex.withLock {
+                    if (!callerIsCurrent() || !inputsAllowed() || context().mode != DataSource.DEMO) {
+                        mutable.value = GameCommandSession(resetGeneration, GameCommandPhase.RESET_FAILED)
+                        return@withLock rejected()
+                    }
+                    val result = game.resetDemoProgress()
+                    mutable.value = GameCommandSession(resetGeneration,
+                        if (result == MutationResult.Success) GameCommandPhase.ACTIVE else GameCommandPhase.RESET_FAILED)
+                    result
                 }
-                val result = game.resetDemoProgress()
-                mutable.value = GameCommandSession(resetGeneration,
-                    if (result == MutationResult.Success) GameCommandPhase.ACTIVE else GameCommandPhase.RESET_FAILED)
-                result
+            } catch (cancelled: CancellationException) {
+                blockFailedReset(resetGeneration)
+                throw cancelled
+            } catch (_: Exception) {
+                blockFailedReset(resetGeneration)
+                MutationResult.StorageFailure("초기화를 마치지 못했어요. 다시 시도해 주세요.")
             }
-        } catch (cancelled: CancellationException) {
-            blockFailedReset(resetGeneration)
-            throw cancelled
-        } catch (_: Exception) {
-            blockFailedReset(resetGeneration)
-            return MutationResult.StorageFailure("초기화를 마치지 못했어요. 다시 시도해 주세요.")
         }
     }
+
+    /** Called immediately before routing, after persistence and any suspended caller resumption. */
+    fun canRoute(generation: Long, callerIsCurrent: () -> Boolean): Boolean =
+        allowed(generation) && callerIsCurrent()
 
     /** Non-destructive session change. The new source is committed only after old work is stopped. */
     suspend fun changeMode(

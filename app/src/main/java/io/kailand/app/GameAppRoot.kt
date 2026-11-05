@@ -117,6 +117,8 @@ private fun SavedGameScreens(
     }
     val receipt = snapshot.pendingReceipt ?: heldReceipt
     val demoRoute = route == GameRoute.DEMO
+    fun briefingIsCurrent() = routeName == callbackRoute && navigationVersion == callbackVersion &&
+        (!demoRoute || briefingOpen)
     SideEffect {
         simulation.setScreens(
             demo = demoRoute && phase !in setOf(GameCommandPhase.CHANGING_MODE, GameCommandPhase.MODE_FAILED),
@@ -124,11 +126,11 @@ private fun SavedGameScreens(
     }
     val closeToIsland: suspend () -> MutationResult = {
         if (receipt == null) MutationResult.Rejected("확인할 기록이 없어요.")
-        else closer.close(receipt) { briefingOpen = false; navigate(GameRoute.ISLAND) }
+        else closer.close(receipt, { briefingIsCurrent() }) { briefingOpen = false; navigate(GameRoute.ISLAND) }
     }
     val closeToItems: suspend () -> MutationResult = {
         if (receipt == null) MutationResult.Rejected("확인할 기록이 없어요.")
-        else closer.close(receipt) { briefingOpen = false; navigate(GameRoute.ISLAND); itemsOpen = true }
+        else closer.close(receipt, { briefingIsCurrent() }) { briefingOpen = false; navigate(GameRoute.ISLAND); itemsOpen = true }
     }
     if (phase == GameCommandPhase.ACTIVE && receipt != null && !demoRoute) {
         BriefingScreen(receipt, catalog, snapshot.avatar, gate,
