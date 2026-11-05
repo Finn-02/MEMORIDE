@@ -1,5 +1,18 @@
 # 실제 개발 환경 기록
 
+## 최신 A05 인수 결과 — 2026-11-05 KST
+
+첫 팀 키로 서명한 중간 APK(versionCode2/3, 빌드 소스 ee3ed0f)를 A와 C의 별도 Windows PC에서
+일반 Android API37/x86_64에 최초 설치·동일 키 업데이트·정식 Main 실행까지 확인했다.
+C의 APK 해시/공개 인증서 검증 JSON은 A 독립 검증 결과와 전부 일치했다.
+[C 인수 검토](A05_C_ACCEPTANCE_REVIEW.md)에 환경·로그 대조·판정 범위를 기록했다.
+A05 WBS의 첫 서명 release/별도 PC 설치 조건은 충족했다.
+게임 기록 보존/S10 전체·Pleos signed release/X03·실차·최종 UI/A06은 NOT RUN이다.
+Python59 PASS, JUnit233/debug는 최종 검사에서 유효한 UP-TO-DATE 결과를 재사용했다.
+개인키/비밀번호는 로컬 별도 보관하며 저장소·검토 ZIP에 포함하지 않는다.
+
+## 이전 A04 요약 — 아래의 미완료 표시는 당시 기록
+
 최신 요약 (2026-11-05 KST): A01·A02·A03(PR12/14) main 병합 확인. 기존 part/a-a01-bootstrap에 A04 단일 저장·DEMO/브리핑·동행/방문·Runner·모드/reset을 연결했다. Windows11 AMD64/JBR25.0.4/Gradle9.3.1에서 Python44개·JUnit223개(실패/오류/skip0)·debug·unsigned release 빌드 PASS. 일반 Android 임시 사용자 UI9개와 원래 저장 SHA256 보존, Pleos2.1 API34의 실제 P 모드 전환·개발 진입 차단·정식 복귀를 확인했다. [A04-4 결과](A04_4_SIMULATION_AND_RESET.md)에 정확한 실행·실패/재시험·범위를 기록했다. 실제 사용자 확인 출처 저장·PLEOS 최종도착 port·실차·서명 release 설치·다른 PC는 남아 있다. A03의 이전 실제 P/D/P·NaviHelper3.0.5 요청/조회/취소와 이번 결과는 구분한다. [SDK 근거](08_pleos_spike.md).
 
 아래 환경 표는 최신 확인값이며, 이후의 단계별 기록은 각 절에 적힌 당시 결과다. 과거 NOT RUN 표시는 위 최신 요약 및 A03 실험 기록과 구분한다.

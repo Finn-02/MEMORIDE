@@ -9,7 +9,8 @@ USER_CONFIRMED enum이나 저장 활성화와 독립적이다.
 서명 설정과 APK 검증 도구, C PC의 설치·업데이트 확인 절차를 제공한다.
 작업 시작 때 로컬 release 인증정보가 없었고, 이후 사용자가 기존 팀 키가 없음을 확인했다.
 첫 키 생성·서명 결과는 공개 상태 보고서로 따로 확인한다. AI에 키 파일/비밀번호를 전달하지 않는다.
-**실제 팀 서명 중간 후보 생성과 A PC 설치·업데이트는 완료했다. C PC 설치 인수는 아직 남아 있다.**
+**실제 팀 서명 중간 후보와 A/C 별도 PC 설치·업데이트를 확인해 A05 WBS 조건을 충족했다.**
+최종 UI·Pleos·게임 기록 보존 인수는 남아 있다. [C 회신 검토](A05_C_ACCEPTANCE_REVIEW.md)에 근거와 한계를 구분했다.
 
 2026-11-05 KST 로컬 결과: 소스 `ee3ed0feda9e094211be2b275f1d68528b05d9c8`,
 versionCode 2와 3, versionName 0.1.0. 개인 터미널에서 비밀번호를 직접 입력해 서명했다.
@@ -22,7 +23,7 @@ versionCode 2와 3, versionName 0.1.0. 개인 터미널에서 비밀번호를 �
 새 일반 Android API37 AVD에서 v2 최초 설치, 정식 Main 실행, UNKNOWN 차단,
 v2→v3 동일 키 업데이트와 appId 보존을 확인했다. 기존 debug 기기/저장은 변경하지 않았다.
 일반 Android release는 UNKNOWN이므로 게임 진행을 만들지 않았다. 게임 저장 보존/S10 전체,
-Pleos release, C PC/X03, 최종 UI/A06은 NOT RUN이다.
+Pleos release/X03와 최종 UI/A06은 NOT RUN이다. C PC의 일반 API37 설치·업데이트는 별도 회신 근거로 확인했다.
 하네스의 API37 appId 이름 차이와 업데이트 직후 UiAutomation null root는 기록/캡처 재시험으로 해결했다.
 이는 앱 설치 실패로 집계하지 않는다. 최초 A05 통합의 JUnit233/debug 결과와 이번 실제 서명 인수를 구분한다.
 

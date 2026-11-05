@@ -1,5 +1,16 @@
 # A 진행 상태
 
+## 최신 상태 — 2026-11-05 A05 교차 설치 인수
+
+A04/공통 타입 PR #15~17 main 반영 뒤, A05는 임시 codex/a05-release-preparation 브랜치에서 진행했다.
+첫 팀 키의 중간 서명 APK v2/v3(빌드 ee3ed0f)를 A/C의 별도 Windows PC에서
+일반 API37 최초 설치·동일 키 업데이트·정식 Main/UNKNOWN 차단까지 확인했다.
+**A05 WBS 조건 충족, 기존 PR #18 최종 검토 준비.** 새 PR은 만들지 않는다.
+[C 근거 검토](../A05_C_ACCEPTANCE_REVIEW.md). 게임 기록 보존/S10 전체·Pleos/X03·실차·최종 UI는 A06 후속 인수다.
+USER_CONFIRMED 타입은 공급됐지만 실제 저장 연결은 별도 후속이다.
+
+## 이전 A04 진행 기록 — 아래 상태/검사값은 당시 기준
+
 상태: A01·A02·A03(PR12/14) main 병합 확인. A04의 DEMO 저장·화면·Runner/방문·모드/reset 구현·검증 완료, 통합 PR 검토 준비. 실제 사용자 확인 출처 저장은 B 계약 대기다.
 기준: part/a-a01-bootstrap 유지. main edea1fd를 f0c52c8로 merge한 뒤 A04-3 8ff3911 위에 A04-4를 구현했다. 실제 최신 커밋/PR은 Git에서 확인한다.
 완료: 실제 P·UX 제한의 InteractionGate 정규화, foreground/연결 세대별 차단·정리, generic/Automotive 개발 샘플 경계 유지. debug NaviHelper3.0.5 진단의 목적지 요청·조회·취소 및 Back 종료·SDK 재접속.
