@@ -1,11 +1,20 @@
 # A 진행 상태
 
-## 최신 상태 — 2026-11-05 A05 교차 설치 인수
+## 최신 상태 — 2026-11-05 A06 통합 검증 착수
+
+PR #18 병합 `507b987` 및 #19 포함 main `a04b3c5`를 기존 `part/a-a01-bootstrap`에 반영했다.
+실제 임시 파일 DataStore와 A/B 조정 경계를 연결한 신규 시험 2개를 추가했다.
+Python59/JUnit235 실제 실행·debug 빌드 PASS. 승인된 도착 저장 중 제한 변경과
+확인 저장 중 화면 취소 후 snapshot 일치·파일 복원·중복 지급 방지를 확인했다.
+[A06 근거/남은 인수](../A06_INTEGRATION_VERIFICATION.md). A06 전체 완료나 새 PR 발행은 아니다.
+서명 release Pleos/X03·기기 게임 기록 보존/S02/S10·최종 UI는 후속이다.
+
+## 이전 상태 — 2026-11-05 A05 교차 설치 인수
 
 A04/공통 타입 PR #15~17 main 반영 뒤, A05는 임시 codex/a05-release-preparation 브랜치에서 진행했다.
 첫 팀 키의 중간 서명 APK v2/v3(빌드 ee3ed0f)를 A/C의 별도 Windows PC에서
 일반 API37 최초 설치·동일 키 업데이트·정식 Main/UNKNOWN 차단까지 확인했다.
-**A05 WBS 조건 충족, 기존 PR #18 최종 검토 준비.** 새 PR은 만들지 않는다.
+**A05 WBS 조건 충족, PR #18 main 병합 완료(`507b987`).**
 [C 근거 검토](../A05_C_ACCEPTANCE_REVIEW.md). 게임 기록 보존/S10 전체·Pleos/X03·실차·최종 UI는 A06 후속 인수다.
 USER_CONFIRMED 타입은 공급됐지만 실제 저장 연결은 별도 후속이다.
 
