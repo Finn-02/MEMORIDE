@@ -105,8 +105,10 @@ private fun BriefingSession(
                     item {
                         BriefingCard("이동 기록") {
                             text.elapsed?.let { Text("시간 · $it") }
-                            text.distance?.let { Text("거리 · $it") }
-                            Text("거리 표시는 단위를 줄여 내림한 값이에요.", style = MaterialTheme.typography.bodySmall)
+                            text.distance?.let {
+                                Text("거리 · $it")
+                                Text("거리 표시는 단위를 줄여 내림한 값이에요.", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }

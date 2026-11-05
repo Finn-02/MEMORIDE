@@ -8,7 +8,7 @@
 
 **이 README가 개발 시작 설명서입니다.** 초대 수락 → 공통 준비 → 파트 선택 → 자기 AI와 세부 설계·개발 → 작은 PR 순서로 진행합니다. 이미 파트를 정했다면 공통 준비를 마친 뒤 해당 파트 링크로 이동하세요.
 
-**A01 공용 앱 골격과 Gradle wrapper를 추가했고 Windows에서 debug 단위 시험·APK 빌드를 확인했습니다.** [A01 실행 안내](docs/A01_QUICKSTART.md)에 따라 같은 프로젝트를 사용하세요. 화면은 아직 파트별 임시 연결 자리이며 게임 저장·여정·실제 Pleos·release·다른 PC 실행은 확인 전입니다. 앱 기반을 각자 따로 만들지 않습니다.
+**공통 앱에 저장된 섬·인벤토리·월드와 DEMO 저장·브리핑·동행·방문·시연을 연결했습니다.** Windows에서 Python44개·JUnit223개와 debug/unsigned release 빌드를 확인했습니다. [A04 실행·검증 범위](docs/A04_4_SIMULATION_AND_RESET.md)를 참고하세요. 실제 사용자 확인 도착 저장·PLEOS 최종도착·서명 release 설치·다른 PC 인수는 남아 있습니다. 최초 환경 준비는 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따르며 같은 Android 프로젝트를 사용합니다.
 
 ## 1. 모두 공통으로 준비하기
 
@@ -121,6 +121,12 @@ D1 공용 기반 → D3 한 지역 전체 흐름 → D8 첫 release 설치 → D
 Actions에는 push/PR 자동 트리거가 없고 수동 실행만 있습니다. 로컬 검사가 기본이며 새 유료 서버·API·자산·AI Actions를 도입하지 않습니다. Actions 비활성화·계정 비용 통제·병합 규칙은 별도 설정으로, 파일이 있다고 자동 적용되지는 않습니다. [PM 저장소 설정](REPO_SETUP.md)을 참고하세요.
 
 제출용 서명 release APK는 아직 없습니다. A01의 개발용 debug APK는 로컬 빌드 출력이며 제출 후보가 아닙니다. A가 서명 release를 실제 설치한 뒤 이 절에 APK 또는 Release 링크·검증 커밋·환경을 기록합니다. 심사용 private 접근과 공식 제출은 [인수 확인표](templates/acceptance_checklist.md)로 확인합니다.
+
+A05의 [중간 release 서명·검증·C PC 전달 절차](docs/A05_RELEASE_HANDOFF.md)를 준비했습니다.
+첫 팀 키로 서명한 중간 후보(versionCode 2/3)의 로컬 설치·동일 키 업데이트를 확인했습니다.
+빌드 소스는 `ee3ed0f`이며, [C의 다른 Windows PC 설치·업데이트도 확인](docs/A05_C_ACCEPTANCE_REVIEW.md)했습니다.
+Pleos release/X03·게임 기록 보존/S10 전체·최종 UI/A06은 아직 남아 있습니다.
+키 없는 unsigned 빌드나 debug 키 검증을 서명 release 인수 완료로 표시하지 않습니다.
 
 ## 필요한 문서만 찾아보기
 

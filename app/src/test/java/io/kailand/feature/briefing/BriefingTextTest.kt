@@ -87,6 +87,20 @@ class BriefingTextTest {
         assertEquals(fixture("regional").receipt, fixture("restricted_pending").receipt)
     }
 
+    @Test fun userConfirmedReceiptHasExplicitLabelAndKeepsMeasurementsAbsent() {
+        val s = fixture("missing_metrics")
+        val receipt = requireNotNull(s.receipt).copy(source = DataSource.USER_CONFIRMED)
+        val text = formatBriefing(receipt, s.catalog, s.avatar)
+        assertEquals("사용자 확인 완료 · 실제 방문 인증 아님", text.source)
+        assertNull(text.elapsed)
+        assertNull(text.distance)
+        assertEquals(DataSource.USER_CONFIRMED, receipt.source)
+        val demo = formatBriefing(receipt.copy(source = DataSource.DEMO), s.catalog, s.avatar)
+        val pleos = formatBriefing(receipt.copy(source = DataSource.PLEOS), s.catalog, s.avatar)
+        assertEquals("DEMO · 모의 여정", demo.source)
+        assertEquals("PLEOS · 여정 기록", pleos.source)
+    }
+
     @Test fun sourceAndInvalidGrowthDoNotClaimSdkVerificationOrGrantSuccess() {
         val s = fixture("daily")
         val text = formatBriefing(requireNotNull(s.receipt).copy(source = DataSource.PLEOS, growthBefore = 2, growthAfter = 1), s.catalog, s.avatar)

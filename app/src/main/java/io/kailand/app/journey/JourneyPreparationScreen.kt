@@ -25,9 +25,12 @@ fun JourneyPreparationScreen(
     onOpenCompanion: () -> Unit,
     modifier: Modifier = Modifier,
     developmentControls: (@Composable () -> Unit)? = null,
+    initialRegionId: String? = null,
 ) {
     val snapshot by journey.state.collectAsState()
-    var selectedRegion by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedRegion by rememberSaveable(initialRegionId) {
+        mutableStateOf(initialRegionId ?: snapshot.destination?.regionId)
+    }
     var kind by rememberSaveable { mutableStateOf(JourneyKind.REGION) }
     var busy by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<String?>(null) }
