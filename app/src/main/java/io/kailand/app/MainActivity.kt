@@ -12,9 +12,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import io.kailand.BuildConfig
 import io.kailand.core.contract.GateState
 import io.kailand.core.contract.InteractionGate
+import io.kailand.core.contract.DataSource
 import io.kailand.core.platform.developmentGate
 import io.kailand.core.platform.VehicleGateMonitor
 import io.kailand.core.ui.MemorideTheme
@@ -23,6 +26,16 @@ open class MainActivity : ComponentActivity() {
     protected open val developmentEntry: Boolean = false
     private var gate by mutableStateOf(InteractionGate(GateState.UNKNOWN))
     private var vehicleGateMonitor: VehicleGateMonitor? = null
+    private var foreground = false
+    private val entryModel by lazy { ViewModelProvider(this)[GameEntryModel::class.java] }
+    protected val gameOwner: Any get() = entryModel.owner
+    protected val gameSession: GameAppSession
+        get() = (application as MemorideApplication).gameSession
+
+    private fun publishGameContext() {
+        gameSession.updateHost(gameOwner, gate, foreground,
+            if (developmentEntry) DataSource.DEMO else DataSource.PLEOS)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +43,7 @@ open class MainActivity : ComponentActivity() {
             packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) {
             vehicleGateMonitor = VehicleGateMonitor(this) {
                 gate = it
+                publishGameContext()
                 if (BuildConfig.DEBUG) Log.i("MemorideVehicleGate", "gate=${it.state}")
             }
         }
@@ -40,16 +54,19 @@ open class MainActivity : ComponentActivity() {
 
     @Composable
     protected open fun AppContent(gate: InteractionGate) {
-        AppRoot(gate, developmentEntry)
+        GameAppRoot(gate, gameSession, gameOwner, developmentEntry)
     }
 
     override fun onResume() {
         super.onResume()
+        foreground = true
+        publishGameContext()
         val monitor = vehicleGateMonitor
         if (monitor != null) monitor.start() else updateGate(foreground = true)
     }
 
     override fun onPause() {
+        foreground = false
         vehicleGateMonitor?.stop()
         updateGate(foreground = false)
         super.onPause()
@@ -70,5 +87,11 @@ open class MainActivity : ComponentActivity() {
                 Configuration.UI_MODE_TYPE_CAR,
             foreground = foreground,
         )
+        publishGameContext()
     }
+}
+
+/** Stable through configuration recreation, distinct for another Activity or a process restart. */
+class GameEntryModel : ViewModel() {
+    val owner = Any()
 }
