@@ -29,7 +29,7 @@ internal fun worldPresentation(snapshot: GameSnapshot, catalog: Catalog): WorldP
     val issues = buildList {
         if (regionCounts.any { it.value > 1 }) add("지역 ID가 중복되어 있어요.")
         if (items.any { it.value.size > 1 }) add("아이템 ID가 중복되어 있어요.")
-        if (items.containsKey("")) add("비어 있는 아이템 ID가 있어요.")
+        if (items.keys.any { it.isBlank() }) add("비어 있는 아이템 ID가 있어요.")
     }
     val regions = catalog.regions.map { region ->
         val regionIssues = buildList {
