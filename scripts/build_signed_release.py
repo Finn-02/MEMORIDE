@@ -43,10 +43,10 @@ def version_code(text: str) -> int:
     return value
 
 
-def build(version: int) -> None:
+def build(version: int, key_file: Path | None = None, alias: str | None = None) -> None:
     """Credentials enter only this process and the one Gradle child, never command arguments."""
-    key_file = Path(input('Existing confirmed team keystore path: ').strip()).expanduser()
-    alias = input('Team key alias: ').strip()
+    key_file = key_file or Path(input('Existing confirmed team keystore path: ').strip()).expanduser()
+    alias = alias or input('Team key alias: ').strip()
     if not key_file.is_file() or not alias or alias.casefold() == 'androiddebugkey':
         raise ValueError('An existing team key file and non-debug alias are required.')
     environment = dict(os.environ)
@@ -76,6 +76,8 @@ def main() -> int:
     parser.add_argument('--build-tools', required=True, type=Path)
     parser.add_argument('--expected-cert-sha256', required=True)
     parser.add_argument('--output-dir', type=Path, default=ROOT / 'tmp/a05-candidates')
+    parser.add_argument('--keystore-file', type=Path, help='Local PKCS12 path only; never pass passwords as arguments.')
+    parser.add_argument('--key-alias', help='Local non-debug alias.')
     args = parser.parse_args()
     try:
         if not sys.stdin.isatty():
@@ -84,7 +86,7 @@ def main() -> int:
         if not (args.build_tools / 'lib/apksigner.jar').is_file():
             raise ValueError('Provide the local Android SDK Build Tools directory.')
         initial_sha = source_sha()
-        build(args.version_code)
+        build(args.version_code, args.keystore_file, args.key_alias)
         if source_sha() != initial_sha:
             raise ValueError('Build inputs or Git HEAD changed during the build; no candidate was issued.')
         apk = ROOT / 'app/build/outputs/apk/release/app-release.apk'

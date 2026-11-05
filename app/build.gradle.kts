@@ -44,6 +44,7 @@ android {
                 val keyFile = rootProject.file(releaseSigningValues.getValue("MEMORIDE_KEYSTORE_FILE")!!)
                 require(keyFile.isFile) { "The configured team keystore file does not exist." }
                 storeFile = keyFile
+                storeType = "PKCS12"
                 storePassword = releaseSigningValues.getValue("MEMORIDE_KEYSTORE_PASSWORD")
                 keyAlias = releaseSigningValues.getValue("MEMORIDE_KEY_ALIAS")
                 keyPassword = releaseSigningValues.getValue("MEMORIDE_KEY_PASSWORD")

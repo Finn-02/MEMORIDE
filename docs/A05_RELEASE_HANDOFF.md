@@ -7,16 +7,27 @@ USER_CONFIRMED enum이나 저장 활성화와 독립적이다.
 ## 현재 완료 범위와 남은 입력
 
 서명 설정과 APK 검증 도구, C PC의 설치·업데이트 확인 절차를 제공한다.
-확인한 로컬에는 release 서명 설정이 없고, 팀 키 존재 여부는 아직 확인되지 않았다.
-팀 키를 새로 만들거나 기존 키 파일/비밀번호를 읽지 않았다.
+작업 시작 때 로컬 release 인증정보가 없었고, 이후 사용자가 기존 팀 키가 없음을 확인했다.
+첫 키 생성·서명 결과는 공개 상태 보고서로 따로 확인한다. AI에 키 파일/비밀번호를 전달하지 않는다.
 **실제 팀 서명 release 생성과 C PC 설치는 아직 완료하지 않았다.**
 
 기존 키가 있다면 같은 키로 업데이트를 유지해야 한다. 기존 키 여부를 확인한 다음
-없다고 확정됐을 때만 담당자가 로컬 Android Studio의 Generate Signed Bundle/APK 절차로 새 키를 만든다.
+없다고 확정됐을 때만 담당자가 로컬 Android Studio 또는 같은 JDK의 keytool로 새 키를 만든다.
 키·비밀번호·키 백업은 저장소, AI 채팅, APK 전달 ZIP에 넣지 않는다.
 키의 실제 경로와 비밀번호는 담당자 개인 터미널/IDE에서만 입력한다.
 
 ## A의 로컬 빌드
+
+2026-11-05 사용자 확인: 기존 팀 release 키가 없다고 확인됐다.
+첫 팀 키는 저장소 밖 로컬 보관 위치에 PKCS12로 생성한다. 새 키를 기존 경로에 덮어쓰지 않는다.
+PKCS12의 키 비밀번호는 keystore 비밀번호와 동일하게 사용한다.
+Gradle의 teamRelease storeType도 PKCS12로 고정한다.
+키 생성과 비밀번호 입력은 담당자의 별도 개인 터미널에서 진행하고 AI는 공개 인증서/결과만 확인한다.
+첫 생성은 `scripts/initialize_release_key.py --confirmed-no-existing-key --build-tools <SDK Build Tools 경로>`로
+개인 터미널에서 실행할 수 있다. 기본 보관은 Windows LocalAppData의 MEMORIDE/signing이다.
+keytool의 숨김 입력으로 키를 만들고 공개 인증서를 내보낸 다음 서명 실행기로 이어진다.
+기존 키/인증서가 있으면 덮어쓰지 않는다. 생성 후 빌드만 실패했다면 `--resume-existing`으로
+같은 키를 이어서 사용한다. AI는 `tmp/a05/PRIVATE_STEP_STATUS.json`의 공개 상태만 확인한다.
 
 기존 키와 공개 인증서 지문이 확인되면, 아래 보조 명령을 **담당자 개인 터미널에서 직접** 실행할 수 있다.
 입력한 비밀번호는 숨기며 부모 셸의 환경 변수를 바꾸지 않는다. 빌드 입력이 커밋된 상태인지 확인하고,
@@ -131,4 +142,5 @@ C의 실제 회신 전에는 X03·S01·S10·별도 PC 설치를 완료로 표시
 [Android 빌드 변형·서명 설정](https://developer.android.com/build/build-variants),
 [앱 서명과 키 관리](https://developer.android.com/studio/publish/app-signing),
 [apksigner 서명 검증](https://developer.android.com/tools/apksigner).
+[JDK keytool](https://docs.oracle.com/en/java/javase/25/docs/specs/man/keytool.html).
 새 유료 서비스·API 키·원격 빌드·Actions 자동 실행은 추가하지 않는다.
