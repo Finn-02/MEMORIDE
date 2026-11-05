@@ -51,6 +51,12 @@ class GameCommandCoordinator(
         generation: Long, command: ArrivalCommand, callerIsCurrent: () -> Boolean = { true },
     ): ArrivalResult = mutex.withLock {
         currentCoroutineContext().ensureActive()
+        // Contract supply only. Remove this admission block with B05 validation/restore tests
+        // and A's manual-journey integration, not merely when the enum becomes available.
+        if (command.source == DataSource.USER_CONFIRMED ||
+            command.evidence == ArrivalEvidence.USER_CONFIRMED_DESTINATION) {
+            return@withLock ArrivalResult.Rejected("사용자 확인 저장 연결을 준비하고 있어요.")
+        }
         if (!allowed(generation) || !callerIsCurrent() || !currentArrival(command)) {
             return@withLock ArrivalResult.Rejected("현재 여정과 이용 상태를 다시 확인해 주세요.")
         }

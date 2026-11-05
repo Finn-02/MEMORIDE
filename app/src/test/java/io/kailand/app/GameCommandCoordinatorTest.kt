@@ -66,6 +66,31 @@ class GameCommandCoordinatorTest {
         assertEquals(1, game.writes)
     }
 
+    @Test fun suppliedUserConfirmedTypesCannotReachStorageBeforeB05Integration() = runBlocking {
+        val before = game.state.value
+        for (source in DataSource.entries) for (evidence in ArrivalEvidence.entries) {
+            if (source != DataSource.USER_CONFIRMED && evidence != ArrivalEvidence.USER_CONFIRMED_DESTINATION) continue
+            context = context.copy(mode = source, journey = journey.copy(source = source))
+            assertTrue("$source / $evidence", coordinator.completeArrival(0,
+                command.copy(source = source, evidence = evidence)) is ArrivalResult.Rejected)
+        }
+        assertTrue(game.commands.isEmpty())
+        assertEquals(before, game.state.value)
+    }
+
+    @Test fun supplyingNewTypesPreservesExistingDemoAndPleosDispatch() = runBlocking {
+        for ((source, evidence) in listOf(
+            DataSource.DEMO to ArrivalEvidence.DEMO_FINAL_DESTINATION,
+            DataSource.PLEOS to ArrivalEvidence.PLEOS_FINAL_DESTINATION,
+        )) {
+            context = context.copy(mode = source, journey = journey.copy(source = source))
+            val original = command.copy(source = source, evidence = evidence)
+            assertTrue(coordinator.completeArrival(0, original) is ArrivalResult.Applied)
+            assertSame(original, game.commands.last())
+        }
+        assertEquals(2, game.commands.size)
+    }
+
     @Test fun acknowledgementFailureKeepsPendingAndWrongIdCannotCloseIt() = runBlocking {
         game.state.value = game.state.value.copy(pendingReceipt = receipt)
         assertTrue(coordinator.acknowledge(0, "old") is MutationResult.Rejected)
