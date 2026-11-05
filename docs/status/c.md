@@ -1,5 +1,13 @@
 # C 진행 상태
 
+## 최신 재검사 — 2026-11-05
+
+현재 C 브랜치 `part/c-c01-companion` / `184727a`에서 공통 `py -3 -X utf8 scripts/check_all.py --android` exit 0. Python 44개·Android 195개(실패/오류/skip 0) PASS, debug BUILD SUCCESSFUL in 27s(14 executed / 31 up-to-date). JBR 25.0.4와 committed wrapper를 사용했다. 샌드박스에서는 Python 탐색·Java 실행이 차단되어 일반 로컬 권한으로 실행했다. DataStore protobuf의 sun.misc.Unsafe 경고가 남았으며 실패는 아니다.
+
+이번 변경은 [C05 현재 판정표와 기기 인수 순서](../c05_acceptance.md)의 문서 정리다. 앱 동작·계약·저장·AppRoot는 변경하지 않았다. A04 `0850ea6`의 이전 223개 결과와 이번 C 브랜치 195개를 구분한다. 아래 과거 체크리스트는 당시 기록이며 현재 판정은 위 링크를 따른다. A04 구현 대기 대신 전달본 리뷰/병합과 실제 앱 인수가 남아 있다.
+
+이번 NOT RUN: 실제 UI 수락/거절/닫기, 저장 의상 I03, 기기 전체 초기화 S09 3회, 회전/큰 글자/프로세스 복원, Pleos/실차/서명 release 설치. 기존 환경 문서 수정은 보존했고 commit/push/PR/병합은 수행하지 않았다. 다음은 A04 기준 기기 인수와 A05 release 후보 수령이다.
+
 상태: IN PROGRESS — C01~C04 main 병합. C01~C03 그래픽·C01 패널 접기, C05 로컬 검증과 A02/C04 저장 경계 검증 기록을 기존 C 브랜치 전달 대상으로 정리. 실제 A04 통합·release 백업 인수 대기
 
 2026-11-05 A04 전달본 `0850ea6` C 교차 검증: A 원격 커밋의 detached checkout에서 Python 44개·Android 223개·debug 빌드 PASS. 별도 실제 임시 DataStore 파일 시험 4개로 D01~D06/reset 3회, 원본 반복 파일 불변, 저장 대기/reset·옛 입력 U20, 실패 차단/재시도·모드 보존 PASS. 실제 A04 앱에서 만료/미표시, 모드 전환 종료·복귀 비재개, background 후 섬/방문 재진입 비재개 관찰. 실제 수락/거절 성공은 시간 제한 때문에 미확인, UI 전체 초기화·보상 지급은 미실행. 저장 파일 없음 상태 유지. A04를 C 브랜치에 섞지 않고 기존 브랜치/환경 수정 복원. 상세는 [A04 교차 검증](../c05_acceptance.md#2026-11-05-a04-전달본-교차-검증). C05는 기기 전체 인수·서명 release 설치까지 계속 IN PROGRESS.
