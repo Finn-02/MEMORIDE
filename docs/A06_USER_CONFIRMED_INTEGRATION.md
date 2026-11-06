@@ -68,6 +68,11 @@ RAM 권장량 안내를 닫은 뒤 computer-use로 아래 흐름을 직접 조�
 
 ## NOT RUN / 다음 인수
 
+2026-11-06 후속: [공식 Pleos debug 인수](A06_USER_CONFIRMED_PLEOS_ACCEPTANCE.md)에서
+정식 Main의 P 허용·사용자 확인 저장·브리핑·미확인/확인 완료 재시작 복원을 확인했다.
+D의 실제 제한 신호/저장 불변도 확인했으나 QEMU 반복 종료로 D 화면/P 복귀는 BLOCKED다.
+아래 NOT RUN은 최초 일반 Android 검증 당시 기록이며 후속 문서의 실제 범위를 우선한다.
+
 이번 신규 경로의 실제 Pleos/차량 gate 조작·실차·서명 release·기기 업데이트/다운그레이드,
 UI 저장/ack 실패 주입·기기 프로세스 재시작·큰 글자/회전 전수는 NOT RUN.
 자동 시험의 실제 파일 재생성/경쟁 검증과 기기 UI 시험은 구분한다.

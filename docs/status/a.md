@@ -1,5 +1,14 @@
 # A 진행 상태
 
+## 최신 기기 인수 — 2026-11-06 사용자 확인 Pleos
+
+앱 소스 `685d107`의 debug APK를 별도 공식 Pleos2.1/API34 AVD에서 정식 Main으로 검증했다.
+실제 P/DO=false/UxR0에서 USER_CONFIRMED 저장→브리핑, 미확인/확인 완료 앱 재시작과
+원본/아이템/pending 보존·재시작 전후 파일 해시 불변 PASS.
+사용자 조작 D에서 DO=true/UxR80·앱 RESTRICTED·저장 불변을 확인했다.
+그러나 QEMU가 두 차례 c0000005로 종료돼 D 화면/P 복귀는 BLOCKED이며 전체 P/D/P PASS가 아니다.
+[범위·복구·남은 인수](../A06_USER_CONFIRMED_PLEOS_ACCEPTANCE.md). 서명 release/실차/B 교차/C05 전체는 후속이다.
+
 ## 최신 연결 — 2026-11-06 사용자 확인 저장
 
 B PR #20/C PR #21 포함 main `9a19c77`을 기존 A 브랜치에 `953dadc`로 반영했다.
