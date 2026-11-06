@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import io.kailand.core.contract.*
 import kotlinx.coroutines.launch
 
@@ -77,12 +78,15 @@ fun ManualJourneyScreen(
         }
     }
     state.confirmation?.let { question ->
-        AlertDialog(onDismissRequest = {
+        Dialog(onDismissRequest = {
             scope.launch { show(runtime.choose(question.token, ManualJourneyChoice.CONTINUE, callerIsCurrent)) }
-        }, title = { Text("여정을 어떻게 마무리할까요?") },
-            text = { Text("목적지는 ${question.destination.label}입니다. 도착 확인은 실제 방문 인증이 아닙니다.") },
-            confirmButton = {
-                Column {
+        }) {
+            Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
+                // Keep the explanation and every choice reachable in short windows and large fonts.
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("여정을 어떻게 마무리할까요?", style = MaterialTheme.typography.headlineSmall)
+                    Text("목적지는 ${question.destination.label}입니다. 도착 확인은 실제 방문 인증이 아닙니다.")
                     listOf("${question.destination.label}에 도착했어요" to ManualJourneyChoice.ARRIVED,
                         "목적지를 바꿀게요" to ManualJourneyChoice.CHANGE_DESTINATION,
                         "여정을 취소할게요" to ManualJourneyChoice.CANCEL,
@@ -91,6 +95,7 @@ fun ManualJourneyScreen(
                             enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { Text(label) }
                     }
                 }
-            })
+            }
+        }
     }
 }
