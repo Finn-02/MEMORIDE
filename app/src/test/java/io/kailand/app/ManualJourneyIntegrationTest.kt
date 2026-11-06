@@ -6,6 +6,7 @@ import io.kailand.core.contract.*
 import io.kailand.feature.island.*
 import java.io.File
 import java.io.IOException
+import java.time.Instant
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
@@ -223,6 +224,149 @@ class ManualJourneyIntegrationTest {
         } finally { p.close() }
     }
 
+    @Test fun olderAcknowledgementAndReplayCannotReplaceNewPendingAfterFileRecreation() = runBlocking {
+        withTimeout(15_000) {
+            val p = pipeline()
+            try {
+                val oldToken = p.question()
+                assertEquals(RequestResult.Accepted, p.manual.choose(oldToken, ManualJourneyChoice.ARRIVED) { true })
+                val oldReceipt = checkNotNull(p.game.state.value.pendingReceipt)
+                val closer = ReceiptCloseCoordinator(p.game, p.commands, 0) { p.allowed() }
+                assertEquals(MutationResult.Success, closer.close(oldReceipt) {
+                    p.manual.finishAcknowledged(oldReceipt.journeyId)
+                })
+                p.clock += 1000
+                val freshToken = p.question()
+                assertEquals(RequestResult.Accepted, p.manual.choose(freshToken, ManualJourneyChoice.ARRIVED) { true })
+                val freshReceipt = checkNotNull(p.game.state.value.pendingReceipt)
+                assertNotEquals(oldReceipt.journeyId, freshReceipt.journeyId)
+                assertTrue(freshReceipt.grantedItemIds.isEmpty())
+                val before = checkNotNull(p.store.read())
+                var routes = 0
+                assertTrue(closer.close(oldReceipt) { routes++ } is MutationResult.Rejected)
+                assertEquals(0, routes)
+                assertEquals(before, p.store.read())
+                p.close()
+                withRestoredGame(p.file) { game, store ->
+                    assertEquals(freshReceipt, game.state.value.pendingReceipt)
+                    val oldCommand = ArrivalCommand(oldReceipt.journeyId, DataSource.USER_CONFIRMED,
+                        JourneyKind.REGION, oldReceipt.regionId, oldToken.revision,
+                        ArrivalEvidence.USER_CONFIRMED_DESTINATION, oldReceipt.completedAtEpochMs)
+                    // B's public duplicate boundary must preserve the newer pending result too.
+                    assertEquals(ArrivalResult.AlreadyApplied(oldReceipt), game.completeArrival(oldCommand))
+                    assertEquals(before, store.read())
+                    assertEquals(2, store.read()!!.processedReceipts.size)
+                    assertEquals(3, game.state.value.ownedItemIds.size)
+                    val commands = GameCommandCoordinator(game, { true }) {
+                        GameCommandContext(InteractionGate(GateState.PARKED_ALLOWED), true, DataSource.USER_CONFIRMED)
+                    }
+                    assertEquals(MutationResult.Success, ReceiptCloseCoordinator(game, commands, 0) { true }
+                        .close(freshReceipt) { routes++ })
+                    assertEquals(1, routes)
+                    assertEquals(before.copy(pendingReceiptId = null), store.read())
+                }
+            } finally { p.close() }
+        }
+    }
+
+    @Test fun failedDailySaveRetriedAfterKstMidnightUsesOriginalDateAndRestoresBothDays() = runBlocking {
+        withTimeout(15_000) {
+            val p = pipeline()
+            try {
+                p.clock = Instant.parse("2026-11-06T14:59:59Z").toEpochMilli()
+                val token = p.question(JourneyKind.DAILY)
+                p.store.failNext = true
+                assertTrue(p.manual.choose(token, ManualJourneyChoice.ARRIVED) { true } is RequestResult.Failed)
+                assertNull(p.store.read())
+                p.clock = Instant.parse("2026-11-06T15:00:01Z").toEpochMilli()
+                assertEquals(RequestResult.Accepted, p.manual.retry { true })
+                val original = checkNotNull(p.game.state.value.pendingReceipt)
+                assertEquals(Instant.parse("2026-11-06T14:59:59Z").toEpochMilli(), original.completedAtEpochMs)
+                assertEquals("2026-11-06", p.store.read()!!.lastDailyGrantDate)
+                assertEquals(1, p.game.state.value.dailyGrowth)
+                assertNull(original.elapsedSeconds); assertNull(original.distanceMeters)
+                val closer = ReceiptCloseCoordinator(p.game, p.commands, 0) { p.allowed() }
+                assertEquals(MutationResult.Success, closer.close(original) {
+                    p.manual.finishAcknowledged(original.journeyId)
+                })
+                val next = p.question(JourneyKind.DAILY)
+                assertEquals(RequestResult.Accepted, p.manual.choose(next, ManualJourneyChoice.ARRIVED) { true })
+                val second = checkNotNull(p.game.state.value.pendingReceipt)
+                assertEquals(2, p.game.state.value.dailyGrowth)
+                assertEquals("2026-11-07", p.store.read()!!.lastDailyGrantDate)
+                assertEquals(MutationResult.Success, closer.close(second) {
+                    p.manual.finishAcknowledged(second.journeyId)
+                })
+                // A different confirmation on that same KST day cannot grant daily growth again.
+                val sameDay = p.question(JourneyKind.DAILY)
+                assertEquals(RequestResult.Accepted, p.manual.choose(sameDay, ManualJourneyChoice.ARRIVED) { true })
+                assertEquals(2, p.game.state.value.dailyGrowth)
+                val expected = p.store.read()
+                p.close()
+                withRestoredGame(p.file) { game, store ->
+                    assertEquals(expected, store.read())
+                    assertEquals(3, store.read()!!.processedReceipts.size)
+                    assertEquals(2, game.state.value.dailyGrowth)
+                    assertTrue(game.state.value.ownedItemIds.isEmpty())
+                    assertEquals(sameDay.journeyId, game.state.value.pendingReceipt!!.journeyId)
+                }
+            } finally { p.close() }
+        }
+    }
+
+    @Test fun modeChangeWaitsForAdmittedManualSaveThenResetPersistsWithoutRevivingOldWork() = runBlocking {
+        withTimeout(15_000) {
+            val p = pipeline()
+            try {
+                val token = p.question()
+                val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+                p.store.beforeUpdate = { entered.complete(Unit); release.await() }
+                val saving = async(start = CoroutineStart.UNDISPATCHED) {
+                    p.manual.choose(token, ManualJourneyChoice.ARRIVED) { true }
+                }
+                entered.await()
+                val changing = async(start = CoroutineStart.UNDISPATCHED) {
+                    p.commands.changeMode(0, { true }, stopOldWork = { p.manual.invalidate() },
+                        commitMode = { p.mode = DataSource.DEMO })
+                }
+                assertFalse(changing.isCompleted)
+                assertEquals(DataSource.USER_CONFIRMED, p.mode)
+                release.complete(Unit)
+                assertEquals(RequestResult.Accepted, saving.await())
+                assertEquals(MutationResult.Success, changing.await())
+                assertEquals(token.journeyId, p.game.state.value.pendingReceipt!!.journeyId)
+                p.store.beforeUpdate = {}
+                assertEquals(MutationResult.Success, p.commands.resetDemo(1) {})
+                assertEquals(2L, p.commands.session.value.generation)
+                assertTrue(p.manual.retry { true } is RequestResult.Failed)
+                assertTrue(p.manual.choose(token, ManualJourneyChoice.ARRIVED) { true } is RequestResult.Failed)
+                val expected = checkNotNull(p.store.read())
+                assertTrue(expected.processedReceipts.isEmpty())
+                assertTrue(p.game.state.value.ownedItemIds.isEmpty())
+                assertNull(p.game.state.value.pendingReceipt)
+                p.close()
+                withRestoredGame(p.file) { game, store ->
+                    assertEquals(expected, store.read())
+                    assertTrue(game.state.value.ownedItemIds.isEmpty())
+                    assertNull(game.state.value.pendingReceipt)
+                }
+            } finally { p.close() }
+        }
+    }
+
+    private suspend fun <T> withRestoredGame(
+        file: File, block: suspend (BGameService, PreferencesGameSaveStore) -> T,
+    ): T {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val backend = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
+            val store = PreferencesGameSaveStore(backend)
+            val game = BGameService(store, scope) { RegionRewards.fromJson(json) }
+            assertEquals(GameReadiness.READY, game.readiness.first { it != GameReadiness.LOADING })
+            return block(game, store)
+        } finally { scope.coroutineContext[Job]!!.cancelAndJoin() }
+    }
+
     private suspend fun pipeline(): Pipeline = Pipeline().also {
         assertEquals(GameReadiness.READY, it.game.readiness.first { value -> value != GameReadiness.LOADING })
         it.manual.updateHost()
@@ -245,8 +389,8 @@ class ManualJourneyIntegrationTest {
         val manual: ManualJourneyRuntime = ManualJourneyRuntime(scope, commands, 0, catalog.regions.map { it.id }.toSet(),
             { allowed() && mode == DataSource.USER_CONFIRMED }, now = { clock })
         fun allowed() = gate.canInteract && foreground && ownerCurrent
-        fun question(): ManualConfirmationToken {
-            assertEquals(RequestResult.Accepted, manual.begin(target, JourneyKind.REGION) { true })
+        fun question(kind: JourneyKind = JourneyKind.REGION): ManualConfirmationToken {
+            assertEquals(RequestResult.Accepted, manual.begin(target, kind) { true })
             assertTrue(manual.requestReview { true })
             return manual.state.value.confirmation!!.token
         }

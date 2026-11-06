@@ -1,5 +1,13 @@
 # A 진행 상태
 
+## 최신 회귀 — 2026-11-06 C 비교와 독립적인 사용자 확인 저장 경계
+
+A 소유 통합시험3개를 추가해 오래된 ack/원본 재전달과 새 pending, KST 자정 저장 재시도,
+승인된 저장→모드 전환→reset의 파일 복원을 확인했다. [상세](../A06_USER_CONFIRMED_BOUNDARY_REGRESSION.md).
+사용자 확인14개/전체JUnit264개(failure/error/skip0), 정적/Python59개 PASS.
+production·B/C·계약·저장 스키마 변경 없음. C 비교 APK 소스685d107/해시 불변, APK 패키징·설치/AVD 조작 없음.
+B 독립 교차 검토와 C 호스트 종료 조사, 최종 release/A06 인수는 별도 진행이다.
+
 ## 최신 기기 인수 — 2026-11-06 사용자 확인 Pleos
 
 앱 소스 `685d107`의 debug APK를 별도 공식 Pleos2.1/API34 AVD에서 정식 Main으로 검증했다.
