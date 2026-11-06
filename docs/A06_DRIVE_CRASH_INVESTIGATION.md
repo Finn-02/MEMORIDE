@@ -7,7 +7,10 @@
 
 ## 확정한 사실과 정정
 
-- Android Emulator37.2.13/build16740729, 공식 Pleos2.1/API34 x86_64 이미지 revision1.
+- Android Emulator37.2.13/build16740729, 공식 Pleos2.1/API34 x86_64 이미지.
+  후속 재확인: package.xml의 설치 revision은2, source.properties의 Pkg.Revision은1로 서로 다르다.
+  기존 revision1 단정과 C에게 요청한 revision1 고정 조건은 정정한다.
+  [메타데이터·공식 배포·프로필 재확인](A06_PLEOS_IMAGE_REVISION_CORRECTION.md) 참조.
 - GPU는 Intel Iris Xe, 드라이버31.0.101.4314, 호스트 RAM 약16GB다.
   [현재 Pleos 공식 최소 GPU](https://document.pleos.ai/en/docs/connect/guide/getting-started/application-development/configure-pleos-connect-emulator)는
   RTX3060 Laptop6GB 또는 명시된 동급 AMD 외장 GPU다. 이 PC는 해당 목록에 못 미친다.

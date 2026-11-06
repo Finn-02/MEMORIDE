@@ -7,6 +7,8 @@ PR #22의 새 사용자 확인 경로를 공식 Pleos에서 검사했다. 이번
 ## 대상과 경계
 
 후속 정정: RAM2048은 명령 요청값이며 실제 실행은 emulator에 의해4096MB로 상향됐다.
+이미지 revision도 source.properties의1만으로 단정하지 않는다. 설치 package.xml은2이며
+[공식 배포와의 재확인](A06_PLEOS_IMAGE_REVISION_CORRECTION.md)에 따라 C의 revision1 고정 요청을 철회했다.
 [D 종료 원인 분리 조사](A06_DRIVE_CRASH_INVESTIGATION.md)에서 로그/실제 설정과 후속 비교를 기록한다.
 과거 QEMU 종료는 유지하며, 새로운 정상 사례를 기존 오류의 해결로 소급하지 않는다.
 
