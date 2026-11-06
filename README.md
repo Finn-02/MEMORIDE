@@ -8,7 +8,7 @@
 
 **이 README가 개발 시작 설명서입니다.** 초대 수락 → 공통 준비 → 파트 선택 → 자기 AI와 세부 설계·개발 → 작은 PR 순서로 진행합니다. 이미 파트를 정했다면 공통 준비를 마친 뒤 해당 파트 링크로 이동하세요.
 
-**공통 앱에 저장된 섬·인벤토리·월드와 DEMO 저장·브리핑·동행·방문·시연을 연결했습니다.** [사용자 확인 도착 저장](docs/A06_USER_CONFIRMED_INTEGRATION.md)도 기존 단일 저장·브리핑에 연결했고, 일반 Android 개발 화면에서 원주 확인/저장/닫기를 검증했습니다. Windows에서 Python59개·JUnit261개와 debug 빌드 PASS입니다. A05 팀 서명 후보의 A/C 별도 PC 설치·업데이트와 [Pleos 게임 기록 복원 사례](docs/A06_SIGNED_PLEOS_ACCEPTANCE.md)는 이전 후보의 근거입니다. [새 사용자 확인 경로의 Pleos debug 저장·재시작 복원](docs/A06_USER_CONFIRMED_PLEOS_ACCEPTANCE.md)은 확인했고, D 제한 신호 관측 후 QEMU 종료로 제한 화면/P 복귀는 보류했습니다. 실차·PLEOS 자동 최종도착·최종 UI/최종 SHA 서명 후보 인수는 남아 있습니다. [A06 통합 검증](docs/A06_INTEGRATION_VERIFICATION.md)을 진행하며, 최초 설정은 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따릅니다.
+**공통 앱에 저장된 섬·인벤토리·월드와 DEMO 저장·브리핑·동행·방문·시연을 연결했습니다.** [사용자 확인 도착 저장](docs/A06_USER_CONFIRMED_INTEGRATION.md)도 기존 단일 저장·브리핑에 연결했고, 일반 Android 개발 화면에서 원주 확인/저장/닫기를 검증했습니다. Windows에서 Python59개·JUnit261개와 debug 빌드 PASS입니다. A05 팀 서명 후보의 A/C 별도 PC 설치·업데이트와 [Pleos 게임 기록 복원 사례](docs/A06_SIGNED_PLEOS_ACCEPTANCE.md)는 이전 후보의 근거입니다. [새 사용자 확인 경로의 Pleos debug 저장·재시작 복원](docs/A06_USER_CONFIRMED_PLEOS_ACCEPTANCE.md)은 확인했고, [후속 D 전환 비교](docs/A06_DRIVE_CRASH_INVESTIGATION.md)에서 제한 화면/P 복귀는 확인했지만, 이전 두 차례 QEMU 종료의 근본 원인은 미확정입니다. 실차·PLEOS 자동 최종도착·최종 UI/최종 SHA 서명 후보 인수는 남아 있습니다. [A06 통합 검증](docs/A06_INTEGRATION_VERIFICATION.md)을 진행하며, 최초 설정은 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따릅니다.
 
 ## 1. 모두 공통으로 준비하기
 

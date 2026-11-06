@@ -6,7 +6,8 @@
 실제 P/DO=false/UxR0에서 USER_CONFIRMED 저장→브리핑, 미확인/확인 완료 앱 재시작과
 원본/아이템/pending 보존·재시작 전후 파일 해시 불변 PASS.
 사용자 조작 D에서 DO=true/UxR80·앱 RESTRICTED·저장 불변을 확인했다.
-그러나 QEMU가 두 차례 c0000005로 종료돼 D 화면/P 복귀는 BLOCKED이며 전체 P/D/P PASS가 아니다.
+초기 QEMU 두 차례 c0000005 종료 후, [후속 비교](../A06_DRIVE_CRASH_INVESTIGATION.md)에서 기본 조건과 Vulkan 비활성화 조건의 D 차단 화면/P 복귀를 각각 확인했다.
+저장 JSON/파일 해시 불변이며 이번 표본은 기능 PASS다. 기존 종료 원인은 미확정으로 안정성 해결/전체 인수 PASS가 아니다.
 [범위·복구·남은 인수](../A06_USER_CONFIRMED_PLEOS_ACCEPTANCE.md). 서명 release/실차/B 교차/C05 전체는 후속이다.
 
 ## 최신 연결 — 2026-11-06 사용자 확인 저장

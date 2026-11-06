@@ -6,6 +6,10 @@ PR #22의 새 사용자 확인 경로를 공식 Pleos에서 검사했다. 이번
 
 ## 대상과 경계
 
+후속 정정: RAM2048은 명령 요청값이며 실제 실행은 emulator에 의해4096MB로 상향됐다.
+[D 종료 원인 분리 조사](A06_DRIVE_CRASH_INVESTIGATION.md)에서 로그/실제 설정과 후속 비교를 기록한다.
+과거 QEMU 종료는 유지하며, 새로운 정상 사례를 기존 오류의 해결로 소급하지 않는다.
+
 - 설치된 공식 Pleos Connect 2.1.0 / API34 x86_64 이미지와 Pleos_Connect_v2_0 프로필로
   별도 AVD `MEMORIDE_A06_UC_PLEOS`, serial `emulator-5582`, Android 사용자10을 생성했다.
 - RAM2048MB, cold boot, snapshot load/save 없음. 기존 서명 release/debug Pleos AVD와 키는 변경하지 않았다.
