@@ -143,6 +143,23 @@ class WorldPresentationTest {
         assertEquals(customPath, projection.regions.flatMap { it.items }.single { it.id == item.id }.imagePath)
     }
 
+    @Test fun blankItemIdsNeverCountAsCollectiblesOrEnableDestinationCandidates() {
+        val region = catalog.regions.first()
+        for (blankId in listOf("", " ", "\t", "\n")) {
+            val invalidItem = catalog.items.first().copy(id = blankId)
+            val broken = catalog.copy(items = catalog.items + invalidItem)
+            val snapshot = sample("fresh").copy(ownedItemIds = setOf(blankId))
+            val view = worldPresentation(snapshot, broken)
+            assertTrue("Blank ID must be reported", view.issues.isNotEmpty())
+            assertEquals(catalog.items.size, view.totalCount)
+            assertEquals(0, view.ownedCount)
+            assertTrue(view.regions.none { it.canPrepare })
+            val actions = WorldActions({ WorldInputs(snapshot, broken, allowed, true) },
+                { fail("Invalid catalog must not dispatch a destination") }, {})
+            assertFalse(actions.prepare(region.id))
+        }
+    }
+
     @Test fun candidateAndInventoryActionsUseOnlyCallbacksAndLatestInputs() {
         var inputs = WorldInputs(sample("fresh"), catalog, allowed, true)
         val selected = mutableListOf<String>()
