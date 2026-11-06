@@ -27,7 +27,13 @@ fun ManualJourneyScreen(
     val scope = rememberCoroutineScope()
     DisposableEffect(runtime) { onDispose { runtime.leaveScreen() } }
     SideEffect { runtime.updateHost() }
-    fun show(result: RequestResult) { error = (result as? RequestResult.Failed)?.message }
+    fun show(result: RequestResult) {
+        error = if (result is RequestResult.Failed) {
+            if (runtime.result.value is ArrivalResult.StorageFailure)
+                "도착 기록을 저장하지 못했어요. 다시 시도해 주세요."
+            else result.message
+        } else null
+    }
     val enabled = state.interactionAllowed && !busy && callerIsCurrent()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
