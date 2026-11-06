@@ -1,5 +1,16 @@
 # A 진행 상태
 
+## 최신 연결 — 2026-11-06 사용자 확인 저장
+
+B PR #20/C PR #21 포함 main `9a19c77`을 기존 A 브랜치에 `953dadc`로 반영했다.
+전용 사용자 확인 모드에서 목적지/질문 토큰·실제 이용 상태·owner/세대/화면을 재검사한 뒤
+기존 B 단일 저장과 PM pendingReceipt/비동기 acknowledge로 연결했다.
+최초 ID/확인 시각/null을 재시도에 보존하고 모드/reset의 옛 입력은 차단한다.
+Python59/JUnit261(신규 A 통합11개)/debug PASS. 일반 AVD에서 원주 확인→저장→브리핑→닫기/섬,
+앱 파일의 USER_CONFIRMED/null/원본 보존/pending 해제 확인 PASS.
+[상세/NOT RUN](../A06_USER_CONFIRMED_INTEGRATION.md). 실제 Pleos의 새 경로·최종 서명 후보/C05/A06 전체는 후속이다.
+아래 B/C 대기·PR 보류 등은 각 기록 시점의 상태다.
+
 ## 최신 준비 점검 — 2026-11-05 A06 B/C
 
 main a04b3c5 / 원격 B af388f1 / C184727a를 확인했다.
