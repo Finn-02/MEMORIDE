@@ -442,4 +442,93 @@ class VisitControllerTest {
             assertFalse(visiting.canShowVisitor(InteractionGate(gate)))
         }
     }
+
+    @Test fun concurrentAcceptAndRejectHaveOnlyOneWinner() {
+        val f = Fixture()
+        val token = f.request()
+        val start = CountDownLatch(1)
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val accept = pool.submit<Boolean> { check(start.await(5, TimeUnit.SECONDS)); f.controller.accept(token) }
+            val reject = pool.submit<Boolean> { check(start.await(5, TimeUnit.SECONDS)); f.controller.reject(token) }
+            start.countDown()
+            val accepted = accept.get(5, TimeUnit.SECONDS)
+            val rejected = reject.get(5, TimeUnit.SECONDS)
+            assertTrue(accepted.xor(rejected))
+            assertEquals(if (accepted) VisitPhase.VISITING else VisitPhase.REJECTED, f.state.phase)
+            assertEquals(accepted, f.state.canShowVisitor(f.allowed.gate))
+            assertEquals(0, f.scheduler.pending)
+        } finally { pool.shutdownNow() }
+    }
+
+    @Test fun resetRacingAcceptanceAlwaysEndsBlockedWithoutAVisitorOrTimer() {
+        val f = Fixture()
+        val token = f.request()
+        val timeout = f.scheduler.entries.last()
+        val start = CountDownLatch(1)
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val accept = pool.submit<Boolean> { check(start.await(5, TimeUnit.SECONDS)); f.controller.accept(token) }
+            val reset = pool.submit<Long> { check(start.await(5, TimeUnit.SECONDS)); f.controller.beginReset() }
+            start.countDown()
+            accept.get(5, TimeUnit.SECONDS)
+            val resetToken = reset.get(5, TimeUnit.SECONDS)
+            assertEquals(VisitPhase.CANCELLED, f.state.phase)
+            assertEquals(VisitCancelReason.RESET, f.state.cancelReason)
+            assertFalse(f.state.interactionAllowed)
+            assertEquals(0, f.scheduler.pending)
+            f.scheduler.fire(timeout, true)
+            assertFalse(f.controller.accept(token))
+            f.noVisitor()
+            assertFalse(f.controller.finishReset(resetToken, false))
+            assertTrue(f.controller.request() is VisitRequestResult.Rejected)
+            assertTrue(f.controller.finishReset(resetToken, true))
+            assertEquals(VisitPhase.IDLE, f.state.phase)
+            assertNotEquals(token, f.request())
+        } finally { pool.shutdownNow() }
+    }
+
+    @Test fun threeResetRoundsKeepOldSessionsAndCallbacksOutOfTheNextRound() {
+        val f = Fixture()
+        val past = mutableListOf<VisitToken>()
+        val cancelledTimers = mutableListOf<FakeScheduler.Entry>()
+        repeat(3) { round ->
+            val token = f.request()
+            cancelledTimers.add(f.scheduler.entries.last())
+            when (round) {
+                0 -> assertTrue(f.controller.reject(token))
+                1 -> {
+                    f.clock.monotonic += VisitController.REQUEST_TIMEOUT_MS
+                    f.scheduler.runDue()
+                    assertEquals(VisitPhase.EXPIRED, f.state.phase)
+                }
+                else -> {
+                    assertTrue(f.controller.accept(token))
+                    assertTrue(f.controller.close(token))
+                }
+            }
+            past.add(token)
+            assertEquals(0, f.scheduler.pending)
+            val reset = f.controller.beginReset()
+            assertTrue(f.controller.finishReset(reset, true))
+            assertEquals(VisitPhase.IDLE, f.state.phase)
+            assertNull(f.state.request)
+            for (old in past) {
+                assertFalse(f.controller.accept(old))
+                assertFalse(f.controller.reject(old))
+                assertFalse(f.controller.withdraw(old))
+                assertFalse(f.controller.close(old))
+            }
+            for (timer in cancelledTimers) f.scheduler.fire(timer, true)
+            assertEquals(VisitPhase.IDLE, f.state.phase)
+            assertEquals(0, f.scheduler.pending)
+            f.noVisitor()
+        }
+        val fresh = f.request()
+        val before = f.state
+        for (timer in cancelledTimers) f.scheduler.fire(timer, true)
+        assertEquals(before, f.state)
+        assertEquals(1, f.scheduler.pending)
+        assertTrue(past.none { it.requestId == fresh.requestId })
+    }
 }

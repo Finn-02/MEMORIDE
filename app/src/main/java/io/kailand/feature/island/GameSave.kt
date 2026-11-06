@@ -37,7 +37,11 @@ internal data class GameSave(
             check(receipt.elapsedSeconds == null || receipt.elapsedSeconds >= 0)
             check(receipt.distanceMeters == null ||
                 (receipt.distanceMeters.isFinite() && receipt.distanceMeters >= 0))
-            receipt.toContract() // Includes persisted enum validation.
+            val restored = receipt.toContract() // Includes persisted enum validation.
+            check(restored.source != DataSource.USER_CONFIRMED ||
+                (restored.elapsedSeconds == null && restored.distanceMeters == null)) {
+                "Invalid saved user-confirmed measurements"
+            }
         }
         val pending = pendingReceiptId?.let { id ->
             val receipt = checkNotNull(processedReceipts[id]) {
