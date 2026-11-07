@@ -8,7 +8,7 @@
 
 **이 README가 개발 시작 설명서입니다.** 초대 수락 → 공통 준비 → 파트 선택 → 자기 AI와 세부 설계·개발 → 작은 PR 순서로 진행합니다. 이미 파트를 정했다면 공통 준비를 마친 뒤 해당 파트 링크로 이동하세요.
 
-**공통 앱에 저장된 섬·인벤토리·월드와 DEMO 저장·브리핑·동행·방문·시연을 연결했습니다.** [사용자 확인 도착 저장](docs/A06_USER_CONFIRMED_INTEGRATION.md)도 기존 단일 저장·브리핑에 연결했고, 일반 Android 개발 화면에서 원주 확인/저장/닫기를 검증했습니다. Windows에서 Python59개·JUnit264개와 debug 빌드 PASS입니다. [큰 글자·가로 질문 잘림 수정](docs/A06_USER_CONFIRMED_UI_LARGE_TEXT.md)은 C 고정 비교 APK와 분리한 새 UI 후보에서 검증했습니다. A05 팀 서명 후보의 A/C 별도 PC 설치·업데이트와 [Pleos 게임 기록 복원 사례](docs/A06_SIGNED_PLEOS_ACCEPTANCE.md)는 이전 후보의 근거입니다. [새 사용자 확인 경로의 Pleos debug 저장·재시작 복원](docs/A06_USER_CONFIRMED_PLEOS_ACCEPTANCE.md)은 확인했고, [후속 D 전환 비교](docs/A06_DRIVE_CRASH_INVESTIGATION.md)에서 제한 화면/P 복귀는 확인했지만, 이전 두 차례 QEMU 종료의 근본 원인은 미확정입니다. 실차·PLEOS 자동 최종도착·최종 UI/최종 SHA 서명 후보 인수는 남아 있습니다. [A06 통합 검증](docs/A06_INTEGRATION_VERIFICATION.md)을 진행하며, 최초 설정은 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따릅니다.
+**공통 앱의 섬·인벤토리·월드와 저장·브리핑·동행·방문·시연을 연결했습니다.** PR #22 검토 소스 `72b689d`의 사용자 확인 도착 저장·복원·실패 재시도·큰 글자/가로 검수와 Mac Python59/JUnit264/Debug 완료를 PM이 회신했습니다. 같은 소스의 [서명 Release v4 인수](docs/A06_V4_RELEASE_ACCEPTANCE.md)에서 A의 Pleos P→D 차단→P 복귀·저장/재실행·이전 v3 업데이트 보존과 C의 별도 PC 최초 설치/정식 UNKNOWN 화면을 확인했습니다. A의 종료 요청 시 QEMU `c0000602`와 [기존 D 전환 `c0000005`](docs/A06_DRIVE_CRASH_INVESTIGATION.md)의 근본 원인은 미확정이며, PM 요청에 따라 검토 문서 정리 후 PR을 Ready로 전환합니다. C 고정 APK의 Vulkan-off 비교는 최종 시연 환경 확정 때 별도로 확인하며, 최종 확인과 병합은 PM이 담당합니다. 실차·PLEOS 자동 최종도착·최종 제출 인수 완료를 뜻하지 않습니다. 최초 설정은 [A01 실행 안내](docs/A01_QUICKSTART.md)를 따릅니다.
 
 ## 1. 모두 공통으로 준비하기
 
@@ -120,13 +120,22 @@ D1 공용 기반 → D3 한 지역 전체 흐름 → D8 첫 release 설치 → D
 
 Actions에는 push/PR 자동 트리거가 없고 수동 실행만 있습니다. 로컬 검사가 기본이며 새 유료 서버·API·자산·AI Actions를 도입하지 않습니다. Actions 비활성화·계정 비용 통제·병합 규칙은 별도 설정으로, 파일이 있다고 자동 적용되지는 않습니다. [PM 저장소 설정](REPO_SETUP.md)을 참고하세요.
 
-팀 서명 중간 release APK는 A05에서 생성·교차 설치했습니다. 최종 제출 후보는 A06 인수 후 확정하며, APK 빌드 소스와 환경은 아래 A05 기록을 따릅니다. 심사용 private 접근과 공식 제출은 [인수 확인표](templates/acceptance_checklist.md)로 확인합니다.
+현재 검토 후보는 **A06 서명 Release v4**입니다. 아래 A05 중간 후보와 빌드 소스·검증 범위를 구분합니다. 심사용 private 접근과 공식 제출은 [인수 확인표](templates/acceptance_checklist.md)로 확인합니다.
+
+| 구분 | A06 최신 검토 후보 | A05 이전 중간 후보 |
+|---|---|---|
+| 앱 버전 | `0.1.0` / versionCode `4` | `0.1.0` / versionCode `2/3` |
+| 빌드 소스 | `72b689da04c3ea16ea851c3607d6c9c578aa0781` | `ee3ed0f` |
+| 검증 | Mac 독립 검수, A의 Pleos P→D 차단→P 복귀·저장 복원·v3→v4 보존, C의 별도 Windows 최초 설치·정식 UNKNOWN 화면 | 기존 설치·동일 키 업데이트 및 중간 후보 Pleos 복원 |
+| 상세 | [A06 v4 인수](docs/A06_V4_RELEASE_ACCEPTANCE.md) | [A05 전달](docs/A05_RELEASE_HANDOFF.md) · [C 인수](docs/A05_C_ACCEPTANCE_REVIEW.md) |
+
+A06 v4 APK SHA-256은 `4574eaa15af0de1736bcaaf0e1b73b001054db3ed5ed5574fa821c79879af1fe`입니다. Windows의 기록된 JBR25·Gradle wrapper9.3.1로 빌드한 후보이며, 이후 검토 문서 커밋과 APK 빌드 소스를 구분합니다. 공개 팀 인증서 SHA-256은 `8c842e7249d09f67f425bc90ed944bbdbc6393444cbb0845bcfb1bc17193cebb`입니다.
 
 A05의 [중간 release 서명·검증·C PC 전달 절차](docs/A05_RELEASE_HANDOFF.md)를 준비했습니다.
 첫 팀 키로 서명한 중간 후보(versionCode 2/3)의 로컬 설치·동일 키 업데이트를 확인했습니다.
 빌드 소스는 `ee3ed0f`이며, [C의 다른 Windows PC 설치·업데이트도 확인](docs/A05_C_ACCEPTANCE_REVIEW.md)했습니다.
 이후 [새 Pleos에서 중간 서명 후보의 설치·진행 복원](docs/A06_SIGNED_PLEOS_ACCEPTANCE.md)도 확인했습니다.
-전체 저장 호환 행렬·최종 UI/A06·최종 SHA 후보 인수는 아직 남아 있습니다.
+이 문단은 A05 당시 기록입니다. A06 v4의 완료 범위는 위 최신 기록을 따르며, 전체 저장 호환 행렬·실차·최종 제출 인수까지 완료한 것은 아닙니다.
 키 없는 unsigned 빌드나 debug 키 검증을 서명 release 인수 완료로 표시하지 않습니다.
 
 ## 필요한 문서만 찾아보기
