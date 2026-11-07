@@ -121,9 +121,15 @@ class ManualArrivalController(
     /** Debug draft reset only. A04 must coordinate actual GameService reset separately. */
     @Synchronized fun resetPreview(): Boolean {
         if (!mutable.value.interactionAllowed) return false
-        generation++
-        mutable.value = ManualJourneySnapshot(interactionAllowed = true)
+        invalidate()
+        mutable.value = mutable.value.copy(interactionAllowed = true)
         return true
+    }
+
+    /** Owner/mode/reset invalidation is unconditional, including while the platform blocks input. */
+    @Synchronized fun invalidate() {
+        generation++
+        mutable.value = ManualJourneySnapshot()
     }
 
     private fun withPrompt(snapshot: ManualJourneySnapshot): ManualJourneySnapshot {

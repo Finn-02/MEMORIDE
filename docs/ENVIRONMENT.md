@@ -1,6 +1,13 @@
 # 실제 개발 환경 기록
 
-## 최신 A05 인수 결과 — 2026-11-05 KST
+## 최신 A06 기기 인수 — 2026-11-05 KST
+
+A05 중간 팀 서명 v2/v3(빌드 소스 ee3ed0f)를 새 공식 Pleos2.1/API34 x86_64 AVD에서
+최초 설치·동일 인증서 업데이트·정식 Main/DEMO 저장·모모/빵모자/성장1/기념품/브리핑 상태 복원까지 확인했다.
+기존 debug Pleos AVD는 변경하지 않았다. 초기 RAM4GB에서 자원 문제를 관측해 새 AVD만 RAM2GB로 재실행했다.
+[A06 기기 인수 근거](A06_SIGNED_PLEOS_ACCEPTANCE.md). 최신 main의 최종 서명 후보·실차·최종 UI 인수는 별도다.
+
+## 이전 A05 인수 결과 — 2026-11-05 KST
 
 첫 팀 키로 서명한 중간 APK(versionCode2/3, 빌드 소스 ee3ed0f)를 A와 C의 별도 Windows PC에서
 일반 Android API37/x86_64에 최초 설치·동일 키 업데이트·정식 Main 실행까지 확인했다.

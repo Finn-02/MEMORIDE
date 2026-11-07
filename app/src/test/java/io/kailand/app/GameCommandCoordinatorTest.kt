@@ -66,7 +66,7 @@ class GameCommandCoordinatorTest {
         assertEquals(1, game.writes)
     }
 
-    @Test fun suppliedUserConfirmedTypesCannotReachStorageBeforeB05Integration() = runBlocking {
+    @Test fun userConfirmedInputCannotBypassTheDedicatedConfirmationEntry() = runBlocking {
         val before = game.state.value
         for (source in DataSource.entries) for (evidence in ArrivalEvidence.entries) {
             if (source != DataSource.USER_CONFIRMED && evidence != ArrivalEvidence.USER_CONFIRMED_DESTINATION) continue

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.SystemClock
 import io.kailand.core.contract.*
 import io.kailand.app.journey.GuardedDemoJourney
+import io.kailand.app.journey.ManualJourneyRuntime
 import io.kailand.feature.demo.DemoScenario
 import io.kailand.feature.demo.DemoScenarios
 import io.kailand.feature.visit.VisitClock
@@ -29,12 +30,17 @@ class GameAppSession internal constructor(context: Context) {
     private var inputs = GameCommandContext()
     private var runtimeOwner: Any? = null
     private var runtime: GameSimulationRuntime? = null
+    private var manualOwner: Any? = null
+    private var manualGeneration = -1L
+    private var manualRuntime: ManualJourneyRuntime? = null
     private var modeOwner: Any? = null
     private val mutableMode = MutableStateFlow(DataSource.DEMO)
     val mode = mutableMode.asStateFlow()
     val commands = GameCommandCoordinator(game, { game.readiness.value == GameReadiness.READY }) {
-        inputs.copy(journey = runtime?.snapshot.takeIf {
-            activeOwner === runtimeOwner && inputs.mode == DataSource.DEMO
+        inputs.copy(journey = when (inputs.mode) {
+            DataSource.DEMO -> runtime?.snapshot.takeIf { activeOwner === runtimeOwner }
+            DataSource.USER_CONFIRMED -> manualRuntime?.snapshot.takeIf { activeOwner === manualOwner }
+            DataSource.PLEOS -> null
         })
     }
     private val mutableCatalog = MutableStateFlow<CatalogLoadState>(CatalogLoadState.Loading)
@@ -65,6 +71,7 @@ class GameAppSession internal constructor(context: Context) {
     /** Main-thread lifecycle input. A background entry cannot revoke a newer foreground owner. */
     fun updateHost(owner: Any, gate: InteractionGate, foreground: Boolean, mode: DataSource) {
         if (foreground) {
+            if (manualOwner != null && manualOwner !== owner) manualRuntime?.invalidate()
             if (modeOwner !== owner) {
                 modeOwner = owner
                 if (commands.session.value.phase == GameCommandPhase.ACTIVE) mutableMode.value = mode
@@ -77,6 +84,7 @@ class GameAppSession internal constructor(context: Context) {
             activeOwner = null
             runtime?.updateHost(inputs)
         }
+        manualRuntime?.updateHost()
     }
 
     fun canHost(owner: Any): Boolean = activeOwner === owner && inputs.foreground && inputs.gate.canInteract &&
@@ -101,13 +109,27 @@ class GameAppSession internal constructor(context: Context) {
     fun screenDemoControls(runtime: GameSimulationRuntime, callerIsCurrent: () -> Boolean) =
         GuardedDemoJourney(runtime.journey, runtime.demo, scope, callerIsCurrent)
 
+    fun manualJourney(owner: Any, catalog: Catalog): ManualJourneyRuntime? {
+        if (!canUse(owner) || inputs.mode != DataSource.USER_CONFIRMED) return null
+        val generation = commands.session.value.generation
+        manualRuntime?.let { if (manualOwner === owner && manualGeneration == generation) return it }
+        manualRuntime?.invalidate()
+        manualOwner = owner
+        manualGeneration = generation
+        return ManualJourneyRuntime(scope, commands, generation, catalog.regions.map { it.id }.toSet(), {
+            canUse(owner) && inputs.mode == DataSource.USER_CONFIRMED && manualOwner === owner &&
+                game.state.value.pendingReceipt == null
+        }).also { manualRuntime = it; it.updateHost() }
+    }
+
+    fun finishManualReceipt(journeyId: String) { manualRuntime?.finishAcknowledged(journeyId) }
+
     suspend fun changeMode(owner: Any, target: DataSource): MutationResult {
-        if (target !in listOf(DataSource.DEMO, DataSource.PLEOS)) return MutationResult.Rejected("지원하지 않는 입력 모드입니다.")
         if (!canHost(owner)) return MutationResult.Rejected("현재 이용 상태를 확인해 주세요.")
         if (target == inputs.mode && commands.session.value.phase == GameCommandPhase.ACTIVE) return MutationResult.Success
         val captured = runtime.takeIf { runtimeOwner === owner }
         return commands.changeMode(commands.session.value.generation, { canHost(owner) },
-            stopOldWork = { captured?.stopForModeChange(target) }, commitMode = {
+            stopOldWork = { manualRuntime?.invalidate(); captured?.stopForModeChange(target) }, commitMode = {
                 inputs = inputs.copy(mode = target)
                 mutableMode.value = target
                 captured?.updateHost(inputs)
