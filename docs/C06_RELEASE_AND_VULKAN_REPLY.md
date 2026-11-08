@@ -20,7 +20,7 @@ versionName `0.1.0` / versionCode `4` / applicationId `io.kailand`.
 SHA256 `2583f0d1e4bd3148d248a7290430d1640d44b74650fc645ebdae7fb1dcc5e704`.
 소스 SHA는 빌드 담당자 선언이며 APK에서 암호학적으로 역산한 값이 아니다.
 
-## 고정 debug Vulkan-off 비교 — 결과 전달 준비 완료
+## 고정 debug Vulkan-off 비교 — 회신 검토 완료
 
 이 시험은 v4 인수와 별개다. 기존 `MEMORIDE_A06_C_COMPARE`와
 고정 `685d107b5a10cd43b4887638d12e0445b3aef383` debug APK를 유지했다.
@@ -67,13 +67,14 @@ AVD 정상 종료 요청 시험은 하지 않았으므로 `combase.dll/c0000602`
 회신 ZIP `MEMORIDE_C_VULKAN_OFF_REPLY_20261108_004006_KST.zip`,
 SHA256 `785ba35cfd13ecf5e23cf2a217b5566b4a52c6b51769c883093b728af3bdb34d`.
 환경·결과 양식·시각별 표본·저장 의미/해시·선별 로그·대표 화면과 별도 참고 이력을 포함하고 ZIP 무결성을 확인했다.
-아직 A가 이 최신 회신을 수용했다고 주장하지 않는다.
+파트 1은 정상 조건에서 완료된 표본의 주행 제한·주차 복귀·저장 보존 근거를 수용했다.
+최종 시연 환경은 A PC로 확정했고, A PC에서 서명 Release v4 최종 리허설을 완료했다.
+QEMU 종료 원인은 미해결이다.
 
 ## 남은 범위
 
 - 후속 별도 개발 AVD에서 수행한 C05 표시·화면 이탈 검사와 아직 남은 접근성/경쟁 조건은
   [추가 UI 검사](C05_UI_ACCESSIBILITY_FOLLOWUP.md)에 기록했다. 서명 후보/고정 Vulkan 비교와 분리한다.
-- A/PM의 Vulkan 비교 회신 검토와 최종 시연 환경 판단.
 - C05 전수 UI·접근성·활성 방문/reset 경쟁·옛 token 기기 재전달은 기존 NOT RUN 범위를 유지한다.
   A의 독립 핵심 시연3회·방문 분기 근거는 [A 기록](A06_V4_RELEASE_ACCEPTANCE.md)을 참조하되 C의 전수 재실행으로 세지 않는다.
 - 추가 기기 시험은 대상 후보/환경/합성 데이터 범위를 분리한다. 이 문서 정리로 더 이상의 재시도나 초기화를 시작하지 않는다.
