@@ -1,5 +1,9 @@
 # C05 → A06 전달 회신
 
+> 이 문서는 2026-11-06 C05 전달 당시 결과다. PR #21/#22 병합 후 서명 v4 교차 설치와
+> 고정 debug Vulkan 비교의 최신 완료 범위·참고 이력·남은 항목은
+> [C 후속 인수](C06_RELEASE_AND_VULKAN_REPLY.md)를 따른다. 당시 NOT RUN을 새 기기 PASS로 자동 변경하지 않는다.
+
 2026-11-06 KST / Windows11 Home AMD64 / Python3.14.7 / JBR25.0.4 / wrapper9.3.1 / SDK API37.
 
 ## 브랜치와 전달 범위
