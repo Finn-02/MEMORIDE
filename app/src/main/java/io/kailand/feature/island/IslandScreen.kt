@@ -67,6 +67,10 @@ fun IslandScreen(
 
                 val scene: @Composable (Modifier) -> Unit = { sceneModifier ->
                     Column(sceneModifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(view.characterName, style = MaterialTheme.typography.titleLarge)
+                            if (actions.eating) Text("냠냠 · 식사 중")
+                        }
                         IslandSceneCard(
                             growth = view.growth,
                             avatar = snapshot.avatar,
@@ -76,7 +80,10 @@ fun IslandScreen(
                             slots = view.slots,
                         )
                         Text("의상 · ${view.outfitStatus}")
-
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("섬 장식", style = MaterialTheme.typography.titleMedium)
+                            view.slots.forEach { slot -> Text("${slot.label} · ${slot.status}") }
+                        }
                     }
                 }
                 val controls: @Composable (Modifier) -> Unit = { controlsModifier ->
