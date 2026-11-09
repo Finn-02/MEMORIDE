@@ -27,10 +27,19 @@ private val supportedDecorAssets = setOf(
 )
 private val supportedSlots = setOf("slot_left", "slot_right", "slot_back")
 
+/** Never display decoded images for an older decoration-slot selection. */
+internal data class DecorationFrameBatch<T>(
+    val paths: List<String>,
+    val frames: List<T>,
+) {
+    fun forRequest(requested: List<String>): List<T> =
+        if (paths == requested) frames else emptyList()
+}
+
 private sealed interface DecorationImages {
     data object Loading : DecorationImages
-    data object Failed : DecorationImages
-    data class Ready(val layers: List<ImageBitmap>) : DecorationImages
+    data class Failed(val paths: List<String>) : DecorationImages
+    data class Ready(val batch: DecorationFrameBatch<ImageBitmap>) : DecorationImages
 }
 
 private fun decodeDecoration(assets: AssetManager, filename: String): ImageBitmap {
@@ -49,18 +58,10 @@ private fun decodeDecoration(assets: AssetManager, filename: String): ImageBitma
     return bitmap.asImageBitmap()
 }
 
-/** Read-only rendering: the existing inventory owns all place/remove actions. */
-@Composable
-internal fun IslandDecorationLayers(
-    slots: List<IslandSlot>,
-    catalog: Catalog,
-    modifier: Modifier = Modifier,
-) {
-    val assets = LocalContext.current.applicationContext.assets
-
-    // IslandPresentation already verifies ownership, known slot IDs and
-    // unambiguous placement. Revalidate the Catalog asset type and path here.
-    val requested = slots.mapNotNull { slot ->
+// IslandPresentation already verifies ownership, known slot IDs and
+// unambiguous placement. Revalidate the Catalog asset type and path here.
+internal fun decorationPaths(slots: List<IslandSlot>, catalog: Catalog): List<String> =
+    slots.mapNotNull { slot ->
         if (!slot.available || slot.savedItemId == null || slot.itemName == null ||
             slot.id !in supportedSlots) return@mapNotNull null
         val item = catalog.items.singleOrNull {
@@ -75,8 +76,18 @@ internal fun IslandDecorationLayers(
         "${assetKey}_${slot.id}_v3.png"
     }
 
+/** Read-only rendering: the existing inventory owns all place/remove actions. */
+@Composable
+internal fun IslandDecorationLayers(
+    slots: List<IslandSlot>,
+    catalog: Catalog,
+    modifier: Modifier = Modifier,
+) {
+    val assets = LocalContext.current.applicationContext.assets
+    val requested = decorationPaths(slots, catalog)
+
     val images by produceState<DecorationImages>(
-        initialValue = if (requested.isEmpty()) DecorationImages.Ready(emptyList())
+        initialValue = if (requested.isEmpty()) DecorationImages.Ready(DecorationFrameBatch(requested, emptyList()))
                        else DecorationImages.Loading,
         key1 = assets,
         key2 = requested,
@@ -85,18 +96,20 @@ internal fun IslandDecorationLayers(
             val loaded = withContext(Dispatchers.IO) {
                 requested.map { decodeDecoration(assets, it) }
             }
-            DecorationImages.Ready(loaded)
+            DecorationImages.Ready(DecorationFrameBatch(requested, loaded))
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
             Log.e("MemorideIsland", "Cannot load saved island decorations", error)
-            DecorationImages.Failed
+            DecorationImages.Failed(requested)
         }
     }
 
     Box(modifier) {
         when (val result = images) {
-            is DecorationImages.Ready -> result.layers.forEach { layer ->
+            // produceState retains the last value until a new load completes.
+            // Discard that value immediately if the slot paths have changed.
+            is DecorationImages.Ready -> result.batch.forRequest(requested).forEach { layer ->
                 Image(
                     bitmap = layer,
                     contentDescription = null,
@@ -104,7 +117,7 @@ internal fun IslandDecorationLayers(
                     contentScale = ContentScale.Fit,
                 )
             }
-            DecorationImages.Failed -> Text(
+            is DecorationImages.Failed -> if (result.paths == requested) Text(
                 "장식 이미지를 불러오지 못했어요.",
                 color = MaterialTheme.colorScheme.error,
             )
