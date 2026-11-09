@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.kailand.core.contract.AvatarPreview
 import io.kailand.core.contract.Catalog
@@ -24,6 +25,7 @@ fun AvatarView(
     catalog: Catalog,
     expressionKey: String,
     modifier: Modifier = Modifier,
+    avatarSize: Dp = 128.dp,
 ) {
     val assets = LocalContext.current.applicationContext.assets
     val loader = remember(assets) { androidAvatarAssetLoader(assets) }
@@ -33,7 +35,7 @@ fun AvatarView(
     val outfit = if (body != null) avatarLayer(loader, listOfNotNull(paths.outfit)) else null
     val placeholder = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
 
-    Canvas(modifier.size(128.dp)) {
+    Canvas(modifier.size(avatarSize)) {
         val side = size.minDimension.toInt()
         if (side <= 0) return@Canvas
         if (body == null) {
