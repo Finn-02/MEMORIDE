@@ -13,24 +13,30 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** Shares successful decodes and bounds memory to the nine starter avatar layers. */
+/** Shares successful decodes up to the configured cache capacity. */
 internal class AvatarAssetLoader<T : Any>(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val cacheCapacity: Int = 9,
     private val decode: (String) -> T?,
 ) {
     private val mutex = Mutex()
-    private val cache = LinkedHashMap<String, T>(9, 0.75f, true)
+    private val cache = LinkedHashMap<String, T>(cacheCapacity, 0.75f, true)
+
+    fun cached(path: String): T? = synchronized(cache) { cache[path] }
 
     suspend fun loadFirst(candidates: List<String>): T? {
         for (path in candidates) {
             currentCoroutineContext().ensureActive()
             if (!isAvatarAssetPath(path)) continue
+            cached(path)?.let { return it }
             val image = withContext(dispatcher) {
                 mutex.withLock {
-                    cache[path] ?: decodeSafely(path)?.also {
+                    cached(path) ?: decodeSafely(path)?.also {
                         currentCoroutineContext().ensureActive()
-                        cache[path] = it
-                        if (cache.size > 9) cache.remove(cache.keys.first())
+                        synchronized(cache) {
+                            cache[path] = it
+                            if (cache.size > cacheCapacity) cache.remove(cache.keys.first())
+                        }
                     }
                 }
             }
@@ -54,7 +60,7 @@ private var sharedLoader: AvatarAssetLoader<ImageBitmap>? = null
 @Synchronized
 internal fun androidAvatarAssetLoader(assets: AssetManager): AvatarAssetLoader<ImageBitmap> {
     if (cachedAssets === assets) sharedLoader?.let { return it }
-    return AvatarAssetLoader { path -> decodeAvatarPng(assets, path) }.also {
+    return AvatarAssetLoader(cacheCapacity = 36) { path -> decodeAvatarPng(assets, path) }.also {
         cachedAssets = assets
         sharedLoader = it
     }

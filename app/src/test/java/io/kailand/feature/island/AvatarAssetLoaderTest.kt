@@ -22,6 +22,72 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AvatarAssetLoaderTest {
+    @Test fun approved36FramesResolveDecodeAndStayCachedUnderTheirExactState() = runBlocking {
+        val catalog = islandTestCatalog
+        val reads = mutableMapOf<String, Int>()
+        val loader = AvatarAssetLoader(Dispatchers.Unconfined, cacheCapacity = 36) { path ->
+            reads[path] = reads.getOrDefault(path, 0) + 1
+            ImageIO.read(islandTestRoot.resolve("app/src/main/assets").resolve(path))
+        }
+        val outfits = mapOf(null to "none", "daejeon_hat" to "bread_hat",
+            "wonju_crown" to "ginkgo_crown", "sokcho_scarf" to "wave_scarf")
+        val hashes = mutableSetOf<Int>()
+        for (character in catalog.characters) {
+            for (expression in listOf("idle", "happy", "eat")) {
+                for ((id, outfit) in outfits) {
+                    val avatar = AvatarPreview(character.id, id)
+                    val layers = AvatarAssetResolver.resolve(avatar, catalog, expression)
+                    val frames = AvatarAssetResolver.approvedFrames(avatar, expression, layers)
+                    assertEquals("avatars/approved/${character.id}/${expression}__${outfit}.png", frames.first())
+                    val frame = checkNotNull(loader.loadFirst(frames))
+                    assertEquals(256, frame.width)
+                    assertEquals(256, frame.height)
+                    assertTrue(frame.colorModel.hasAlpha())
+                    assertEquals(0, frame.getRGB(0, 0) ushr 24)
+                    hashes += frame.getRGB(0, 0, 256, 256, null, 0, 256).contentHashCode()
+                }
+            }
+        }
+        assertEquals(36, hashes.size)
+        assertEquals(36, reads.size)
+        reads.keys.toList().forEach { path ->
+            assertTrue(loader.cached(path) === loader.loadFirst(listOf(path)))
+        }
+        assertTrue(reads.values.all { it == 1 })
+    }
+
+    @Test fun missingApprovedOutfitUsesSameCharacterWithoutOutfit() = runBlocking {
+        val avatar = AvatarPreview("momo", "sokcho_scarf")
+        val layers = AvatarAssetResolver.resolve(avatar, islandTestCatalog, "eat")
+        val frames = AvatarAssetResolver.approvedFrames(avatar, "eat", layers)
+        val loader = AvatarAssetLoader(Dispatchers.Unconfined) { path ->
+            if (path.endsWith("wave_scarf.png")) throw FileNotFoundException() else path
+        }
+        assertEquals(listOf("avatars/approved/momo/eat__wave_scarf.png", "avatars/approved/momo/eat__none.png",
+            "avatars/approved/momo/idle__none.png"), frames)
+        assertEquals(frames[1], loader.loadFirst(frames))
+        assertNull(loader.cached(frames[0]))
+        val invalid = AvatarPreview("momo", "daejeon_bread")
+        val fallback = AvatarAssetResolver.resolve(invalid, islandTestCatalog, "unknown")
+        assertEquals(listOf("avatars/approved/momo/idle__none.png"),
+            AvatarAssetResolver.approvedFrames(invalid, "unknown", fallback))
+    }
+
+    @Test fun invalidCatalogOrMissingFramesNeverSelectStarterAvatarLayers() = runBlocking {
+        val avatar = AvatarPreview("tori", "daejeon_hat")
+        val catalog = islandTestCatalog
+        val incomplete = catalog.copy(assets = catalog.assets - setOf("face_eat", "face_idle", "outfit_bread_hat"))
+        val frames = AvatarAssetResolver.approvedFrames(avatar, "eat",
+            AvatarAssetResolver.resolve(avatar, incomplete, "eat"))
+        assertEquals(listOf("avatars/approved/tori/idle__none.png"), frames)
+        val attempted = mutableListOf<String>()
+        val loader = AvatarAssetLoader<String>(Dispatchers.Unconfined) { path -> attempted += path; null }
+        assertNull(loader.loadFirst(frames))
+        assertEquals(frames, attempted)
+        val wrongBody = AvatarAssetResolver.resolve(avatar, catalog, "eat").copy(body = png("char_momo"))
+        assertTrue(AvatarAssetResolver.approvedFrames(avatar, "eat", wrongBody).isEmpty())
+    }
+
     @Test fun all36CombinationsCanBeCompositedFromRealPngsOnTheJvm() = runBlocking {
         val catalog = islandTestCatalog
         val reads = mutableMapOf<String, Int>()

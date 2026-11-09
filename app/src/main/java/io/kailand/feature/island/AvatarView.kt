@@ -30,31 +30,30 @@ fun AvatarView(
     val assets = LocalContext.current.applicationContext.assets
     val loader = remember(assets) { androidAvatarAssetLoader(assets) }
     val paths = remember(avatar, catalog, expressionKey) { AvatarAssetResolver.resolve(avatar, catalog, expressionKey) }
-    val body = avatarLayer(loader, listOfNotNull(paths.body))
-    val face = if (body != null) avatarLayer(loader, paths.faceCandidates) else null
-    val outfit = if (body != null) avatarLayer(loader, listOfNotNull(paths.outfit)) else null
+    val approved = remember(avatar, expressionKey, paths) { AvatarAssetResolver.approvedFrames(avatar, expressionKey, paths) }
+    val frame = avatarFrame(loader, approved)
     val placeholder = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
 
     Canvas(modifier.size(avatarSize)) {
         val side = size.minDimension.toInt()
         if (side <= 0) return@Canvas
-        if (body == null) {
+        if (frame == null) {
             drawCircle(placeholder, side * 0.16f, Offset(center.x, center.y - side * 0.14f))
             drawCircle(placeholder, side * 0.22f, Offset(center.x, center.y + side * 0.18f))
         } else {
             val origin = IntOffset(((size.width - side) / 2).toInt(), ((size.height - side) / 2).toInt())
             val destination = IntSize(side, side)
-            // Every layer keeps its full transparent canvas and uses exactly the same destination.
-            drawImage(body, dstOffset = origin, dstSize = destination)
-            face?.let { drawImage(it, dstOffset = origin, dstSize = destination) }
-            outfit?.let { drawImage(it, dstOffset = origin, dstSize = destination) }
+            // Keep the approved frame's full transparent canvas at the existing placement.
+            drawImage(frame, dstOffset = origin, dstSize = destination)
         }
     }
 }
 
 @Composable
-private fun avatarLayer(loader: AvatarAssetLoader<ImageBitmap>, candidates: List<String>): ImageBitmap? =
+private fun avatarFrame(loader: AvatarAssetLoader<ImageBitmap>, candidates: List<String>): ImageBitmap? =
     key(loader, candidates) {
-        val image by produceState<ImageBitmap?>(null) { value = loader.loadFirst(candidates) }
+        val image by produceState(candidates.firstOrNull()?.let(loader::cached)) {
+            value = loader.loadFirst(candidates)
+        }
         image
     }
