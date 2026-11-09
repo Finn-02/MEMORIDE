@@ -9,7 +9,10 @@ class IslandDecorationLayersTest {
 
     private fun slots(placements: Map<String, String>): List<IslandSlot> =
         islandPresentation(
-            islandTestSnapshot.copy(decorationSlots = placements),
+            islandTestSnapshot.copy(
+                ownedItemIds = islandTestSnapshot.ownedItemIds + placements.values,
+                decorationSlots = placements,
+            ),
             catalog,
         ).slots
 
