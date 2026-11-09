@@ -4,13 +4,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-/** Coastal Morning, matching docs/ux/design_tokens.json. Night candidates are out of scope. */
+/** Coastal Morning reference palette, with explicit accessible UI variants.
+ * The original Figma Ocean remains available for artwork; white text uses OceanAccessible.
+ */
 object MemorideColors {
     val BackgroundTop = Color(0xFFE3F2FF)
     val BackgroundMiddle = Color(0xFFF4F8FF)
     val BackgroundBottom = Color(0xFFFFF6EA)
     val Navy = Color(0xFF1F4E79)
     val Ocean = Color(0xFF2E86AB)
+    val OceanAccessible = Color(0xFF267493)
     val Sky = Color(0xFF38BDF8)
     val Coral = Color(0xFFFF8A5B)
     val CoralDeep = Color(0xFFFF5E62)
@@ -19,6 +22,8 @@ object MemorideColors {
     val TextPrimary = Color(0xFF13233A)
     val TextSecondary = Color(0xFF5B6B82)
     val OnPrimary = Color.White
+    val PrimarySupportingText = Color.White
+    val DisabledPrimaryText = TextPrimary
     val Surface = Color.White
     val Panel = Color.White.copy(alpha = .92f)
     val SurfaceSubtle = Color(0xFFEEF6FB)
@@ -41,7 +46,7 @@ object MemorideBrushes {
         .5f to MemorideColors.BackgroundMiddle,
         1f to MemorideColors.BackgroundBottom,
     )
-    val Primary = Brush.horizontalGradient(listOf(MemorideColors.Navy, MemorideColors.Ocean))
+    val Primary = Brush.horizontalGradient(listOf(MemorideColors.Navy, MemorideColors.OceanAccessible))
     val Progress = Brush.horizontalGradient(listOf(MemorideColors.Sky, MemorideColors.Navy))
     val Sea = Brush.verticalGradient(listOf(Color(0xFFDDF3FB), Color(0xFFA8DCEB)))
     val MapSea = Brush.verticalGradient(listOf(Color(0xFFBFE8F2), Color(0xFF9ED3E6)))

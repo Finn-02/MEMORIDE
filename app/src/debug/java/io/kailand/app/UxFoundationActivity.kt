@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import io.kailand.core.contract.GateState
 import io.kailand.core.contract.InteractionGate
@@ -20,8 +21,9 @@ import io.kailand.core.ui.*
  */
 class UxFoundationActivity : ComponentActivity() {
     private var gate by mutableStateOf(InteractionGate(GateState.UNKNOWN))
-    private var resumed = false
+    private var resumed by mutableStateOf(false)
     private var monitor: VehicleGateMonitor? = null
+    private val measurements by lazy { UxWindowMeasurements(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +36,15 @@ class UxFoundationActivity : ComponentActivity() {
         }
         setContent {
             MemorideTheme {
+                // Gate transitions dispose the visible UI. Keep restorable state outside that
+                // branch so resize/pause never requires keeping a restricted UI alive.
+                val screenState = rememberSaveableStateHolder()
                 if (resumed && gate.canInteract) {
-                    UxFoundationGallery(gate, onClose = { if (resumed && gate.canInteract) finish() })
+                    screenState.SaveableStateProvider("foundation") {
+                        UxFoundationGallery(gate,
+                            onClose = { if (resumed && gate.canInteract) finish() },
+                            onViewportMeasured = measurements::viewportMeasured)
+                    }
                 } else {
                     MemorideScreen {
                         Column(Modifier.padding(MemorideDimens.ScreenPadding)) {
@@ -54,12 +63,14 @@ class UxFoundationActivity : ComponentActivity() {
         resumed = true
         gate = InteractionGate(GateState.UNKNOWN)
         monitor?.start()
+        measurements.start()
     }
 
     override fun onPause() {
         resumed = false
         gate = InteractionGate(GateState.UNKNOWN)
         monitor?.stop()
+        measurements.stop()
         super.onPause()
     }
 

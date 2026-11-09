@@ -66,7 +66,7 @@ fun MemoridePrimaryButton(
         modifier = modifier.heightIn(min = MemorideDimens.PrimaryMinHeight),
         shape = shape,
         color = Color.Transparent,
-        contentColor = if (enabled) MemorideColors.OnPrimary else MemorideColors.TextSecondary,
+        contentColor = if (enabled) MemorideColors.OnPrimary else MemorideColors.DisabledPrimaryText,
         shadowElevation = if (enabled) 6.dp else 0.dp,
     ) {
         Row(
@@ -83,8 +83,8 @@ fun MemoridePrimaryButton(
                 if (!supportingText.isNullOrBlank()) Text(
                     supportingText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (enabled) MemorideColors.OnPrimary.copy(alpha = .78f)
-                        else MemorideColors.TextSecondary,
+                    color = if (enabled) MemorideColors.PrimarySupportingText
+                        else MemorideColors.DisabledPrimaryText,
                 )
             }
         }

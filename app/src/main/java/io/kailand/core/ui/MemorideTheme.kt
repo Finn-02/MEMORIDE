@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.sp
 private val CoastalColors = lightColorScheme(
     primary = MemorideColors.Navy,
     onPrimary = MemorideColors.OnPrimary,
-    secondary = MemorideColors.Ocean,
+    secondary = MemorideColors.OceanAccessible,
     onSecondary = MemorideColors.OnPrimary,
     background = MemorideColors.BackgroundMiddle,
     onBackground = MemorideColors.TextPrimary,
