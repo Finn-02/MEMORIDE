@@ -74,7 +74,8 @@ B는 고유한 **확정 REGION 영수증**으로 집계한다. `discoveredRegion
 
 - Windows AMD64, Python 3.10, 기록된 JBR25 / Gradle wrapper9.3.1.
 - `scripts/check_all.py`: exit 0, 정적 검사와 Python 59개 PASS.
-- `gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:compileReleaseKotlin`: exit 0. JUnit 276개, 실패/오류/건너뜀0, debug APK 및 release Kotlin 컴파일 PASS.
+- 공유할 코드 커밋 `16d3d8e`만 분리한 깨끗한 작업트리: `gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:compileReleaseKotlin` exit 0. JUnit **264개**, 실패/오류/건너뜀0, debug APK 및 release Kotlin 컴파일 PASS. 정적 검사/Python59도 별도 PASS.
+- 기존 미커밋 내비 작업을 포함한 A 원래 작업트리에서는 같은 명령으로 JUnit **276개**와 debug/release 컴파일 PASS. 이 276개를 공유 커밋만의 시험 수로 표시하지 않는다.
 - 일반 Android API37 AVD: 주요 버튼 반응, 보조 버튼 반응, 비활성 버튼 무반응, 약411dp/글자2.0 스크롤 도달, 1280×720·density160 가로 렌더링 확인. 글자 배율과 표시 크기는 검수 뒤 원래 값으로 복원.
 - NOT RUN: 다른 PC, 전체 새 flow 연결, 새 성장 규칙, 모든 feature 화면 회귀, Pleos·실차, 서명 release 설치, 물리 크기 및 플랫폼 전체 대비 인수.
 - 기존 콘텐츠/시험은 아직 DAILY 성장 규칙을 포함한다. 이번 59/276 PASS를 새 REGION 성장 규칙의 검증으로 해석하지 않는다.
