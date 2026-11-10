@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.kailand.BuildConfig
 import io.kailand.app.journey.*
 import io.kailand.core.contract.*
 import io.kailand.core.ui.*
@@ -142,7 +141,7 @@ private fun ProductScreens(
         }
     }
     val draft = inbox.draft
-    val usable = BuildConfig.DEBUG && draft != null && app.navigationInbox.current(draft) &&
+    val usable = draft != null && app.navigationInbox.current(draft) &&
         draft.destination(catalog).regionId != null
     LaunchedEffect(draft, usable, screen) {
         if (usable && current() && noReceipt()) {
@@ -153,10 +152,10 @@ private fun ProductScreens(
         (saveResult is ArrivalResult.StorageFailure || saveResult is ArrivalResult.Rejected)
     val destination = if (failedSave) IslandDestinationSlot(true) {
         MemoridePrimaryButton("저장 다시 시도", { open(ProductRoute.SAVE) }, Modifier.fillMaxWidth(), enabled = current())
-    } else if (BuildConfig.DEBUG && draft != null && draft.status != NavigationDraftStatus.CONSUMED) {
+    } else if (draft?.status != NavigationDraftStatus.CONSUMED && (draft != null || !developmentEntry)) {
         IslandDestinationSlot(usable) {
-            NavigationDraftCard(inbox, connection, current() && usable,
-                onRefresh = { if (current() && noReceipt()) app.navigationCapture.refresh() }, onFinish = ::finish)
+            NavigationDraftCard(inbox, connection, current(),
+                onRefresh = { if (current() && noReceipt()) app.navigationCapture.refresh() }, onFinish = ::finish, canFinish = usable)
         }
     } else null
 

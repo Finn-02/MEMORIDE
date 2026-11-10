@@ -21,12 +21,15 @@ import io.kailand.core.contract.DataSource
 import io.kailand.core.platform.developmentGate
 import io.kailand.core.platform.VehicleGateMonitor
 import io.kailand.core.ui.MemorideTheme
+import io.kailand.app.journey.createNavigationLauncher
+import io.kailand.core.contract.RequestResult
 
 open class MainActivity : ComponentActivity() {
     protected open val developmentEntry: Boolean = false
     private var gate by mutableStateOf(InteractionGate(GateState.UNKNOWN))
     private var vehicleGateMonitor: VehicleGateMonitor? = null
     private var foreground = false
+    private val navigationLauncher by lazy { createNavigationLauncher(this) }
     private val entryModel by lazy { ViewModelProvider(this)[GameEntryModel::class.java] }
     protected val gameOwner: Any get() = entryModel.owner
     protected open val observePlatformNavigation: Boolean = true
@@ -56,8 +59,13 @@ open class MainActivity : ComponentActivity() {
 
     @Composable
     protected open fun AppContent(gate: InteractionGate) {
-        GameAppRoot(gate, gameSession, gameOwner, developmentEntry, entryModel.navigation)
+        GameAppRoot(gate, gameSession, gameOwner, developmentEntry, entryModel.navigation,
+            launchNavigation = { launchExternalNavigation() })
     }
+
+    protected open fun launchExternalNavigation(): RequestResult =
+        if (developmentEntry) RequestResult.Failed("실제 내비는 정식 앱의 주차 허용 상태에서 열어 주세요.")
+        else navigationLauncher.launch { foreground && gate.canInteract && gameSession.canUse(gameOwner) }
 
     override fun onResume() {
         super.onResume()

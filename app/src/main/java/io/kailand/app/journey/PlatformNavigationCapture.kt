@@ -12,6 +12,7 @@ import ai.pleos.playground.navi.data.DestinationInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,13 +20,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 fun createNavigationCapture(context: Context, scope: CoroutineScope, inbox: NavigationInbox): NavigationCapture =
-    DebugNavigationCapture(context.applicationContext, scope, inbox)
+    PleosNavigationCapture(context.applicationContext, scope, inbox)
 
 /** Kept alive across Activity pause; process death is not a guaranteed background service. */
-private class DebugNavigationCapture(
+private class PleosNavigationCapture(
     private val context: Context, private val scope: CoroutineScope, private val inbox: NavigationInbox,
 ) : NavigationCapture {
-    private val mutable = MutableStateFlow("내비 연결 대기 · 개발 빌드")
+    private val mutable = MutableStateFlow("내비 연결 대기")
     override val status = mutable.asStateFlow()
     private val handler = Handler(Looper.getMainLooper())
     private var helper: NaviHelper? = null
@@ -36,6 +37,8 @@ private class DebugNavigationCapture(
     private var again = false
     private var connected = false
     private var starting = false
+    private var queryFence = false
+    private var queryTimeout: Runnable? = null
 
     override fun start() {
         if (starting || helper != null) return
@@ -68,8 +71,8 @@ private class DebugNavigationCapture(
                 } }
                 val events = object : NaviHelperEventListener {
                     override fun onDestinationInfo(destinationInfo: DestinationInfo) = event {
-                        val requested = inFlight
-                        inFlight = null
+                        val requested = inFlight ?: return@event
+                        finishQuery()
                         if (requested != null && requested != epoch) {
                             again = true // Route changed while a query was in flight; discard that response.
                         } else {
@@ -91,7 +94,9 @@ private class DebugNavigationCapture(
                         epoch++; inbox.arrivalHint() // Only a user review hint, never PLEOS arrival evidence.
                     }
                     override fun onError(errorCode: NaviErrorCode) = event {
-                        inFlight = null; again = false
+                        again = false
+                        inbox.unavailable("내비 조회 오류 · 다시 조회해 주세요.")
+                        finishQuery()
                         mutable.value = "내비 조회 오류 · 다시 조회해 주세요."
                     }
                 }
@@ -101,11 +106,16 @@ private class DebugNavigationCapture(
                     mutable.value = "PLEOS 목적지 연결 · 도착은 사용자 확인"
                     query()
                 } }, onFailed = { event {
+                    inbox.unavailable("내비에 연결하지 못했어요. 다시 조회해 주세요.")
+                    finishQuery()
                     mutable.value = "내비에 연결하지 못했어요. 다시 조회해 주세요."
                     helper = null; listener = null; connected = false
                     runCatching { sdk.release() }
                 } })
+            } catch (cancelled: CancellationException) { throw cancelled
             } catch (_: Exception) {
+                inbox.unavailable("내비 연결을 시작하지 못했어요.")
+                finishQuery()
                 mutable.value = "내비 연결을 시작하지 못했어요."
                 helper?.let { runCatching { it.release() } }
                 helper = null; listener = null; connected = false
@@ -114,17 +124,39 @@ private class DebugNavigationCapture(
     }
 
     private suspend fun changed() { epoch++; inbox.changing(); query() }
+    private fun finishQuery() {
+        queryTimeout?.let(handler::removeCallbacks)
+        queryTimeout = null; inFlight = null
+        if (queryFence) { queryFence = false; inbox.endObservation() }
+    }
+
     private fun query() {
         if (!connected) return
         if (inFlight != null) { again = true; return }
         inFlight = epoch
+        queryFence = true
+        inbox.beginObservation()
+        val token = generation
+        val timeout = Runnable {
+            if (token == generation && inFlight != null) scope.launch {
+                inbox.unavailable("목적지 응답을 확인하지 못했어요. 다시 조회해 주세요.")
+                again = false; finishQuery()
+            }
+        }
+        queryTimeout = timeout
+        handler.postDelayed(timeout, 10_000)
         try { helper?.getDestinationInfo() } catch (_: Exception) {
-            inFlight = null; mutable.value = "내비 목적지를 조회하지 못했어요."
+            scope.launch {
+                inbox.unavailable("내비 목적지를 조회하지 못했어요. 다시 조회해 주세요.")
+                finishQuery()
+            }
+            mutable.value = "내비 목적지를 조회하지 못했어요."
         }
     }
     override fun refresh() { if (helper == null) start() else query() }
     override suspend fun reset() {
-        generation++; epoch++; starting = false; connected = false; inFlight = null; again = false
+        generation++; epoch++; starting = false; connected = false; again = false
+        finishQuery()
         helper?.let { sdk ->
             runCatching { listener?.let { sdk.removeListener(it) } }
             runCatching { sdk.release() }

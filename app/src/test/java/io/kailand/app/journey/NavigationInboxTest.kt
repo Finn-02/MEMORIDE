@@ -159,4 +159,23 @@ class NavigationInboxTest {
             assertEquals(raw, backend.data.first()[key])
         } finally { scope.coroutineContext[Job]!!.cancelAndJoin() }
     }
+    @Test fun pendingObservationAndTransportFailureBlockHintUntilSuccessfulRequery() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val store = MemoryStore()
+            val inbox = NavigationInbox(store, scope, { 1000 }, { id })
+            inbox.observe("원주", 37.34, 127.92)
+            val original = checkNotNull(inbox.state.value.draft)
+            inbox.beginObservation()
+            assertFalse(inbox.current(original))
+            inbox.unavailable("transport failed")
+            inbox.endObservation()
+            assertEquals(original, inbox.state.value.draft)
+            assertFalse(inbox.current(original))
+            assertTrue(inbox.observe("원주", 37.34, 127.92))
+            assertEquals(original, inbox.state.value.draft)
+            assertTrue(inbox.current(original))
+        } finally { scope.cancel() }
+    }
+
 }

@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun NavigationDraftCard(state: NavigationInboxState, connection: String, enabled: Boolean,
-    onRefresh: () -> Unit, onFinish: (NavigationDraft) -> Unit) {
+    onRefresh: () -> Unit, onFinish: (NavigationDraft) -> Unit, canFinish: Boolean = true) {
     val draft = state.draft
     Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -25,7 +25,7 @@ fun NavigationDraftCard(state: NavigationInboxState, connection: String, enabled
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TextButton(onClick = onRefresh, enabled = enabled && state.ready && !state.saving) { Text("다시 조회") }
                 if (draft != null) Button(onClick = { onFinish(draft) },
-                    enabled = enabled && state.ready && !state.saving && state.error == null && draft.usable(System.currentTimeMillis())) {
+                    enabled = enabled && canFinish && state.ready && !state.saving && state.error == null && draft.usable(System.currentTimeMillis())) {
                     Text("이동 마무리")
                 }
             }

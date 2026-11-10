@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
   <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
   <uses-permission android:name="pleos.car.permission.NAVI_CUSTOM_MAP" />
   <application>
+    <activity android:name="io.kailand.app.NavigationLaunchRehearsalActivity"
+        android:exported="true" android:label="MEMORIDE 내비 실행 시험" />
     <activity android:name="io.kailand.app.UxRehearsalActivity"
         android:exported="true" android:label="MEMORIDE 네 시연 리허설" />
     <activity

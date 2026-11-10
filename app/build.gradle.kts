@@ -99,7 +99,7 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.serialization.json)
     debugImplementation(libs.compose.tooling)
-    // A03 runtime probe; production integration follows verified platform behavior.
-    debugImplementation("ai.pleos.playground:NaviHelper:3.0.5")
+    // A03 read-only destination observation in both normal build types.
+    implementation("ai.pleos.playground:NaviHelper:3.0.5")
     testImplementation(libs.junit)
 }

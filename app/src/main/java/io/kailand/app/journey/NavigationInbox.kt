@@ -120,6 +120,12 @@ class NavigationInbox(
     suspend fun dismiss(draft: NavigationDraft) = update {
         if (it == draft) it.copy(status = NavigationDraftStatus.CANCELLED, revision = next(it.revision)) else it
     }
+    /** A transport failure preserves the last hint but blocks confirmation until a valid observation. */
+    suspend fun unavailable(message: String) {
+        loading.join()
+        mutex.withLock { mutable.value = mutable.value.copy(error = message) }
+    }
+
     /** Awaited before game reset; failure prevents resetting while an old draft could be restored. */
     suspend fun clear() { check(update { null }) { "내비 목적지 기록을 정리하지 못했어요." } }
 
