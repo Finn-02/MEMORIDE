@@ -263,7 +263,7 @@ class DemoScenarioRunnerTest {
             val committed = f.game
             val sent = f.inputs.toList()
             assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
-            assertEquals(1, committed.dailyGrowth)
+            assertEquals(f.plan("D03").expectedGrowth, committed.dailyGrowth)
             assertEquals(3, committed.ownedItemIds.size)
             assertNotNull(committed.pendingReceipt)
 
@@ -274,6 +274,26 @@ class DemoScenarioRunnerTest {
             assertTrue(f.runner.advance())
             assertEquals(DemoStep.DONE, f.state.step)
             assertEquals(committed, f.game)
+            assertEquals(sent, f.inputs)
+            assertEquals(0, f.retries)
+        }
+    }
+
+    @Test fun acceptedWithoutStoredReceiptRemainsUnverifiedWithoutRedispatch() = runBlocking {
+        val f = Fixture()
+        f.readyToComplete()
+        val before = f.game
+        f.dispatchHook = {
+            f.journeyState.value = f.journeyState.value.copy(phase = JourneyPhase.ARRIVED)
+            RequestResult.Accepted
+        }
+        assertFalse(f.runner.advance())
+        val sent = f.inputs.toList()
+        repeat(3) {
+            assertFalse(f.runner.advance())
+            assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
+            assertEquals(before, f.game)
+            assertNull(f.game.pendingReceipt)
             assertEquals(sent, f.inputs)
             assertEquals(0, f.retries)
         }
