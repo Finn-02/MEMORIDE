@@ -49,6 +49,21 @@ class ManualArrivalController(
     private var generation = 0L
     private var nonce = 0L
 
+    /** Restore only a navigation hint's stable identity. This is not an arrival declaration. */
+    @Synchronized fun adoptNavigation(draft: NavigationDraft, destination: DestinationSpec): RequestResult {
+        val before = mutable.value
+        if (!before.interactionAllowed || before.phase == ManualJourneyPhase.CONFIRMED ||
+            !draft.usable(now()) || destination.label.isBlank() ||
+            destination.latitude != draft.latitude || destination.longitude != draft.longitude ||
+            (destination.regionId != null && destination.regionId !in regionIds)) return failed("현재 내비 목적지를 다시 확인해 주세요.")
+        if (runCatching { UUID.fromString(draft.id).toString() == draft.id }.getOrDefault(false).not() ||
+            draft.revision < 0) return failed("목적지 기록을 확인해 주세요.")
+        mutable.value = ManualJourneySnapshot(phase = ManualJourneyPhase.ACTIVE,
+            journeyId = draft.id, revision = draft.revision, kind = JourneyKind.REGION,
+            destination = destination, interactionAllowed = true)
+        return RequestResult.Accepted
+    }
+
     @Synchronized fun begin(destination: DestinationSpec, kind: JourneyKind): RequestResult {
         val before = mutable.value
         if (!before.interactionAllowed) return failed("주차·이용 허용 상태에서 여정을 선택해 주세요.")

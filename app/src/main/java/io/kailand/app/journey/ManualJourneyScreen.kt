@@ -17,6 +17,10 @@ import kotlinx.coroutines.launch
 fun ManualJourneyScreen(
     runtime: ManualJourneyRuntime, destinations: List<DestinationSpec>, initialRegionId: String?,
     callerIsCurrent: () -> Boolean,
+    navigationDraft: NavigationDraft? = null,
+    navigationIsCurrent: (NavigationDraft) -> Boolean = { false },
+    onAdoptNavigation: (NavigationDraft, () -> Boolean) -> RequestResult = { _, _ -> RequestResult.Failed("목적지를 확인해 주세요.") },
+    navigationReviewKey: String? = null,
 ) {
     val state by runtime.state.collectAsState()
     val busy by runtime.busy.collectAsState()
@@ -34,12 +38,30 @@ fun ManualJourneyScreen(
             else result.message
         } else null
     }
+    LaunchedEffect(runtime, navigationDraft, navigationReviewKey) {
+        val draft = navigationDraft
+        if (draft != null && navigationIsCurrent(draft) && state.phase != ManualJourneyPhase.CONFIRMED &&
+            (runtime.isNavigationJourney || navigationReviewKey == "${draft.id}:${draft.revision}")) {
+            show(onAdoptNavigation(draft, callerIsCurrent))
+            if (navigationReviewKey == "${draft.id}:${draft.revision}") runtime.requestReview(callerIsCurrent)
+        }
+        runtime.updateHost()
+    }
     val enabled = state.interactionAllowed && !busy && callerIsCurrent()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("사용자 확인 여정", style = MaterialTheme.typography.headlineMedium)
         Text("도착을 직접 확인해 기록합니다. 실제 방문 인증이나 SDK 자동 도착이 아닙니다.")
-        Text("시간과 거리는 측정하지 않습니다. 내비게이션은 별도로 이용해 주세요.")
+        Text(if (runtime.isNavigationJourney) "PLEOS에서 받은 목적지입니다. 시간·거리와 실제 도착은 인증하지 않습니다."
+            else "시간과 거리는 측정하지 않습니다. 내비게이션은 별도로 이용해 주세요.")
+        if (runtime.isNavigationJourney && state.destination?.regionId == null)
+            Text("등록 지역의 기준 좌표와 일치하지 않아 지역 선물을 지급하지 않습니다.")
+        if (runtime.isNavigationJourney && !state.interactionAllowed) {
+            Text("내비 목적지가 바뀌거나 취소됐어요. 이전 확인으로 완료할 수 없습니다.")
+            TextButton(onClick = { runtime.leaveNavigation(callerIsCurrent) }, enabled = callerIsCurrent() && !busy) {
+                Text("수동 여정으로 다시 시작")
+            }
+        }
         if (!state.interactionAllowed) Text("주차·이용 허용 상태에서 현재 여정을 다시 확인해 주세요.")
         if (state.phase != ManualJourneyPhase.CONFIRMED) {
             destinations.forEach { destination ->

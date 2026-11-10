@@ -18,6 +18,7 @@ class ManualJourneyRuntime(
     regionIds: Set<String>,
     private val hostAllowed: () -> Boolean,
     now: () -> Long = System::currentTimeMillis,
+    private val onAttempt: (ArrivalCommand) -> Unit = {},
 ) {
     private val controller = ManualArrivalController(regionIds, now = now)
     val state = controller.state
@@ -27,6 +28,11 @@ class ManualJourneyRuntime(
     val result = mutableResult.asStateFlow()
     private var valid = true
     private var original: ArrivalCommand? = null
+    private var acknowledgedWhileSaving: String? = null
+    private var navigationCurrent: (() -> Boolean)? = null
+    private var navigationSaved: (suspend () -> Unit)? = null
+    private var navigationDismissed: (suspend () -> Unit)? = null
+    val isNavigationJourney: Boolean get() = navigationCurrent != null
 
     val snapshot: JourneySnapshot get() = state.value.let {
         JourneySnapshot(it.journeyId, DataSource.USER_CONFIRMED, it.kind, when (it.phase) {
@@ -38,7 +44,8 @@ class ManualJourneyRuntime(
         }, it.revision, it.destination)
     }
 
-    private fun allowed() = valid && hostAllowed() && commands.session.value == GameCommandSession(generation)
+    private fun allowed() = valid && hostAllowed() && commands.session.value == GameCommandSession(generation) &&
+        (navigationCurrent?.invoke() ?: true)
 
     fun updateHost() { controller.setInteractionAllowed(allowed()) }
 
@@ -46,14 +53,44 @@ class ManualJourneyRuntime(
         valid = false
         controller.invalidate()
         original = null
+        acknowledgedWhileSaving = null
+        navigationCurrent = null; navigationSaved = null; navigationDismissed = null
     }
 
     fun begin(destination: DestinationSpec, kind: JourneyKind, caller: () -> Boolean): RequestResult {
-        updateHost()
-        if (!allowed() || !caller() || busy.value) return failed()
+        if (!valid || !hostAllowed() || !caller() || busy.value ||
+            commands.session.value != GameCommandSession(generation)) return failed()
+        // A valid fresh manual choice may replace a stale hint, but a rejected choice must retain its fence.
+        controller.setInteractionAllowed(true)
         return controller.begin(destination, kind).also {
-            if (it == RequestResult.Accepted) { original = null; mutableResult.value = null }
+            if (it == RequestResult.Accepted) {
+                navigationCurrent = null; navigationSaved = null; navigationDismissed = null
+                original = null; mutableResult.value = null
+            }
+            updateHost()
         }
+    }
+
+    fun adoptNavigation(draft: NavigationDraft, destination: DestinationSpec, current: () -> Boolean,
+        saved: suspend () -> Unit, dismissed: suspend () -> Unit = {}, caller: () -> Boolean): RequestResult {
+        if (!valid || !hostAllowed() || !caller() || busy.value || !current() ||
+            commands.session.value != GameCommandSession(generation)) return failed()
+        controller.setInteractionAllowed(true)
+        return controller.adoptNavigation(draft, destination).also {
+            if (it == RequestResult.Accepted) {
+                navigationCurrent = current; navigationSaved = saved
+                navigationDismissed = dismissed
+                original = null; mutableResult.value = null
+            }
+            updateHost()
+        }
+    }
+
+    fun leaveNavigation(caller: () -> Boolean) {
+        if (!valid || !hostAllowed() || !caller() || busy.value ||
+            result.value is ArrivalResult.Applied || result.value is ArrivalResult.AlreadyApplied) return
+        controller.invalidate(); navigationCurrent = null; navigationSaved = null; navigationDismissed = null
+        original = null; mutableResult.value = null; updateHost()
     }
 
     fun requestReview(caller: () -> Boolean): Boolean {
@@ -65,6 +102,7 @@ class ManualJourneyRuntime(
         updateHost()
         if (!allowed() || !caller() || busy.value) return failed()
         val chosen = controller.choose(token, choice)
+        if (chosen == RequestResult.Accepted && choice == ManualJourneyChoice.CANCEL) navigationDismissed?.invoke()
         if (chosen != RequestResult.Accepted || choice != ManualJourneyChoice.ARRIVED) return chosen
         val draft = checkNotNull(state.value.confirmedDraft)
         original = ArrivalCommand(draft.token.journeyId, DataSource.USER_CONFIRMED, draft.kind,
@@ -90,22 +128,35 @@ class ManualJourneyRuntime(
         // Runs even if the UI coroutine is cancelled while waiting; admission still checks its lease.
         return scope.async {
             try {
+                onAttempt(command)
                 val answer = commands.completeUserConfirmed(generation, command, ::current)
+                if (answer is ArrivalResult.Applied || answer is ArrivalResult.AlreadyApplied) navigationSaved?.invoke()
                 mutableResult.value = answer
                 when (answer) {
                     is ArrivalResult.Applied, is ArrivalResult.AlreadyApplied -> RequestResult.Accepted
                     is ArrivalResult.Rejected -> RequestResult.Failed(answer.reason)
                     is ArrivalResult.StorageFailure -> RequestResult.Failed(answer.message)
                 }
-            } finally { mutableBusy.value = false }
+            } finally {
+                mutableBusy.value = false
+                acknowledgedWhileSaving?.let { id ->
+                    acknowledgedWhileSaving = null
+                    finishAcknowledged(id)
+                }
+            }
         }.await()
     }
 
     /** Finish this in-memory journey after its stored receipt has been acknowledged. */
     fun finishAcknowledged(journeyId: String) {
+        if (state.value.journeyId == journeyId && busy.value) {
+            acknowledgedWhileSaving = journeyId
+            return
+        }
         if (state.value.journeyId == journeyId && !busy.value &&
             (result.value is ArrivalResult.Applied || result.value is ArrivalResult.AlreadyApplied)) {
             controller.invalidate(); original = null; mutableResult.value = null
+            navigationCurrent = null; navigationSaved = null; navigationDismissed = null
             updateHost()
         }
     }

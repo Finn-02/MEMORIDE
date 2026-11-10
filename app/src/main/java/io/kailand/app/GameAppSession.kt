@@ -5,6 +5,12 @@ import android.os.SystemClock
 import io.kailand.core.contract.*
 import io.kailand.app.journey.GuardedDemoJourney
 import io.kailand.app.journey.ManualJourneyRuntime
+import io.kailand.app.journey.NavigationDraft
+import io.kailand.app.journey.NavigationInbox
+import io.kailand.app.journey.NavigationCapture
+import io.kailand.feature.island.BGameService
+import io.kailand.app.journey.createNavigationDraftStore
+import io.kailand.app.journey.createNavigationCapture
 import io.kailand.feature.demo.DemoScenario
 import io.kailand.feature.demo.DemoScenarios
 import io.kailand.feature.visit.VisitClock
@@ -22,10 +28,18 @@ sealed interface CatalogLoadState {
 }
 
 /** Process-owned service. Activity recreation never creates another GameService or write mutex. */
-class GameAppSession internal constructor(context: Context) {
+class GameAppSession internal constructor(
+    context: Context,
+    suppliedGame: BGameService? = null,
+    suppliedInbox: NavigationInbox? = null,
+    suppliedCapture: NavigationCapture? = null,
+    private val onManualAttempt: (ArrivalCommand) -> Unit = {},
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+) {
     private val app = context.applicationContext
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    val game = createBGameService(app, scope)
+    val navigationInbox = suppliedInbox ?: NavigationInbox(createNavigationDraftStore(app, scope), scope)
+    val navigationCapture by lazy { suppliedCapture ?: createNavigationCapture(app, scope, navigationInbox) }
+    val game = suppliedGame ?: createBGameService(app, scope)
     private var activeOwner: Any? = null
     private var inputs = GameCommandContext()
     private var runtimeOwner: Any? = null
@@ -98,7 +112,8 @@ class GameAppSession internal constructor(context: Context) {
         val old = runtime
         runtimeOwner = owner
         return GameSimulationRuntime(scope, game, commands, catalog, scenarios,
-            { canHost(owner) }, { inputs.mode }, VisitClock(SystemClock::elapsedRealtime), AppVisitScheduler(scope))
+            { canHost(owner) }, { inputs.mode }, VisitClock(SystemClock::elapsedRealtime), AppVisitScheduler(scope),
+            beforeReset = { navigationCapture.reset() })
             .also {
                 runtime = it
                 it.updateHost(inputs)
@@ -119,10 +134,19 @@ class GameAppSession internal constructor(context: Context) {
         return ManualJourneyRuntime(scope, commands, generation, catalog.regions.map { it.id }.toSet(), {
             canUse(owner) && inputs.mode == DataSource.USER_CONFIRMED && manualOwner === owner &&
                 game.state.value.pendingReceipt == null
-        }).also { manualRuntime = it; it.updateHost() }
+        }, onAttempt = onManualAttempt).also { manualRuntime = it; it.updateHost() }
     }
 
     fun finishManualReceipt(journeyId: String) { manualRuntime?.finishAcknowledged(journeyId) }
+
+    fun adoptNavigation(owner: Any, catalog: Catalog, runtime: ManualJourneyRuntime,
+        draft: NavigationDraft, caller: () -> Boolean): RequestResult {
+        if (manualRuntime !== runtime || manualOwner !== owner || !navigationInbox.current(draft))
+            return RequestResult.Failed("내비 목적지가 바뀌었어요. 다시 확인해 주세요.")
+        return runtime.adoptNavigation(draft, draft.destination(catalog), { navigationInbox.current(draft) },
+            saved = { navigationInbox.consume(draft); Unit },
+            dismissed = { navigationInbox.dismiss(draft); Unit }, caller = caller)
+    }
 
     suspend fun changeMode(owner: Any, target: DataSource): MutationResult {
         if (!canHost(owner)) return MutationResult.Rejected("현재 이용 상태를 확인해 주세요.")

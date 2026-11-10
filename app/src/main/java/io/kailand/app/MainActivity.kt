@@ -29,7 +29,8 @@ open class MainActivity : ComponentActivity() {
     private var foreground = false
     private val entryModel by lazy { ViewModelProvider(this)[GameEntryModel::class.java] }
     protected val gameOwner: Any get() = entryModel.owner
-    protected val gameSession: GameAppSession
+    protected open val observePlatformNavigation: Boolean = true
+    protected open val gameSession: GameAppSession
         get() = (application as MemorideApplication).gameSession
 
     private fun publishGameContext() {
@@ -39,6 +40,7 @@ open class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!developmentEntry && observePlatformNavigation) gameSession.navigationCapture.start()
         if (!developmentEntry && Build.VERSION.SDK_INT >= 29 &&
             packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) {
             vehicleGateMonitor = VehicleGateMonitor(this) {
@@ -54,13 +56,14 @@ open class MainActivity : ComponentActivity() {
 
     @Composable
     protected open fun AppContent(gate: InteractionGate) {
-        GameAppRoot(gate, gameSession, gameOwner, developmentEntry)
+        GameAppRoot(gate, gameSession, gameOwner, developmentEntry, entryModel.navigation)
     }
 
     override fun onResume() {
         super.onResume()
         foreground = true
         publishGameContext()
+        if (!developmentEntry && observePlatformNavigation) gameSession.navigationCapture.refresh()
         val monitor = vehicleGateMonitor
         if (monitor != null) monitor.start() else updateGate(foreground = true)
     }
@@ -94,4 +97,5 @@ open class MainActivity : ComponentActivity() {
 /** Stable through configuration recreation, distinct for another Activity or a process restart. */
 class GameEntryModel : ViewModel() {
     val owner = Any()
+    val navigation = ProductNavigation()
 }

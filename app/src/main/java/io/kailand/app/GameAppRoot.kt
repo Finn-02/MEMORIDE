@@ -1,41 +1,35 @@
 package io.kailand.app
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import io.kailand.BuildConfig
+import io.kailand.app.journey.*
 import io.kailand.core.contract.*
-import io.kailand.core.ui.AvatarSlot
-import io.kailand.app.journey.JourneyPreparationScreen
-import io.kailand.app.journey.ManualJourneyScreen
-import io.kailand.feature.briefing.BriefingScreen
-import io.kailand.feature.companion.CompanionScreen
-import io.kailand.feature.demo.DemoPanel
-import io.kailand.feature.demo.DemoScenario
-import io.kailand.feature.visit.VisitRoute
-import io.kailand.feature.island.*
-import io.kailand.feature.world.WorldScreen
+import io.kailand.core.ui.*
+import io.kailand.feature.island.GameReadiness
+import io.kailand.feature.island.NewInventoryScreen
 import kotlinx.coroutines.launch
 
-private enum class GameRoute { ISLAND, WORLD, PREPARATION, COMPANION, DEMO, VISIT }
-private class GameScreenLease { var active = true }
-
-/** Real saved state, DEMO arrival and receipt-driven briefing; platform permission remains external. */
+/** Product routes only. Legacy demo/visit/companion/preparation routes are deliberately absent. */
 @Composable
-fun GameAppRoot(gate: InteractionGate, app: GameAppSession, owner: Any, developmentEntry: Boolean) {
+fun GameAppRoot(
+    gate: InteractionGate, app: GameAppSession, owner: Any, developmentEntry: Boolean,
+    navigation: ProductNavigation, screens: ProductScreenSlots = ProductScreenSlots(),
+    launchNavigation: suspend () -> RequestResult = { RequestResult.Failed("내비 앱을 직접 열어 주세요.") },
+) {
+    // Retain feature saveable UI across temporary platform blocking, outside the gated subtree.
+    val savedUi = rememberSaveableStateHolder()
     val readiness by app.game.readiness.collectAsState()
     val catalogState by app.catalog.collectAsState()
     val snapshot by app.game.state.collectAsState()
+    val history by app.game.regionVisitHistory.collectAsState()
     val session by app.commands.session.collectAsState()
-    val mode by app.mode.collectAsState()
-    // The branch disposal also closes sheets and stops B's temporary Eat feedback on restriction.
     if (!gate.canInteract) {
         GameMessage(if (gate.state == GateState.UNKNOWN) "이용 상태 미확인" else "지금은 이용할 수 없어요",
             gate.reason ?: "주차 상태와 이용 허용을 확인해 주세요.")
@@ -48,7 +42,7 @@ fun GameAppRoot(gate: InteractionGate, app: GameAppSession, owner: Any, developm
     val loaded = catalogState as? CatalogLoadState.Ready
     if (catalogState == CatalogLoadState.Failed) {
         GameMessage("콘텐츠를 불러오지 못했어요", "잠시 후 다시 시도해 주세요.") {
-            Button(onClick = { if (app.canUse(owner)) app.reloadCatalog() }) { Text("다시 시도") }
+            MemorideSecondaryButton("다시 시도", { if (app.canUse(owner)) app.reloadCatalog() })
         }
         return
     }
@@ -56,207 +50,204 @@ fun GameAppRoot(gate: InteractionGate, app: GameAppSession, owner: Any, developm
         GameMessage("나의 섬을 준비하고 있어요", "저장된 기록과 콘텐츠를 확인 중입니다.")
         return
     }
-    // Keep DemoPanel alive across reset generations so its own reset acknowledgement can finish.
-    SavedGameScreens(app, owner, loaded.catalog, loaded.demoCompletion, loaded.scenarios, snapshot, gate,
-        session.generation, session.phase, mode, developmentEntry)
+    if (session.phase != GameCommandPhase.ACTIVE) {
+        GameMessage("이용 상태를 정리하고 있어요", "잠시 후 다시 확인해 주세요.")
+        return
+    }
+    savedUi.SaveableStateProvider("product") {
+        ProductScreens(app, owner, loaded.catalog, snapshot, history, gate, session.generation,
+            developmentEntry, navigation, screens, launchNavigation)
+    }
 }
 
 @Composable
-private fun SavedGameScreens(
-    app: GameAppSession, owner: Any, catalog: Catalog, completion: DemoInput.Complete,
-    scenarios: List<DemoScenario>, snapshot: GameSnapshot, gate: InteractionGate, generation: Long,
-    phase: GameCommandPhase, mode: DataSource, developmentEntry: Boolean,
+private fun ProductScreens(
+    app: GameAppSession, owner: Any, catalog: Catalog, snapshot: GameSnapshot, history: RegionVisitHistory,
+    gate: InteractionGate, generation: Long, developmentEntry: Boolean,
+    navigation: ProductNavigation, screens: ProductScreenSlots,
+    launchNavigation: suspend () -> RequestResult,
 ) {
-    var routeName by rememberSaveable {
-        mutableStateOf(if (phase in setOf(GameCommandPhase.RESETTING, GameCommandPhase.RESET_FAILED))
-            GameRoute.DEMO.name else GameRoute.ISLAND.name)
-    }
-    var selectedRegion by rememberSaveable { mutableStateOf<String?>(null) }
-    var itemsOpen by remember { mutableStateOf(false) }
-    var navigationVersion by remember { mutableLongStateOf(0) }
-    var briefingOpen by remember { mutableStateOf(false) }
-    var modeError by remember { mutableStateOf<String?>(null) }
+    val observedScreen by navigation.state.collectAsState()
+    val screen = observedScreen // Freeze the lease; delegated State getters would refresh stale callbacks.
+    val selecting by navigation.busy.collectAsState()
     val scope = rememberCoroutineScope()
-    val lease = remember(generation) { GameScreenLease() }
+    val lease = remember(generation) { ProductScreenLease() }
     DisposableEffect(lease) { onDispose { lease.active = false } }
-    val route = GameRoute.valueOf(routeName)
-    fun allowed() = lease.active && app.canUse(owner) && app.commands.session.value.generation == generation
+    fun active() = lease.active && app.canUse(owner) && app.commands.session.value.generation == generation
+    fun current() = active() && navigation.current(screen)
     val closer = remember(app, owner, generation, lease) {
-        ReceiptCloseCoordinator(app.game, app.commands, generation) { allowed() }
+        ReceiptCloseCoordinator(app.game, app.commands, generation) { active() }
     }
     val heldReceipt by closer.heldReceipt.collectAsState()
-    val hostReady = app.canHost(owner)
-    val simulation = remember(app, owner, catalog, scenarios, hostReady) {
-        app.simulation(owner, catalog, scenarios)
+    val receipt = snapshot.pendingReceipt ?: heldReceipt
+    SideEffect {
+        val latest = app.game.state.value.pendingReceipt ?: closer.heldReceipt.value
+        if (latest != null) navigation.presentReceipt(latest.journeyId) else navigation.receiptAbsent()
     }
-    if (simulation == null) {
-        GameMessage("활성 화면을 확인하고 있어요", "잠시 후 다시 확인해 주세요.")
-        return
-    }
-    val journeySnapshot by simulation.journey.state.collectAsState()
-    val runnerState by simulation.runner.state.collectAsState()
-    LaunchedEffect(generation) { itemsOpen = false; briefingOpen = false; selectedRegion = null }
-    val callbackRoute = routeName
-    val callbackVersion = navigationVersion
-    val demoControls = remember(simulation, callbackVersion, lease) {
-        app.screenDemoControls(simulation) {
-            allowed() && routeName == GameRoute.PREPARATION.name && navigationVersion == callbackVersion &&
-                app.game.state.value.pendingReceipt == null && closer.heldReceipt.value == null
-        }
-    }
-    fun navigate(target: GameRoute) {
-        if (allowed()) {
-            navigationVersion++
-            itemsOpen = false
-            routeName = target.name
-        }
+    fun noReceipt() = app.game.state.value.pendingReceipt == null && closer.heldReceipt.value == null
+    fun open(target: ProductRoute) {
+        if (current() && noReceipt()) navigation.open(screen, target)
     }
     val onAction: suspend (GameAction) -> MutationResult = { action ->
         app.commands.apply(generation, action) {
-            allowed() && routeName == callbackRoute && navigationVersion == callbackVersion &&
-                (route != GameRoute.WORLD || itemsOpen)
-                && app.game.state.value.pendingReceipt == null && closer.heldReceipt.value == null
+            current() && noReceipt() && screen.route == ProductRoute.INVENTORY
         }
     }
-    val receipt = snapshot.pendingReceipt ?: heldReceipt
-    val demoRoute = route == GameRoute.DEMO
-    fun briefingIsCurrent() = routeName == callbackRoute && navigationVersion == callbackVersion &&
-        (!demoRoute || briefingOpen)
-    SideEffect {
-        simulation.setScreens(
-            demo = demoRoute && phase !in setOf(GameCommandPhase.CHANGING_MODE, GameCommandPhase.MODE_FAILED),
-            visit = route == GameRoute.VISIT && phase == GameCommandPhase.ACTIVE && receipt == null)
-    }
-    val closeToIsland: suspend () -> MutationResult = {
-        if (receipt == null) MutationResult.Rejected("확인할 기록이 없어요.")
-        else closer.close(receipt, { briefingIsCurrent() }) {
-            app.finishManualReceipt(receipt.journeyId); briefingOpen = false; navigate(GameRoute.ISLAND)
+    val select: suspend (String) -> MutationResult = { id ->
+        navigation.selectCharacter(screen, {
+            current() && noReceipt() && app.commands.canRoute(generation) { current() }
+        }) {
+            if (catalog.characters.count { it.id == id } != 1) MutationResult.Rejected("캐릭터를 다시 확인해 주세요.")
+            else app.commands.apply(generation, GameAction.SelectCharacter(id)) { current() && noReceipt() }
         }
     }
-    val closeToItems: suspend () -> MutationResult = {
-        if (receipt == null) MutationResult.Rejected("확인할 기록이 없어요.")
-        else closer.close(receipt, { briefingIsCurrent() }) {
-            app.finishManualReceipt(receipt.journeyId); briefingOpen = false; navigate(GameRoute.ISLAND); itemsOpen = true
+    fun closeResult(target: ProductRoute): suspend () -> MutationResult = {
+        val displayed = receipt
+        if (displayed == null) MutationResult.Rejected("확인할 기록이 없어요.")
+        else closer.close(displayed, { current() && screen.route == ProductRoute.BRIEFING }) {
+            app.finishManualReceipt(displayed.journeyId)
+            navigation.acknowledged(screen, displayed.journeyId, target)
         }
     }
-    if (phase == GameCommandPhase.ACTIVE && receipt != null && !demoRoute) {
-        BriefingScreen(receipt, catalog, snapshot.avatar, gate,
-            onDismiss = closeToIsland, onOpenItems = closeToItems)
-        return
+    val inbox by app.navigationInbox.state.collectAsState()
+    val connection by app.navigationCapture.status.collectAsState()
+    val manual = app.manualJourney(owner, catalog)
+    val manualState = manual?.state?.collectAsState()?.value
+    val saving = manual?.busy?.collectAsState()?.value ?: false
+    val saveResult = manual?.result?.collectAsState()?.value
+    var error by remember { mutableStateOf<String?>(null) }
+    fun show(result: RequestResult) { error = (result as? RequestResult.Failed)?.message }
+    fun depart() {
+        if (current() && noReceipt()) scope.launch {
+            show(navigation.depart(screen, { current() && noReceipt() }, launchNavigation))
+        }
     }
-    BackHandler(enabled = phase != GameCommandPhase.ACTIVE || (route != GameRoute.ISLAND && !itemsOpen)) {
-        if (phase == GameCommandPhase.ACTIVE) navigate(GameRoute.ISLAND)
-    }
-    Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-        if (developmentEntry) Text("개발 화면 · 실제 로컬 게임 기록 사용", Modifier.padding(8.dp))
-        Text(when (mode) {
-            DataSource.DEMO -> "DEMO · 모의 여정 입력"
-            DataSource.PLEOS -> "PLEOS · 실제 여정 입력 대기"
-            DataSource.USER_CONFIRMED -> "사용자 확인 · 실제 방문 인증 아님"
-        },
-            Modifier.padding(horizontal = 12.dp))
-        Row(Modifier.padding(horizontal = 12.dp).horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            DataSource.entries.forEach { target ->
-                FilterChip(selected = mode == target,
-                    enabled = hostReady && phase in setOf(GameCommandPhase.ACTIVE, GameCommandPhase.MODE_FAILED),
-                    onClick = { scope.launch {
-                        modeError = null
-                        modeError = when (val result = app.changeMode(owner, target)) {
-                            MutationResult.Success -> null
-                            is MutationResult.Rejected -> result.reason
-                            is MutationResult.StorageFailure -> result.message
-                        }
-                    } }, label = { Text(if (target == DataSource.USER_CONFIRMED) "사용자 확인 모드" else "${target.name} 모드") })
+    fun finish(draft: NavigationDraft) {
+        if (!current() || !noReceipt() || !app.navigationInbox.current(draft) ||
+            draft.destination(catalog).regionId == null) return
+        scope.launch {
+            val switched = app.changeMode(owner, DataSource.USER_CONFIRMED)
+            // changeMode intentionally advances generation. Recheck the owner and the original screen.
+            if (switched != MutationResult.Success || !app.canUse(owner) || !navigation.current(screen) ||
+                !noReceipt() || !app.navigationInbox.current(draft)) return@launch
+            val runtime = app.manualJourney(owner, catalog) ?: return@launch
+            val adopted = app.adoptNavigation(owner, catalog, runtime, draft) {
+                app.canUse(owner) && navigation.current(screen) && noReceipt()
             }
-            TextButton(onClick = { navigate(GameRoute.VISIT) }, enabled = allowed()) { Text("가상 방문") }
+            show(adopted)
+            if (adopted == RequestResult.Accepted && navigation.open(screen, ProductRoute.CONFIRMATION)) {
+                val questionScreen = navigation.state.value
+                runtime.requestReview { app.canUse(owner) && navigation.current(questionScreen) && noReceipt() }
+            }
         }
-        modeError?.let { Text(it, Modifier.padding(horizontal = 12.dp)) }
-        if (route != GameRoute.ISLAND) {
-            TextButton(onClick = { navigate(GameRoute.ISLAND) }, enabled = allowed()) { Text("섬으로 돌아가기") }
+    }
+    val draft = inbox.draft
+    val usable = BuildConfig.DEBUG && draft != null && app.navigationInbox.current(draft) &&
+        draft.destination(catalog).regionId != null
+    LaunchedEffect(draft, usable, screen) {
+        if (usable && current() && noReceipt()) {
+            navigation.destinationObserved("${draft.id}:${draft.revision}")
         }
-        Box(Modifier.weight(1f)) {
-            if (phase in setOf(GameCommandPhase.CHANGING_MODE, GameCommandPhase.MODE_FAILED)) {
-                GameMessage(if (phase == GameCommandPhase.MODE_FAILED) "모드 전환을 다시 확인해 주세요" else "입력 모드를 바꾸고 있어요",
-                    if (phase == GameCommandPhase.MODE_FAILED) "위에서 입력 모드를 다시 선택해 주세요." else "이전 시연과 방문을 정리하고 있어요.")
-            } else if (phase != GameCommandPhase.ACTIVE && !demoRoute) {
-                GameMessage("게임 기록을 정리하고 있어요", "정리가 끝날 때까지 기다려 주세요.")
-            } else when (route) {
-                GameRoute.DEMO -> Column(Modifier.fillMaxSize()) {
-                    Text("D04 원본 반복은 브리핑 확인 전에 실행해 주세요.", Modifier.padding(horizontal = 12.dp))
-                    if (receipt != null) Button(onClick = { briefingOpen = true },
-                        enabled = allowed() && !runnerState.busy, modifier = Modifier.padding(horizontal = 12.dp)) {
-                        Text("저장된 브리핑 보기")
-                    }
-                    DemoPanel(simulation.runner, gate, mode, Modifier.weight(1f))
-                }
-                else -> key(generation) { when (route) {
-                GameRoute.ISLAND -> IslandScreen(snapshot, catalog, gate, onAction,
-                    onPrepareJourney = { if (allowed()) { selectedRegion = null; navigate(GameRoute.PREPARATION) } },
-                    onOpenWorld = { navigate(GameRoute.WORLD) },
-                    onOpenDemo = { navigate(GameRoute.DEMO) })
-                GameRoute.WORLD -> WorldScreen(snapshot, catalog, gate,
-                    onSelectRegion = { id ->
-                        if (allowed() && catalog.regions.count { it.id == id } == 1) {
-                            selectedRegion = id; navigate(GameRoute.PREPARATION)
-                        }
-                    }, onOpenItems = { if (allowed()) itemsOpen = true })
-                GameRoute.PREPARATION -> if (mode == DataSource.DEMO) {
-                    JourneyPreparationScreen(demoControls, demoControls,
-                        catalog.regions.map { DestinationSpec(it.id, it.name, it.latitude, it.longitude) },
-                        gate, completion, onBack = { navigate(GameRoute.ISLAND) },
-                        onOpenCompanion = { navigate(GameRoute.COMPANION) },
-                        initialRegionId = selectedRegion,
-                        developmentControls = { Text("DEMO 날짜·시간·거리로 실제 로컬 진행을 저장합니다.") })
-                } else if (mode == DataSource.USER_CONFIRMED) {
-                    val manual = app.manualJourney(owner, catalog)
-                    if (manual != null) ManualJourneyScreen(manual,
-                        catalog.regions.map { DestinationSpec(it.id, it.name, it.latitude, it.longitude) }, selectedRegion,
-                        callerIsCurrent = {
-                            allowed() && routeName == GameRoute.PREPARATION.name && navigationVersion == callbackVersion &&
-                                app.game.state.value.pendingReceipt == null && closer.heldReceipt.value == null
-                        })
-                } else {
-                    GameMessage("여정 준비", "실제 차량 여정 연결을 준비하고 있어요.")
-                }
-                GameRoute.COMPANION -> if (mode == DataSource.DEMO) {
-                    val avatarSlot: AvatarSlot = { avatar, expression, modifier ->
-                        AvatarView(avatar, catalog, expression, modifier)
-                    }
-                    CompanionScreen(journeySnapshot, snapshot.avatar, gate, avatarSlot,
-                        onBack = { navigate(GameRoute.PREPARATION) }, onHideChanged = {})
-                } else GameMessage("동행 화면", "먼저 여정을 준비해 주세요.")
-                GameRoute.VISIT -> Column(Modifier.fillMaxSize()) {
-                    TextButton(onClick = { if (allowed()) simulation.visit.restartDemo() }, enabled = allowed()) {
-                        Text("방문만 다시 준비")
-                    }
-                    val avatarSlot: AvatarSlot = { avatar, expression, modifier ->
-                        AvatarView(avatar, catalog, expression, modifier)
-                    }
-                    VisitRoute(simulation.visit, gate, mode, snapshot.avatar, avatarSlot,
-                        onBack = { navigate(GameRoute.ISLAND) }, modifier = Modifier.weight(1f))
-                }
-                GameRoute.DEMO -> Unit // Kept outside generation keys above.
+    }
+    val failedSave = manualState?.phase == ManualJourneyPhase.CONFIRMED &&
+        (saveResult is ArrivalResult.StorageFailure || saveResult is ArrivalResult.Rejected)
+    val destination = if (failedSave) IslandDestinationSlot(true) {
+        MemoridePrimaryButton("저장 다시 시도", { open(ProductRoute.SAVE) }, Modifier.fillMaxWidth(), enabled = current())
+    } else if (BuildConfig.DEBUG && draft != null && draft.status != NavigationDraftStatus.CONSUMED) {
+        IslandDestinationSlot(usable) {
+            NavigationDraftCard(inbox, connection, current() && usable,
+                onRefresh = { if (current() && noReceipt()) app.navigationCapture.refresh() }, onFinish = ::finish)
+        }
+    } else null
+
+    BackHandler {
+        when {
+            receipt != null -> scope.launch { closeResult(ProductRoute.ISLAND)() }
+            selecting || saving -> Unit
+            screen.route == ProductRoute.CHARACTER -> Unit // cannot bypass required selection
+            screen.route == ProductRoute.CONFIRMATION -> {
+                manualState?.confirmation?.let { question -> scope.launch {
+                    show(manual?.choose(question.token, ManualJourneyChoice.CONTINUE, ::current)
+                        ?: RequestResult.Failed("목적지를 다시 확인해 주세요."))
+                    open(ProductRoute.ISLAND)
                 } }
             }
+            else -> open(ProductRoute.ISLAND)
         }
     }
-    if (itemsOpen) {
-        key(generation) { InventorySheet(snapshot, catalog, gate, onAction, onClose = { itemsOpen = false }) }
-    }
-    if (phase == GameCommandPhase.ACTIVE && demoRoute && receipt != null && briefingOpen && !runnerState.busy) {
-        Dialog(onDismissRequest = { scope.launch { closeToIsland() } },
-            properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            BriefingScreen(receipt, catalog, snapshot.avatar, gate,
-                onDismiss = closeToIsland, onOpenItems = closeToItems)
+    MemorideScreen {
+        Column(Modifier.fillMaxSize()) {
+            if (developmentEntry) Text("개발 화면 · 실제 로컬 게임 기록 사용", Modifier.padding(8.dp))
+            Box(Modifier.weight(1f)) {
+                if (receipt != null) {
+                    // Existing pending receipts take precedence over cold-start selection; never discard them.
+                    key(receipt.journeyId) {
+                        screens.briefing(receipt, catalog, snapshot.avatar, gate,
+                            closeResult(ProductRoute.ISLAND), closeResult(ProductRoute.CHARACTER), Modifier)
+                    }
+                } else when (screen.route) {
+                    ProductRoute.CHARACTER -> screens.character(snapshot, catalog, gate, select, Modifier)
+                    ProductRoute.ISLAND -> screens.island(snapshot, catalog, gate, destination,
+                        { open(ProductRoute.CHARACTER) }, ::depart,
+                        { open(ProductRoute.INVENTORY) }, { open(ProductRoute.WORLD) }, Modifier)
+                    ProductRoute.WORLD -> screens.world(snapshot, catalog,
+                        history,
+                        gate, { open(ProductRoute.ISLAND) }, Modifier)
+                    ProductRoute.INVENTORY -> {
+                        NewInventoryScreen(snapshot, catalog, gate, onAction, { open(ProductRoute.ISLAND) })
+                    }
+                    ProductRoute.NAVIGATION_FAILURE -> ProductColumn {
+                        Text("내비를 직접 열어 주세요", style = MaterialTheme.typography.headlineMedium)
+                        Text("현재 앱에서 내비를 여는 연결을 사용할 수 없어요. 내비 앱을 직접 이용한 뒤 주차 후 MEMORIDE를 열어 주세요.")
+                        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                        MemoridePrimaryButton("다시 시도", ::depart, Modifier.fillMaxWidth(), enabled = current() && !selecting)
+                        MemorideSecondaryButton("섬으로 돌아가기", { open(ProductRoute.ISLAND) }, Modifier.fillMaxWidth())
+                    }
+                    ProductRoute.CONFIRMATION -> ProductColumn {
+                        Text("목적지에 도착했나요?", style = MaterialTheme.typography.headlineMedium)
+                        val question = manualState?.confirmation
+                        if (question == null || manual?.isNavigationJourney != true) {
+                            Text("목적지를 다시 확인해 주세요.")
+                        } else {
+                            Text(question.destination.label)
+                            Text("사용자 확인으로 기록해요. 실제 방문 인증이 아니며 시간과 거리는 측정하지 않아요.")
+                            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                            MemoridePrimaryButton("도착했어요", {
+                                if (current() && navigation.open(screen, ProductRoute.SAVE)) {
+                                    val savingScreen = navigation.state.value
+                                    scope.launch { show(manual.choose(question.token, ManualJourneyChoice.ARRIVED) {
+                                        active() && navigation.current(savingScreen) && noReceipt()
+                                    }) }
+                                }
+                            }, Modifier.fillMaxWidth(), enabled = current() && !saving)
+                            MemorideSecondaryButton("아직 아니에요", { scope.launch {
+                                val answer = manual.choose(question.token, ManualJourneyChoice.CONTINUE, ::current)
+                                show(answer)
+                                if (answer == RequestResult.Accepted) open(ProductRoute.ISLAND)
+                            } }, Modifier.fillMaxWidth(), enabled = current() && !saving)
+                        }
+                    }
+                    ProductRoute.SAVE -> screens.save(
+                        if (saving) ArrivalSaveUiState.Saving else ArrivalSaveUiState.Failed(
+                            "저장을 마치지 못했어요. 최초 확인 내용으로 다시 시도해 주세요."), gate,
+                        { if (current() && !saving && manual != null) scope.launch { show(manual.retry(::current)) } },
+                        { if (!saving) open(ProductRoute.ISLAND) }, Modifier)
+                    ProductRoute.BRIEFING -> ProductColumn {
+                        Text("기록 확인을 마쳤어요")
+                        MemorideSecondaryButton("섬으로 돌아가기", { open(ProductRoute.ISLAND) })
+                    }
+                }
+            }
         }
     }
 }
 
+private class ProductScreenLease { var active = true }
+
 @Composable
 private fun GameMessage(title: String, message: String, content: @Composable () -> Unit = {}) {
-    Surface(Modifier.fillMaxSize()) {
-        Column(Modifier.safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    MemorideScreen {
+        ProductColumn {
             Text("MEMORIDE", style = MaterialTheme.typography.labelLarge)
             Text(title, style = MaterialTheme.typography.headlineSmall)
             Text(message)

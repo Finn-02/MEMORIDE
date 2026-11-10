@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import ai.pleos.playground.navi.constants.NaviErrorCode
 import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.DestinationInfo
+import ai.pleos.playground.navi.data.NavigationScreenRequest
 import ai.pleos.playground.navi.data.RouteInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
@@ -96,6 +97,11 @@ class PleosProbeActivity : ComponentActivity() {
             manual = controller
             manualView.setContent { MemorideTheme { ManualJourneyConfirmationPanel(controller, destinations) } }
             updateControls()
+            button("내비 화면 열기 · 실행 검증") {
+                runCommand("requestNavigationScreen:Foreground") { sdk ->
+                    sdk.requestNavigationScreen(NavigationScreenRequest.Foreground)
+                }
+            }
             destinations.forEach { target ->
                 button("${target.label} 목적지 요청") {
                     runCommand("requestRoute:${target.regionId}") { sdk ->

@@ -451,6 +451,96 @@ class ManualJourneyIntegrationTest {
         }
     }
 
+    @Test fun importedNavigationKeepsIdentityAndOnlyUserConfirmationWritesGameProgress() = runBlocking {
+        val p = pipeline()
+        try {
+            val draft = NavigationDraft("22222222-2222-4222-8222-222222222222", 4, target.label,
+                target.latitude, target.longitude, p.clock, NavigationDraftStatus.ACTIVE)
+            var current = true
+            var consumed = false
+            assertEquals(RequestResult.Accepted, p.manual.adoptNavigation(draft, draft.destination(catalog),
+                { current }, saved = { consumed = true }, caller = { true }))
+            assertNull(p.store.read())
+            assertEquals(draft.id, p.manual.snapshot.journeyId)
+            assertEquals(draft.revision, p.manual.snapshot.routeRevision)
+            assertEquals(DataSource.USER_CONFIRMED, p.manual.snapshot.source)
+            assertTrue(p.manual.requestReview { true })
+            val token = p.manual.state.value.confirmation!!.token
+            assertEquals(RequestResult.Accepted, p.manual.choose(token, ManualJourneyChoice.ARRIVED) { true })
+            assertTrue(consumed)
+            val receipt = p.game.state.value.pendingReceipt!!
+            assertEquals(draft.id, receipt.journeyId)
+            assertEquals(DataSource.USER_CONFIRMED, receipt.source)
+            assertNull(receipt.elapsedSeconds); assertNull(receipt.distanceMeters)
+            assertEquals(1, p.store.read()!!.processedReceipts.size)
+        } finally { p.close() }
+    }
+
+    @Test fun changedOrCancelledNavigationRejectsOldQuestionAndUnknownPoiGetsNoRegionGift() = runBlocking {
+        val p = pipeline()
+        try {
+            val draft = NavigationDraft("33333333-3333-4333-8333-333333333333", 0, "임의 목적지",
+                target.latitude + .1, target.longitude + .1, p.clock, NavigationDraftStatus.ACTIVE)
+            assertNull(draft.destination(catalog).regionId)
+            var current = true
+            assertEquals(RequestResult.Accepted, p.manual.adoptNavigation(draft, draft.destination(catalog),
+                { current }, saved = {}, caller = { true }))
+            p.manual.requestReview { true }
+            val old = p.manual.state.value.confirmation!!.token
+            current = false; p.manual.updateHost()
+            assertTrue(p.manual.choose(old, ManualJourneyChoice.ARRIVED) { true } is RequestResult.Failed)
+            assertNull(p.store.read())
+            current = true
+            assertEquals(RequestResult.Accepted, p.manual.adoptNavigation(draft, draft.destination(catalog),
+                { current }, saved = {}, caller = { true }))
+            p.manual.requestReview { true }
+            assertEquals(RequestResult.Accepted, p.manual.choose(p.manual.state.value.confirmation!!.token,
+                ManualJourneyChoice.ARRIVED) { true })
+            assertTrue(p.game.state.value.pendingReceipt!!.grantedItemIds.isEmpty())
+            assertTrue(p.game.state.value.discoveredRegionIds.isEmpty())
+        } finally { p.close() }
+    }
+
+    @Test fun navigationCancellationChoiceDismissesHintWithoutSavingAndUnknownGateBlocksAdoption() = runBlocking {
+        val p = pipeline()
+        try {
+            val draft = NavigationDraft("44444444-4444-4444-8444-444444444444", 0, target.label,
+                target.latitude, target.longitude, p.clock, NavigationDraftStatus.ACTIVE)
+            var dismissed = false
+            p.gate = InteractionGate(GateState.UNKNOWN)
+            assertTrue(p.manual.adoptNavigation(draft, target, { true }, saved = {}, caller = { true }) is RequestResult.Failed)
+            p.gate = InteractionGate(GateState.PARKED_ALLOWED)
+            assertEquals(RequestResult.Accepted, p.manual.adoptNavigation(draft, target, { true }, saved = {},
+                dismissed = { dismissed = true }, caller = { true }))
+            p.manual.requestReview { true }
+            assertEquals(RequestResult.Accepted, p.manual.choose(p.manual.state.value.confirmation!!.token,
+                ManualJourneyChoice.CANCEL) { true })
+            assertTrue(dismissed); assertNull(p.store.read())
+        } finally { p.close() }
+    }
+
+    @Test fun receiptAcknowledgedWhileNavigationConsumeWaitsStillFinishesTheManualJourney() = runBlocking {
+        val p = pipeline()
+        try {
+            val draft = NavigationDraft("55555555-5555-4555-8555-555555555555", 0, target.label,
+                target.latitude, target.longitude, p.clock, NavigationDraftStatus.ACTIVE)
+            val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+            p.manual.adoptNavigation(draft, target, { true }, saved = { entered.complete(Unit); release.await() }, caller = { true })
+            p.manual.requestReview { true }
+            val saving = async(start = CoroutineStart.UNDISPATCHED) {
+                p.manual.choose(p.manual.state.value.confirmation!!.token, ManualJourneyChoice.ARRIVED) { true }
+            }
+            entered.await()
+            val receipt = p.game.state.value.pendingReceipt!!
+            val closer = ReceiptCloseCoordinator(p.game, p.commands, 0) { p.allowed() }
+            assertEquals(MutationResult.Success, closer.close(receipt) { p.manual.finishAcknowledged(receipt.journeyId) })
+            release.complete(Unit)
+            assertEquals(RequestResult.Accepted, saving.await())
+            assertEquals(ManualJourneyPhase.IDLE, p.manual.state.value.phase)
+            assertNull(p.game.state.value.pendingReceipt)
+        } finally { p.close() }
+    }
+
     private suspend fun <T> withRestoredGame(
         file: File, block: suspend (BGameService, PreferencesGameSaveStore) -> T,
     ): T {
