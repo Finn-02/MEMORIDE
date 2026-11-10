@@ -1,5 +1,13 @@
 # PM 진행 상태
 
+## 2026-11-10 KST · UX-P01/P02
+
+- S05 `RegionBriefingScreen`/`RegionBriefingSlot`, S06 `ArrivalSaveScreen`/`ArrivalSaveScreenSlot` 순수 화면과 fixture·JUnit을 추가했다. AppRoot 연결·ack·retry·닫기 뒤 복구는 A, 영수증·저장은 B 범위다.
+- 결과: Debug 빌드, JUnit 283개 실패 0, `python3 scripts/check_all.py` PASS. 일반 Android 에뮬레이터(1280×720·720×1280·411dp, 글자 1.0/2.0)에서 임시 debug harness로 렌더링·ack 대기/실패/재시도·S06 연타 가드를 확인했다. harness는 커밋하지 않는다.
+- NOT RUN: Android Studio Preview 렌더링, Pleos 확장/분할·제한 전환, 연결 앱의 네 시연, 실차·서명 release. UX-P03 문구·출처·시연표는 후속.
+
+## 이전 기록 (2026-11-05)
+
 상태: P01·P02 main 반영 완료. **P03의 Mac X02·DEMO 실제 저장→브리핑 인수 범위는 PASS**다. 팀원 교차 인수·Pleos 실제 제한 전환·서명 release 설치는 별도 미실행 항목으로 남긴다.
 
 ## 2026-11-05 KST 실제 검증 기준

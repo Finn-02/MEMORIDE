@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 
-internal enum class BriefingAction { DISMISS, OPEN_ITEMS }
+internal enum class BriefingAction { DISMISS, OPEN_ITEMS, ISLAND, SELECT_CHARACTER }
 
 internal data class BriefingActionState(
     val pending: BriefingAction? = null,
