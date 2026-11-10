@@ -1,5 +1,8 @@
 # C04 수동 시연 제어
 
+> 2026-11-05 현재: main a04b3c5를 C 브랜치에 통합했다. A04의 C 기능/AppRoot 연결과 A05 교차 설치 인수는 완료됐으며 아래 대기 문구는 과거 기록이다. 최신 C05 전달 범위·237개 회귀 및 실제 앱 미완료는 [C05 현재 판정](c05_acceptance.md)과 [A06 회신](C05_A06_REPLY.md)을 따른다. 자연색 그래픽은 프로토타입이다.
+
+
 상태: 2026-11-04 독립 Runner·DemoPanel·가짜 A 포트 시험 구현. A02 실제 포트 및 AppRoot 연결·기기 인수는 대기한다. C02/C03 PR #5의 main 병합 `8c78b8e`를 같은 파트 브랜치에 반영했다.
 
 ## 범위와 공개 표면
@@ -66,3 +69,23 @@ NOT RUN: A02/A04 포트와 AppRoot 연결, 실제 B 저장·브리핑, 일상 �
 Android Studio의 Layoutlib에서는 `Asset repository is not set`으로 자산 로드가 실패할 수 있다. 이 경우 Run Preview 또는 기존 에뮬레이터의 PreviewActivity로 실행한다. 이 시연은 실제 A/B 통합 인수와 구분한다.
 
 2026-11-04 Windows의 기존 API 37 에뮬레이터에서 debug APK 설치 및 PreviewActivity 실행 성공. D03 선택 → 초기화 확인 → 목적지 요청 → READY 수동 확인 → 모의 출발 → 완료 요청을 직접 클릭했다. `ui-sample-1`이 유지되며 완료 요청은 연결 대기 오류와 같은 도착 저장 재시도 단계로 표시됐다. 실제 게임 저장·보상은 호출하지 않았다. 실제 A/B 통합, 차량·Pleos·release·안전 시험은 여전히 NOT RUN이다.
+
+## A02 main 병합 후 로컬 경계 검증
+
+2026-11-04 A02/B03/C04 PR이 병합된 main `b8faf56`을 기존 C 브랜치에 fast-forward했다. C01~C03 디자인·패널 접기·C05 및 환경 문서 수정은 stash로 보존 후 충돌 없이 복원했다. 위의 A02 미구현/PR 대기 표시는 이전 구현 시점의 기록이며, 현재 C04 PR #8과 A02 PR #10은 main에 병합됐다. 새 commit/push는 하지 않았다.
+
+앱 조립 경계의 **임시 JVM 검증 하네스**에서 실제 `DemoJourneyAdapter` + `DemoScenarioRunner` + `BGameService`/Preferences DataStore를 연결했다. 사용자 저장 대신 JUnit 임시 파일만 사용했다. C feature에는 A/B 구현 import를 추가하지 않았고 AppRoot·공통 계약·B 저장·빌드 파일은 수정하지 않았다. 하네스가 B의 기존 시험 주입 생성자로 실제 저장을 구성했으며, 이 시험용 조립은 production A04 구현이 아니다. 하네스·init script는 검토 ZIP에 포함하고 저장소에는 추가하지 않는다.
+
+별도 5개 시험 PASS:
+
+- D01→D02: A 발급 UUID로 저장, 동일 날짜 성장 1회, 원본 두 도착 보존.
+- D03→D04→D05: 최초 기념품 3개, 실제 Repeat 명령 재전달·원본 command/receipt 유지·추가 효과 0·반복 전후 저장 파일 바이트 동일, 재방문 기념품 추가 없음.
+- D06: 시간·거리 null과 원본 영수증을 실제 파일까지 보존.
+- 실패 대역→재시도: 첫 호출의 StorageFailure를 명시적으로 주입한 뒤 원본 A 명령 그대로 재시도, 실제 B 저장 1개·기념품 3개. 실제 디스크 장애 주입 시험은 아님.
+- 취소·UNKNOWN: 취소 후 도착 없음, C와 A의 제한 검사로 도착/보상 호출 차단.
+
+임시 소스셋을 추가하는 로컬 init script로 `:app:testDebugUnitTest --tests io.kailand.app.integration.C04A02VerificationTest` exit 0(5 PASS, BUILD SUCCESSFUL in 2s). 최초 Java 소스셋 연결에서는 Kotlin 시험을 찾지 못했고, Kotlin 소스셋에 연결해 해결했다. 공통 Gradle 파일은 변경하지 않았다.
+
+그 뒤 init script 없이 `py -3 -X utf8 scripts/check_all.py --android` exit 0: Python 44개·Android 165개 PASS, debug 빌드 성공(7 executed / 38 up-to-date). Android 165개는 새 main과 보존한 로컬 C05 시험을 포함하며 별도 5개 하네스 시험은 포함하지 않는다. 로컬 디자인을 포함한 working tree 결과로, 깨끗한 main만의 검증으로 주장하지 않는다.
+
+남은 것: production AppRoot의 C04 패널·실제 B 상태/일상 목적지/전체 초기화 조립, 초기화와 저장/Runner 경쟁 U20, UI에서 D01~D06·S09 반복, B 외형 일치, release/물리 기기/Pleos/안전 검증은 여전히 NOT RUN이다. A02 기본 개발 화면은 메모리 도착 대역을 유지하므로 앱에서 실제 보상이 연결됐다고 설명하지 않는다.

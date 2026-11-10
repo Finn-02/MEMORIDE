@@ -1,6 +1,8 @@
 package io.kailand.app
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,6 +14,7 @@ import androidx.compose.ui.window.DialogProperties
 import io.kailand.core.contract.*
 import io.kailand.core.ui.AvatarSlot
 import io.kailand.app.journey.JourneyPreparationScreen
+import io.kailand.app.journey.ManualJourneyScreen
 import io.kailand.feature.briefing.BriefingScreen
 import io.kailand.feature.companion.CompanionScreen
 import io.kailand.feature.demo.DemoPanel
@@ -126,11 +129,15 @@ private fun SavedGameScreens(
     }
     val closeToIsland: suspend () -> MutationResult = {
         if (receipt == null) MutationResult.Rejected("확인할 기록이 없어요.")
-        else closer.close(receipt, { briefingIsCurrent() }) { briefingOpen = false; navigate(GameRoute.ISLAND) }
+        else closer.close(receipt, { briefingIsCurrent() }) {
+            app.finishManualReceipt(receipt.journeyId); briefingOpen = false; navigate(GameRoute.ISLAND)
+        }
     }
     val closeToItems: suspend () -> MutationResult = {
         if (receipt == null) MutationResult.Rejected("확인할 기록이 없어요.")
-        else closer.close(receipt, { briefingIsCurrent() }) { briefingOpen = false; navigate(GameRoute.ISLAND); itemsOpen = true }
+        else closer.close(receipt, { briefingIsCurrent() }) {
+            app.finishManualReceipt(receipt.journeyId); briefingOpen = false; navigate(GameRoute.ISLAND); itemsOpen = true
+        }
     }
     if (phase == GameCommandPhase.ACTIVE && receipt != null && !demoRoute) {
         BriefingScreen(receipt, catalog, snapshot.avatar, gate,
@@ -142,10 +149,15 @@ private fun SavedGameScreens(
     }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         if (developmentEntry) Text("개발 화면 · 실제 로컬 게임 기록 사용", Modifier.padding(8.dp))
-        Text(if (mode == DataSource.DEMO) "DEMO · 모의 여정 입력" else "PLEOS · 실제 여정 입력 대기",
+        Text(when (mode) {
+            DataSource.DEMO -> "DEMO · 모의 여정 입력"
+            DataSource.PLEOS -> "PLEOS · 실제 여정 입력 대기"
+            DataSource.USER_CONFIRMED -> "사용자 확인 · 실제 방문 인증 아님"
+        },
             Modifier.padding(horizontal = 12.dp))
-        Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(DataSource.DEMO, DataSource.PLEOS).forEach { target ->
+        Row(Modifier.padding(horizontal = 12.dp).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DataSource.entries.forEach { target ->
                 FilterChip(selected = mode == target,
                     enabled = hostReady && phase in setOf(GameCommandPhase.ACTIVE, GameCommandPhase.MODE_FAILED),
                     onClick = { scope.launch {
@@ -155,7 +167,7 @@ private fun SavedGameScreens(
                             is MutationResult.Rejected -> result.reason
                             is MutationResult.StorageFailure -> result.message
                         }
-                    } }, label = { Text("${target.name} 모드") })
+                    } }, label = { Text(if (target == DataSource.USER_CONFIRMED) "사용자 확인 모드" else "${target.name} 모드") })
             }
             TextButton(onClick = { navigate(GameRoute.VISIT) }, enabled = allowed()) { Text("가상 방문") }
         }
@@ -196,6 +208,14 @@ private fun SavedGameScreens(
                         onOpenCompanion = { navigate(GameRoute.COMPANION) },
                         initialRegionId = selectedRegion,
                         developmentControls = { Text("DEMO 날짜·시간·거리로 실제 로컬 진행을 저장합니다.") })
+                } else if (mode == DataSource.USER_CONFIRMED) {
+                    val manual = app.manualJourney(owner, catalog)
+                    if (manual != null) ManualJourneyScreen(manual,
+                        catalog.regions.map { DestinationSpec(it.id, it.name, it.latitude, it.longitude) }, selectedRegion,
+                        callerIsCurrent = {
+                            allowed() && routeName == GameRoute.PREPARATION.name && navigationVersion == callbackVersion &&
+                                app.game.state.value.pendingReceipt == null && closer.heldReceipt.value == null
+                        })
                 } else {
                     GameMessage("여정 준비", "실제 차량 여정 연결을 준비하고 있어요.")
                 }

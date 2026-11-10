@@ -146,8 +146,14 @@ class BGameService internal constructor(
     private fun invalidArrivalReason(command: ArrivalCommand): String? = when {
         !JOURNEY_ID.matches(command.journeyId) -> "Invalid journey ID"
         command.routeRevision < 0 -> "Invalid route revision"
-        (command.source == DataSource.DEMO) !=
-            (command.evidence == ArrivalEvidence.DEMO_FINAL_DESTINATION) -> "Source and evidence do not match"
+        command.evidence != when (command.source) {
+            DataSource.DEMO -> ArrivalEvidence.DEMO_FINAL_DESTINATION
+            DataSource.PLEOS -> ArrivalEvidence.PLEOS_FINAL_DESTINATION
+            DataSource.USER_CONFIRMED -> ArrivalEvidence.USER_CONFIRMED_DESTINATION
+        } -> "Source and evidence do not match"
+        command.source == DataSource.USER_CONFIRMED &&
+            (command.elapsedSeconds != null || command.distanceMeters != null) ->
+            "User-confirmed arrivals must not contain measurements"
         command.completedAtEpochMs < 0 -> "Invalid completion time"
         command.elapsedSeconds != null && command.elapsedSeconds < 0 -> "Invalid elapsed time"
         command.distanceMeters != null &&

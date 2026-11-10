@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import io.kailand.core.contract.InteractionGate
+import io.kailand.core.ui.UxFoundationGallery
 
 /** Explicit debug-only launcher; unavailable in release and blocked on Automotive. */
 class DevelopmentActivity : MainActivity() {
@@ -23,12 +24,19 @@ class DevelopmentActivity : MainActivity() {
     override fun AppContent(gate: InteractionGate) {
         val model = remember { ViewModelProvider(this)[DevelopmentJourneyModel::class.java] }
         var avatarPreview by rememberSaveable { mutableStateOf(false) }
-        if (avatarPreview) {
+        var foundationPreview by rememberSaveable { mutableStateOf(false) }
+        if (foundationPreview) {
+            BackHandler { foundationPreview = false }
+            UxFoundationGallery(gate, onClose = { foundationPreview = false })
+        } else if (avatarPreview) {
             BackHandler { avatarPreview = false }
             DevelopmentAvatarHost(gate, onBack = { avatarPreview = false })
         } else {
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                 if (gate.canInteract) {
+                    Button(onClick = { if (gate.canInteract) foundationPreview = true }) {
+                        Text("UX-A01 공통 UI 확인")
+                    }
                     Button(onClick = { if (gate.canInteract) avatarPreview = true }) {
                         Text("B04 캐릭터 이미지 확인")
                     }

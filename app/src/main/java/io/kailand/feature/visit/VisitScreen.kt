@@ -1,6 +1,7 @@
 package io.kailand.feature.visit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -143,6 +150,7 @@ fun VisitScreen(
                 Text(if (receiverView) "현재: 수신자 가상 앞차" else "현재: 발신자 내 차")
                 Text("목적: ${VisitController.PURPOSE}")
                 Text(phaseLabel(state), style = MaterialTheme.typography.titleMedium)
+                VisitMessageArtwork()
                 feedback?.let { Text(it) }
                 if (!state.active && !receiverView) {
                     Text("같은 대상 재요청은 30초 간격이에요. 거절해도 불이익이 없어요.")
@@ -193,6 +201,31 @@ fun VisitScreen(
                 }
             }
         }
+    }
+}
+
+/** Decorative message envelope only: no visitor before consent and no real vehicle connection. */
+@Composable
+private fun VisitMessageArtwork() {
+    Canvas(Modifier.fillMaxWidth().height(104.dp).clip(RoundedCornerShape(20.dp))) {
+        val water = Color(0xFF8CC6D7)
+        val meadow = Color(0xFF9AC9A1)
+        val cream = Color(0xFFF4E7D1)
+        val ink = Color(0xFF344B52)
+        val w = size.width
+        val h = size.height
+        drawRect(water.copy(alpha = .28f))
+        drawOval(meadow.copy(alpha = .5f), Offset(-w * .08f, h * .43f), Size(w * .48f, h * .95f))
+        drawOval(meadow.copy(alpha = .5f), Offset(w * .70f, -h * .25f), Size(w * .45f, h * .85f))
+        val left = w * .5f - 37.dp.toPx()
+        val top = h * .5f - 24.dp.toPx()
+        val width = 74.dp.toPx()
+        val height = 48.dp.toPx()
+        drawRoundRect(Color(0xFFD8BA91), Offset(left, top + 3.dp.toPx()), Size(width, height), CornerRadius(10.dp.toPx()))
+        drawRoundRect(cream, Offset(left, top), Size(width, height), CornerRadius(10.dp.toPx()))
+        val center = Offset(w * .5f, h * .5f + 4.dp.toPx())
+        drawLine(ink, Offset(left + 6.dp.toPx(), top + 9.dp.toPx()), center, 2.dp.toPx(), StrokeCap.Round)
+        drawLine(ink, center, Offset(left + width - 6.dp.toPx(), top + 9.dp.toPx()), 2.dp.toPx(), StrokeCap.Round)
     }
 }
 
