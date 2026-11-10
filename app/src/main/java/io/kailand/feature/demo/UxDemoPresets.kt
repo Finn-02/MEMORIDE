@@ -128,6 +128,9 @@ fun checkUxDemoResult(request: UxDemoRequest, evidence: UxDemoEvidence?, catalog
         after.discoveredRegionIds != before.discoveredRegionIds + "wonju" ||
         e.visitsAfter?.toLong() != checkNotNull(e.visitsBefore).toLong() + 1)
         return failed("기념품·발견·방문 횟수가 기대와 달라요.")
+    if (after.avatar != before.avatar || after.decorationSlots != before.decorationSlots ||
+        (after.pendingReceipt != null && after.pendingReceipt != receipt))
+        return failed("시연 중 외형·장식 또는 확인 중인 원본 결과가 달라졌어요.")
     if (request.preset == UxDemoPreset.SAVE_RETRY) {
         val failure = e.saveFailure ?: return failed("확정 저장 실패 근거가 없어요.")
         val original = failure.originalCommand

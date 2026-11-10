@@ -76,11 +76,28 @@ class UxDemoPresetsTest {
 
     @Test fun characterSelectionBeforeAttemptIsAllowedAndSourceIsNotRewritten() {
         val e = result()
-        assertEquals(UxDemoVerdict.PASS, check(e.copy(beforeAttempt = fresh.copy(avatar = AvatarPreview("momo", null)))))
+        val selectedAvatar = AvatarPreview("momo", null)
+        assertEquals(UxDemoVerdict.PASS, check(e.copy(
+            beforeAttempt = fresh.copy(avatar = selectedAvatar),
+            afterAttempt = e.afterAttempt!!.copy(avatar = selectedAvatar))))
         assertEquals(UxDemoVerdict.FAIL, check(e.copy(receipt = e.receipt!!.copy(source = DataSource.PLEOS))))
         val confirmed = e.copy(source = DataSource.USER_CONFIRMED, receipt = e.receipt!!.copy(source = DataSource.USER_CONFIRMED))
         assertEquals(UxDemoVerdict.PASS, check(confirmed))
         assertEquals(UxDemoVerdict.FAIL, check(confirmed.copy(receipt = confirmed.receipt!!.copy(distanceMeters = 0.0))))
+    }
+
+    @Test fun unrelatedAppearanceChangesAndForeignPendingReceiptCannotPass() {
+        val e = result()
+        val after = e.afterAttempt!!
+        assertEquals(UxDemoVerdict.FAIL, check(e.copy(afterAttempt = after.copy(
+            avatar = AvatarPreview("lulu", null)))))
+        assertEquals(UxDemoVerdict.FAIL, check(e.copy(afterAttempt = after.copy(
+            decorationSlots = mapOf("slot_left" to "wonju_tree")))))
+        assertEquals(UxDemoVerdict.FAIL, check(e.copy(afterAttempt = after.copy(
+            pendingReceipt = e.receipt!!.copy(journeyId = "unrelated-arrival")))))
+        assertEquals(UxDemoVerdict.PASS, check(e.copy(afterAttempt = after.copy(pendingReceipt = e.receipt))))
+        // A may already have acknowledged the matching receipt; preserved evidence still verifies it.
+        assertEquals(UxDemoVerdict.PASS, check(e.copy(afterAttempt = after.copy(pendingReceipt = null))))
     }
 
     @Test fun saveFailureRetryRequiresSameOriginalIdAndUnchangedFailureSnapshot() {

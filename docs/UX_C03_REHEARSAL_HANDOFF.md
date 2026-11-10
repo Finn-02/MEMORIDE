@@ -12,6 +12,7 @@ Figma 프로토타입에서 내비 실패 흐름4(`58:1622`→섬→`23:668`)의
 - `UxDemoPanel`: 네 프리셋만 표시하는 개발/리허설 전용 제어 화면. 준비 요청→준비 결과 수동 확인→A 앱 흐름 열기 요청→실제 결과 수동 확인.
 - `UxDemoPreset`: 원주 새 지역, 같은 날 원주 재방문, 확정 저장 실패 후 원본 재시도, 내비 실행 실패.
 - `checkUxDemoPreparation`/`checkUxDemoResult`: A가 전달한 불변 증거를 읽는 순수 검사. 요청 접수·타이머·화면 탭으로 PASS를 만들지 않는다.
+- 결과 확인 시 시도 직전 외형·장식 보존과 남아 있는 pending 영수증의 원본 일치도 검사한다. 정상 ack로 pending이 없어진 경우는 별도 보존한 원본 증거로 확인한다.
 - debug Preview: 기존 packaged Catalog를 읽고 A 연결 미완료를 표시한다. 가짜 성공/영수증/주차를 공급하지 않는다.
 - AppRoot/기존 DemoPanel/공유 계약/B 저장/PM fixture는 변경하지 않는다. C가 여정 명령·reset·저장소·SDK를 직접 호출하지 않는다.
 
@@ -59,6 +60,7 @@ Figma 프로토타입에서 내비 실패 흐름4(`58:1622`→섬→`23:668`)의
 ## 검증과 NOT RUN
 
 소프트웨어 검사 결과는 이번 검토 ZIP REPORT.md의 실제 집계를 따른다. 테스트는 합성 불변 증거의 검사이며 실제 저장·SDK·전체 flow 실행이 아니다.
-Windows 공통 `check_all.py --android` exit0: Python59/JUnit294(신규 시연 증거 검사9개 포함), 실패/오류/skip0, debug 빌드15초(11 executed/34 up-to-date) PASS.
+최신 재검증은 `cdd9ac7` + B `db7c92c`의 S03 후속 2파일 + 승인 Runner 패치3종 + 이 C03 제안 4파일을 별도 소스 사본에 구성했다. 원본 브랜치·사용자 저장은 변경하지 않았다.
+Windows 공통 `py -3 scripts/check_all.py --android` exit0: Python66/JUnit338(C03 증거 검사10개 포함), 실패/오류/skip0, debug 빌드14초(11 executed/34 up-to-date) PASS. 이는 미공개 검토 사본의 소프트웨어 검사이며 실제 연결 완료가 아니다.
 실제 A 준비/오류 주입/route 연결, 네 시연 앱 전체 실행, Preview 렌더링·터치·Pleos 창별/큰 글자·접근성·release/실차는 NOT RUN이다.
-PR27(UX-C01~02)의 공개 head에는 이 UX-C03 작업을 push하지 않는다. 먼저 A와 콜백 제안을 맞추고 실제 연결 뒤 별도 PR로 정리한다.
+PR27(UX-C01~02)은 main에 병합된 상태다. UX-C03은 C 브랜치에 연결 전 제안으로 커밋한다. A와 콜백 제안을 맞추고 실제 연결 뒤 별도 PR로 정리한다. 기존 공유 계약·AppRoot는 이번 작업에서 변경하지 않았다. 커밋 SHA와 기본 브랜치 검증 결과는 전달 ZIP의 REPORT.md에서 확인한다.
