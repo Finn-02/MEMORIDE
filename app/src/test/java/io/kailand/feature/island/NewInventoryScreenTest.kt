@@ -1,11 +1,13 @@
 package io.kailand.feature.island
 
+import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.unit.dp
 import io.kailand.core.contract.GameAction
 import io.kailand.core.contract.GameSnapshot
 import io.kailand.core.contract.ItemType
 import io.kailand.core.contract.MutationResult
 import io.kailand.core.contract.RegionDefinition
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,6 +30,127 @@ class NewInventoryScreenTest {
 
     private fun cards(type: ItemType, snapshot: GameSnapshot = original) =
         inventoryCards(type, islandPresentation(snapshot, catalog), catalog)
+
+    @Test fun selectionSaverRoundTripsEveryTabAndAnActiveDecoration() {
+        val scope = SaverScope { it is String }
+        val states = ItemType.entries.map { InventorySelection(it) } +
+            InventorySelection(ItemType.DECOR, "wonju_tree")
+        for (selection in states) {
+            val saved = with(InventorySelectionSaver) { checkNotNull(scope.save(selection)) }
+            assertEquals(selection, InventorySelectionSaver.restore(saved))
+        }
+        assertNull(InventorySelectionSaver.restore(listOf("missing-tab")))
+        assertEquals(InventorySelection(ItemType.OUTFIT),
+            InventorySelectionSaver.restore(listOf("OUTFIT", "wonju_tree")))
+    }
+
+    @Test fun onlyActualItemInvalidationClearsAValidDecorationSelection() {
+        val selection = InventorySelection(ItemType.DECOR, "wonju_tree")
+        val owned = original.copy(ownedItemIds = setOf("wonju_tree"))
+        val available = cards(ItemType.DECOR, owned)
+        assertEquals(selection, selection.revalidate(available))
+        assertEquals("wonju_tree", selection.selectedDecoration(available)?.item?.id)
+        val placed = owned.copy(decorationSlots = mapOf("slot_left" to "wonju_tree"))
+        val missingCatalog = catalog.copy(items = catalog.items.filterNot { it.id == "wonju_tree" })
+        val missing = inventoryCards(ItemType.DECOR, islandPresentation(owned, missingCatalog), missingCatalog)
+        for (invalid in listOf(cards(ItemType.DECOR), cards(ItemType.DECOR, placed), missing)) {
+            assertEquals(InventorySelection(ItemType.DECOR), selection.revalidate(invalid))
+        }
+        val slot = islandPresentation(owned, catalog).slots.first()
+        assertNull(selection.placement(slot, available, listOf(slot.copy(available = false))))
+        assertEquals(selection, selection.revalidate(available))
+    }
+
+    @Test fun tabChangeAndExplicitCancelClearOnlyTheIntendedSelection() {
+        val decor = InventorySelection(ItemType.DECOR, "wonju_tree")
+        assertEquals(decor, decor.selectTab(ItemType.DECOR))
+        assertEquals(InventorySelection(ItemType.OUTFIT), decor.selectTab(ItemType.OUTFIT))
+        assertEquals(InventorySelection(ItemType.DECOR), decor.cancelDecoration())
+        assertEquals(decor, decor.afterAction(GameAction.PlaceDecoration("slot_left", "daejeon_sign"),
+            MutationResult.Success))
+        assertEquals(decor, decor.afterAction(GameAction.PlaceDecoration("slot_left", null),
+            MutationResult.Success))
+    }
+
+    @Test fun gateForegroundAndBusyBlockInputWithoutLosingSelection() = runBlocking {
+        val chosen = InventorySelection(ItemType.DECOR, "wonju_tree")
+        var selection = chosen
+        val snapshot = original.copy(ownedItemIds = setOf("wonju_tree"))
+        val view = islandPresentation(snapshot, catalog)
+        val cards = cards(ItemType.DECOR, snapshot)
+        val slot = view.slots.first()
+        val calls = mutableListOf<GameAction>()
+        var permitted = true
+        var foreground = true
+        var closed = false
+        var reply = CompletableDeferred<MutationResult>()
+        val actions = IslandUiActions(this, { permitted }, { foreground }, { snapshot }, { view }) { action ->
+            calls += action
+            reply.await().also { selection = selection.afterAction(action, it) }
+        }
+        fun place() {
+            if (!actions.canEditInventory(closed)) return
+            val request = selection.placement(slot, cards, view.slots) ?: return
+            actions.submit(request) { !closed && selection.placement(slot, cards, view.slots) == request }
+        }
+        fun changeTab() {
+            if (actions.canEditInventory(closed)) selection = selection.selectTab(ItemType.FOOD)
+        }
+
+        permitted = false
+        place()
+        changeTab()
+        assertEquals(chosen, selection)
+        permitted = true
+        foreground = false
+        actions.refreshForeground()
+        place()
+        changeTab()
+        assertEquals(chosen, selection)
+        foreground = true
+        actions.refreshForeground()
+        place()
+        permitted = false // A new restriction before the queued callback.
+        yield()
+        assertTrue(calls.isEmpty())
+        assertEquals(chosen, selection)
+
+        permitted = true
+        val expected = GameAction.PlaceDecoration(slot.id, "wonju_tree")
+        place()
+        yield()
+        assertTrue(actions.busy)
+        place()
+        changeTab()
+        assertEquals(listOf(expected), calls)
+        assertEquals(chosen, selection)
+        reply.complete(MutationResult.Rejected("not applied"))
+        yield()
+        assertEquals(chosen, selection)
+
+        reply = CompletableDeferred()
+        place()
+        yield()
+        reply.complete(MutationResult.StorageFailure("not saved"))
+        yield()
+        assertEquals(chosen, selection)
+
+        reply = CompletableDeferred()
+        closed = true
+        place()
+        changeTab()
+        assertEquals(chosen, selection)
+        assertEquals(2, calls.size)
+        closed = false
+        place()
+        yield()
+        reply.complete(MutationResult.Success)
+        yield()
+        assertEquals(InventorySelection(ItemType.DECOR), selection)
+        place() // Still the pre-commit snapshot, but the successful selection is consumed.
+        yield()
+        assertEquals(listOf(expected, expected, expected), calls)
+    }
 
     @Test fun allTabsHaveThreeLockedCardsInDesignOrderBeforeAnyRewards() {
         val order = mapOf(
