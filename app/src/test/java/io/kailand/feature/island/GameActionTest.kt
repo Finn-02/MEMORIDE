@@ -88,6 +88,20 @@ class GameActionTest {
         assertEquals(5, store.writes)
     }
 
+    @Test fun separateDecorationMoveLeavesTheSourceEmptyWhenPlacementFails() = withService(
+        items.copy(decorationSlots = mapOf("slot_left" to "daejeon_sign")),
+    ) { service, store ->
+        assertEquals(MutationResult.Success, service.apply(GameAction.PlaceDecoration("slot_left", null)))
+        val afterRemoval = store.saved
+        store.beforeCommit = { throw IOException("Destination placement failed before commit") }
+        assertTrue(service.apply(GameAction.PlaceDecoration("slot_right", "daejeon_sign")) is MutationResult.StorageFailure)
+        assertEquals(afterRemoval, store.saved)
+        assertTrue(store.saved.decorationSlots.isEmpty())
+        assertEquals(afterRemoval.toSnapshot(), service.state.value)
+        assertTrue("daejeon_sign" in service.state.value.ownedItemIds)
+        assertEquals(1, store.writes)
+    }
+
     @Test fun unownedAndLegacyReferencesAreValidatedWithoutRepairingSave() = withService(
         GameSave(equippedOutfitId = "legacy_outfit", ownedItemIds = setOf("legacy_outfit", "legacy_food"),
             decorationSlots = mapOf("slot_back" to "legacy_decor", "legacy_slot" to "daejeon_sign")),

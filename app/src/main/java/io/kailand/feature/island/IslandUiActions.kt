@@ -84,15 +84,15 @@ internal class IslandUiActions(
         if (!foregroundAllowed) clearFeedback()
     }
 
-    fun submit(action: GameAction) {
-        if (busy || !canInteractNow() || !view().accepts(action)) return
+    fun submit(action: GameAction, stillValid: () -> Boolean = { true }) {
+        if (busy || !canInteractNow() || !view().accepts(action) || !stillValid()) return
         val version = feedbackVersion
         busy = true
         error = null
         stopMeal()
         scope.launch {
             try {
-                if (version != feedbackVersion || !canInteractNow() || !view().accepts(action)) return@launch
+                if (version != feedbackVersion || !canInteractNow() || !view().accepts(action) || !stillValid()) return@launch
                 val startSnapshot = snapshot()
                 val result = onAction(action)
                 ensureActive()

@@ -12,7 +12,10 @@ import io.kailand.core.contract.GameSnapshot
 import io.kailand.core.contract.ItemType
 import io.kailand.core.contract.JourneyKind
 import io.kailand.core.contract.MutationResult
+import io.kailand.core.contract.RegionVisitHistory
+import io.kailand.core.contract.RegionVisitSummary
 import java.time.Instant
+import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +53,11 @@ class BGameService internal constructor(
     private val _readiness = MutableStateFlow(GameReadiness.LOADING)
     val readiness: StateFlow<GameReadiness> = _readiness.asStateFlow()
 
+    private val _regionVisitHistory = MutableStateFlow<RegionVisitHistory>(RegionVisitHistory.Loading)
+
+    /** Committed game visits. A can pass this to C without exposing the save. */
+    val regionVisitHistory: StateFlow<RegionVisitHistory> = _regionVisitHistory.asStateFlow()
+
     init {
         scope.launch {
             try {
@@ -59,17 +67,21 @@ class BGameService internal constructor(
                 mutationMutex.withLock {
                     regionRewards = rewards
                     _state.value = snapshot
+                    _regionVisitHistory.value = saved.toVisitHistory()
                     _readiness.value = GameReadiness.READY
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                mutationMutex.withLock { _readiness.value = GameReadiness.READ_ERROR }
+                mutationMutex.withLock {
+                    _regionVisitHistory.value = RegionVisitHistory.Unavailable("Game save could not be read")
+                    _readiness.value = GameReadiness.READ_ERROR
+                }
             }
         }
     }
 
-    /** Duplicate lookup, DAILY growth and REGION gifts share one transaction. */
+    /** Duplicate lookup, REGION growth and first-discovery gifts share one transaction. */
     override suspend fun completeArrival(command: ArrivalCommand): ArrivalResult {
         if (_readiness.value != GameReadiness.READY) {
             return ArrivalResult.StorageFailure("Game save is not ready")
@@ -94,10 +106,10 @@ class BGameService internal constructor(
                         val regionId = command.regionId.takeIf { command.kind == JourneyKind.REGION }
                         val discovered = regionId?.takeIf { it !in current.discoveredRegionIds }
                         val gifts = discovered?.let(regionRewards::itemsFor) ?: emptyList()
-                        val dailyDate = if (command.kind == JourneyKind.DAILY) dailyDate(command.completedAtEpochMs) else null
-                        val grantGrowth = dailyDate != null && current.dailyGrowth < regionRewards.dailyGrowthCap &&
-                            !hasDailyGrantOn(current, dailyDate)
-                        val growthAfter = current.dailyGrowth + if (grantGrowth) 1 else 0
+                        val grantDate = regionId?.let { completionDate(command.completedAtEpochMs) }?.takeIf { date ->
+                            current.dailyGrowth < regionRewards.dailyGrowthCap && !hasUsedGrowthDate(current, date)
+                        }
+                        val growthAfter = current.dailyGrowth + if (grantDate != null) 1 else 0
                         val receipt = ArrivalReceipt(
                             journeyId = command.journeyId,
                             source = command.source,
@@ -114,7 +126,8 @@ class BGameService internal constructor(
                         result = ArrivalResult.Applied(receipt)
                         current.copy(
                             dailyGrowth = growthAfter,
-                            lastDailyGrantDate = if (grantGrowth) dailyDate else current.lastDailyGrantDate,
+                            lastDailyGrantDate = if (grantDate == null) current.lastDailyGrantDate else
+                                maxOf(grantDate, current.lastDailyGrantDate?.let(LocalDate::parse) ?: grantDate).toString(),
                             ownedItemIds = current.ownedItemIds + gifts,
                             discoveredRegionIds = current.discoveredRegionIds + listOfNotNull(discovered),
                             processedReceipts = current.processedReceipts +
@@ -124,6 +137,7 @@ class BGameService internal constructor(
                     }
                 }
                 _state.value = committed.toSnapshot()
+                _regionVisitHistory.value = committed.toVisitHistory()
                 checkNotNull(result)
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -133,14 +147,36 @@ class BGameService internal constructor(
         }
     }
 
-    private fun dailyDate(completedAtEpochMs: Long): String = Instant.ofEpochMilli(completedAtEpochMs)
-        .atZone(regionRewards.timeZone).toLocalDate().toString()
+    private fun GameSave.toVisitHistory(): RegionVisitHistory.Available {
+        // The validated map has one receipt per journey ID, including acknowledged receipts.
+        val regions = processedReceipts.values
+            .filter { it.kind == JourneyKind.REGION.name }
+            .groupBy { it.regionId }
+            .mapNotNull { (regionId, receipts) ->
+                if (regionId == null || !regionRewards.contains(regionId)) return@mapNotNull null
+                RegionVisitSummary(
+                    regionId = regionId,
+                    visitCount = receipts.size,
+                    firstVisitedAtEpochMs = receipts.minOf { it.completedAtEpochMs },
+                    lastVisitedAtEpochMs = receipts.maxOf { it.completedAtEpochMs },
+                )
+            }
+            .sortedBy { it.regionId }
+        return RegionVisitHistory.Available(regions)
+    }
 
-    private fun hasDailyGrantOn(save: GameSave, date: String): Boolean =
-        save.lastDailyGrantDate == date || save.processedReceipts.values.any { receipt ->
-            // Original receipts cover out-of-order arrivals without a new save field.
-            receipt.kind == JourneyKind.DAILY.name && receipt.growthAfter > receipt.growthBefore &&
-                dailyDate(receipt.completedAtEpochMs) == date
+    private fun completionDate(completedAtEpochMs: Long): LocalDate = Instant.ofEpochMilli(completedAtEpochMs)
+        .atZone(regionRewards.timeZone).toLocalDate()
+
+    private fun hasUsedGrowthDate(save: GameSave, date: LocalDate): Boolean =
+        save.lastDailyGrantDate == date.toString() || save.processedReceipts.values.any { receipt ->
+            // Old registered REGION completions count even when they awarded no growth.
+            val usesDate = when (receipt.kind) {
+                JourneyKind.REGION.name -> receipt.regionId?.let(regionRewards::contains) == true
+                JourneyKind.DAILY.name -> receipt.growthAfter > receipt.growthBefore
+                else -> false
+            }
+            usesDate && completionDate(receipt.completedAtEpochMs) == date
         }
 
     private fun invalidArrivalReason(command: ArrivalCommand): String? = when {
@@ -262,6 +298,7 @@ class BGameService internal constructor(
             try {
                 val committed = store.update { GameSave() }
                 _state.value = committed.toSnapshot()
+                _regionVisitHistory.value = committed.toVisitHistory()
                 MutationResult.Success
             } catch (cancelled: CancellationException) {
                 throw cancelled
