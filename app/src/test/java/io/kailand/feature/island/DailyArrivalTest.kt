@@ -19,7 +19,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
@@ -29,12 +28,10 @@ class DailyArrivalTest {
     private val d01 = IslandTestData.arrival("D01")
     private val d02 = IslandTestData.arrival("D02")
 
-    @Test fun d01StoresGrowthDateOriginalAndPendingInOneCommit() = withService { service, store ->
+    @Test fun d01StoresOriginalAndPendingWithoutNewDailyGrowth() = withService { service, store ->
         val receipt = (service.completeArrival(d01) as ArrivalResult.Applied).receipt
-        assertEquals(IslandTestData.expected("D01").getValue("growthDelta").jsonPrimitive.int,
-            receipt.growthAfter - receipt.growthBefore)
         assertEquals(0, receipt.growthBefore)
-        assertEquals(1, receipt.growthAfter)
+        assertEquals(0, receipt.growthAfter)
         assertEquals(d01.journeyId, receipt.journeyId)
         assertEquals(d01.kind, receipt.kind)
         assertEquals(d01.source, receipt.source)
@@ -45,8 +42,8 @@ class DailyArrivalTest {
         assertNull(receipt.discoveredRegionId)
         assertTrue(receipt.grantedItemIds.isEmpty())
         val saved = store.commits.single()
-        assertEquals(1, saved.dailyGrowth)
-        assertEquals("2026-10-31", saved.lastDailyGrantDate)
+        assertEquals(0, saved.dailyGrowth)
+        assertNull(saved.lastDailyGrantDate)
         assertEquals(receipt, saved.processedReceipts.getValue(d01.journeyId).toContract())
         assertEquals(d01.journeyId, saved.pendingReceiptId)
         assertEquals(saved.toSnapshot(), service.state.value)
@@ -55,12 +52,10 @@ class DailyArrivalTest {
     @Test fun d02SameDateIsAppliedWithNoAdditionalGrowth() = withService { service, store ->
         val original = (service.completeArrival(d01) as ArrivalResult.Applied).receipt
         val receipt = (service.completeArrival(d02) as ArrivalResult.Applied).receipt
-        assertEquals(IslandTestData.expected("D02").getValue("growthDelta").jsonPrimitive.int,
-            receipt.growthAfter - receipt.growthBefore)
-        assertEquals(1, receipt.growthBefore)
-        assertEquals(1, receipt.growthAfter)
+        assertEquals(0, receipt.growthBefore)
+        assertEquals(0, receipt.growthAfter)
         assertEquals(2, store.commits.size)
-        assertEquals("2026-10-31", store.save!!.lastDailyGrantDate)
+        assertNull(store.save!!.lastDailyGrantDate)
         assertEquals(2, store.save!!.processedReceipts.size)
         assertEquals(d02.journeyId, service.state.value.pendingReceipt?.journeyId)
         assertEquals(original, (service.completeArrival(d01) as ArrivalResult.AlreadyApplied).receipt)
@@ -72,23 +67,25 @@ class DailyArrivalTest {
         assertEquals(3, IslandTestData.rewards.dailyGrowthCap)
         val expectedGrowth = listOf(1, 2, 3, 3)
         expectedGrowth.forEachIndexed { index, growth ->
-            val input = daily(100 + index, "2026-11-0${index + 1}T01:00:00Z")
+            val input = region(100 + index, "2026-11-0${index + 1}T01:00:00Z")
             val receipt = (service.completeArrival(input) as ArrivalResult.Applied).receipt
+            assertEquals(index.coerceAtMost(3), receipt.growthBefore)
             assertEquals(growth, receipt.growthAfter)
-            assertTrue(receipt.grantedItemIds.isEmpty())
+            assertEquals(if (index == 0) IslandTestData.rewards.itemsFor("wonju") else emptyList<String>(),
+                receipt.grantedItemIds)
             assertEquals(growth, service.state.value.dailyGrowth)
             assertEquals(input.journeyId, service.state.value.pendingReceipt?.journeyId)
         }
         assertEquals(4, store.save!!.processedReceipts.size)
         assertEquals("2026-11-03", store.save!!.lastDailyGrantDate) // Last actual grant, not capped completion.
-        assertTrue(store.save!!.ownedItemIds.isEmpty())
-        assertTrue(store.save!!.discoveredRegionIds.isEmpty())
+        assertEquals(IslandTestData.rewards.itemsFor("wonju").toSet(), store.save!!.ownedItemIds)
+        assertEquals(setOf("wonju"), store.save!!.discoveredRegionIds)
     }
 
     @Test fun seoulMidnightAndUtcMidnightUseSeoulDates() = withService { service, store ->
-        val before = daily(110, "2026-11-03T14:59:59.999Z")
-        val midnight = daily(111, "2026-11-03T15:00:00Z")
-        val utcMidnight = daily(112, "2026-11-04T00:00:00Z")
+        val before = region(110, "2026-11-03T14:59:59.999Z")
+        val midnight = region(111, "2026-11-03T15:00:00Z")
+        val utcMidnight = region(112, "2026-11-04T00:00:00Z")
         assertEquals(1, (service.completeArrival(before) as ArrivalResult.Applied).receipt.growthAfter)
         assertEquals("2026-11-03", store.save!!.lastDailyGrantDate)
         assertEquals(2, (service.completeArrival(midnight) as ArrivalResult.Applied).receipt.growthAfter)
@@ -106,21 +103,29 @@ class DailyArrivalTest {
         )
         boundaries.forEach { (before, after, date) ->
             withService { service, store ->
-                service.completeArrival(daily(120, before))
-                assertEquals(2, (service.completeArrival(daily(121, after)) as ArrivalResult.Applied).receipt.growthAfter)
+                service.completeArrival(region(120, before))
+                assertEquals(2, (service.completeArrival(region(121, after)) as ArrivalResult.Applied).receipt.growthAfter)
                 assertEquals(date, store.save!!.lastDailyGrantDate)
             }
         }
     }
 
     @Test fun outOfOrderDifferentIdsCannotGrantTwiceForAnEarlierDate() = withService { service, store ->
-        service.completeArrival(daily(130, "2026-11-01T01:00:00Z"))
-        service.completeArrival(daily(131, "2026-11-02T01:00:00Z"))
-        val olderDate = (service.completeArrival(daily(132, "2026-11-01T02:00:00Z")) as ArrivalResult.Applied).receipt
-        assertEquals(2, olderDate.growthBefore)
-        assertEquals(2, olderDate.growthAfter)
+        val newer = region(130, "2026-11-02T01:00:00Z")
+        val older = region(131, "2026-11-01T01:00:00Z")
+        assertEquals(1, (service.completeArrival(newer) as ArrivalResult.Applied).receipt.growthAfter)
+        assertEquals(2, (service.completeArrival(older) as ArrivalResult.Applied).receipt.growthAfter)
         assertEquals("2026-11-02", store.save!!.lastDailyGrantDate)
-        assertEquals(3, (service.completeArrival(daily(133, "2026-10-31T01:00:00Z")) as ArrivalResult.Applied).receipt.growthAfter)
+        for (command in listOf(older.copy(journeyId = UUID(0, 132).toString()),
+            newer.copy(journeyId = UUID(0, 133).toString()))) {
+            val receipt = (service.completeArrival(command) as ArrivalResult.Applied).receipt
+            assertEquals(2, receipt.growthBefore)
+            assertEquals(2, receipt.growthAfter)
+            assertTrue(receipt.grantedItemIds.isEmpty())
+        }
+        assertEquals("2026-11-02", store.save!!.lastDailyGrantDate)
+        assertEquals(3, (service.completeArrival(region(134, "2026-10-31T01:00:00Z")) as ArrivalResult.Applied).receipt.growthAfter)
+        assertEquals("2026-11-02", store.save!!.lastDailyGrantDate)
     }
 
     @Test fun dailyNormalizesAnyRegionWithoutChangingRegionProgress() {
@@ -131,6 +136,8 @@ class DailyArrivalTest {
                 assertNull(receipt.regionId)
                 assertNull(receipt.discoveredRegionId)
                 assertTrue(receipt.grantedItemIds.isEmpty())
+                assertEquals(initial.dailyGrowth, receipt.growthAfter)
+                assertEquals(initial.lastDailyGrantDate, store.save!!.lastDailyGrantDate)
                 assertEquals(initial.ownedItemIds, store.save!!.ownedItemIds)
                 assertEquals(initial.discoveredRegionIds, store.save!!.discoveredRegionIds)
                 assertNull(store.save!!.processedReceipts.getValue(d01.journeyId).regionId)
@@ -138,7 +145,7 @@ class DailyArrivalTest {
         }
     }
 
-    @Test fun failedDailyCommitPublishesNothingAndRetryGrantsExactlyOnce() = withService { service, store ->
+    @Test fun failedDailyCommitPublishesNothingAndRetryRecordsExactlyOnce() = withService { service, store ->
         val before = service.state.value
         val originalSave = store.save
         val observed = mutableListOf<GameSnapshot>()
@@ -154,11 +161,11 @@ class DailyArrivalTest {
             assertTrue(service.completeArrival(d01) is ArrivalResult.Applied)
             assertTrue(service.completeArrival(d01) is ArrivalResult.AlreadyApplied)
             assertEquals(1, store.commits.size)
-            assertEquals(1, service.state.value.dailyGrowth)
+            assertEquals(0, service.state.value.dailyGrowth)
         } finally { collector.cancel() }
     }
 
-    @Test fun serviceRecreationPreservesDailyLimitOriginalAndAcknowledgement() = withService { service, store ->
+    @Test fun serviceRecreationPreservesDailyOriginalAndAcknowledgement() = withService { service, store ->
         val original = (service.completeArrival(d01) as ArrivalResult.Applied).receipt
         assertEquals(MutationResult.Success, service.acknowledgeReceipt(d01.journeyId))
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -168,7 +175,7 @@ class DailyArrivalTest {
                 elapsedSeconds = null, distanceMeters = null)
             assertEquals(original, (recreated.completeArrival(changedReplay) as ArrivalResult.AlreadyApplied).receipt)
             assertNull(recreated.state.value.pendingReceipt)
-            assertEquals(1, (recreated.completeArrival(d02) as ArrivalResult.Applied).receipt.growthAfter)
+            assertEquals(0, (recreated.completeArrival(d02) as ArrivalResult.Applied).receipt.growthAfter)
             assertTrue(recreated.acknowledgeReceipt(d01.journeyId) is MutationResult.Rejected)
             assertEquals(d02.journeyId, recreated.state.value.pendingReceipt?.journeyId)
             assertEquals(original, store.save!!.processedReceipts.getValue(d01.journeyId).toContract())
@@ -181,13 +188,13 @@ class DailyArrivalTest {
         val expected = IslandTestData.expected("D06")
         assertEquals(expected.getValue("grantedItemIds").jsonArray.map { it.jsonPrimitive.content }, original.grantedItemIds)
         assertEquals(expected.getValue("discoveredRegionId").jsonPrimitive.content, original.discoveredRegionId)
-        assertEquals(0, original.growthAfter - original.growthBefore)
+        assertEquals(1, original.growthAfter - original.growthBefore)
         assertEquals(input.completedAtEpochMs, original.completedAtEpochMs)
         assertEquals(input.source, original.source)
         assertNull(original.elapsedSeconds)
         assertNull(original.distanceMeters)
         assertEquals(setOf("wonju"), store.save!!.discoveredRegionIds)
-        assertNull(store.save!!.lastDailyGrantDate)
+        assertEquals("2026-10-31", store.save!!.lastDailyGrantDate)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
             val recreated = BGameService(store, scope) { IslandTestData.rewards }
@@ -217,7 +224,7 @@ class DailyArrivalTest {
     @Test fun simultaneousDifferentJourneysOnOneDateGrantOnlyOnce() = withService { service, store ->
         val results = coroutineScope {
             (140..155).map { id -> async(Dispatchers.Default) {
-                service.completeArrival(daily(id, "2026-11-03T01:00:00Z")) as ArrivalResult.Applied
+                service.completeArrival(region(id, "2026-11-03T01:00:00Z")) as ArrivalResult.Applied
             } }.awaitAll()
         }
         assertEquals(1, results.sumOf { it.receipt.growthAfter - it.receipt.growthBefore })
@@ -248,7 +255,7 @@ class DailyArrivalTest {
         } finally { scope.cancel() }
     }
 
-    private fun daily(id: Int, instant: String): ArrivalCommand = d01.copy(
+    private fun region(id: Int, instant: String): ArrivalCommand = IslandTestData.arrival("D06").copy(
         journeyId = UUID(0, id.toLong()).toString(), completedAtEpochMs = Instant.parse(instant).toEpochMilli(),
     )
 

@@ -36,8 +36,11 @@ import io.kailand.core.contract.AvatarPreview
 import io.kailand.core.contract.Catalog
 import io.kailand.core.contract.CharacterDefinition
 import io.kailand.core.contract.GameRules
+import io.kailand.core.contract.GateState
+import io.kailand.core.contract.InteractionGate
 import io.kailand.core.contract.ItemDefinition
 import io.kailand.core.contract.ItemType
+import io.kailand.core.contract.MutationResult
 import io.kailand.core.contract.RegionDefinition
 import io.kailand.core.ui.MemorideTheme
 import kotlinx.coroutines.Dispatchers
@@ -205,3 +208,23 @@ private fun readPreviewCatalog(assets: AssetManager): Catalog {
 private fun JsonObject.string(key: String) = getValue(key).jsonPrimitive.content
 private fun JsonObject.objects(key: String) = getValue(key).jsonArray.map { it.jsonObject }
 private fun JsonObject.strings(key: String) = getValue(key).jsonArray.map { it.jsonPrimitive.content }
+
+/** Debug-only S01 preview with the packaged Catalog and in-memory selection. */
+@Preview(name = "S01 wide", widthDp = 1080, heightDp = 640)
+@Preview(name = "S01 split", widthDp = 600, heightDp = 480)
+@Preview(name = "S01 portrait", widthDp = 420, heightDp = 760)
+@Preview(name = "S01 large text", widthDp = 411, heightDp = 500, fontScale = 2f)
+@Composable
+fun CharacterSelectionRuntimePreview() {
+    val assets = LocalContext.current.assets
+    val catalog = remember(assets) { runCatching { readPreviewCatalog(assets) }.getOrNull() }
+    if (catalog == null) {
+        Text("S01 · Run Preview on Android to load the packaged Catalog")
+        return
+    }
+    var snapshot by remember { mutableStateOf(GameSave().toSnapshot()) }
+    CharacterSelectionScreen(snapshot, catalog, InteractionGate(GateState.PARKED_ALLOWED), onSelect = { id ->
+        snapshot = snapshot.copy(avatar = AvatarPreview(id, null))
+        MutationResult.Success
+    })
+}
