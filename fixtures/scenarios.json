@@ -18,7 +18,7 @@
         "distanceMeters": 5000.0
       },
       "expected": {
-        "growthDelta": 1,
+        "growthDelta": 0,
         "grantedItemIds": [],
         "duplicate": false
       }
@@ -60,7 +60,7 @@
         "distanceMeters": 5000.0
       },
       "expected": {
-        "growthDelta": 0,
+        "growthDelta": 1,
         "grantedItemIds": [
           "daejeon_bread",
           "daejeon_hat",
@@ -129,7 +129,7 @@
         "distanceMeters": null
       },
       "expected": {
-        "growthDelta": 0,
+        "growthDelta": 1,
         "grantedItemIds": [
           "wonju_potato",
           "wonju_crown",

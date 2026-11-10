@@ -32,7 +32,7 @@
           "characterId": "tori",
           "outfitItemId": "daejeon_hat"
         },
-        "dailyGrowth": 0,
+        "dailyGrowth": 1,
         "ownedItemIds": [
           "daejeon_bread",
           "daejeon_hat",
@@ -53,7 +53,7 @@
           "elapsedSeconds": 1200,
           "distanceMeters": 5000.0,
           "growthBefore": 0,
-          "growthAfter": 0,
+          "growthAfter": 1,
           "discoveredRegionId": "daejeon",
           "grantedItemIds": [
             "daejeon_bread",
@@ -65,7 +65,7 @@
     },
     {
       "id": "daily",
-      "label": "Preview DEMO daily",
+      "label": "Preview DEMO legacy DAILY growth",
       "gate": {
         "state": "PARKED_ALLOWED"
       },
@@ -91,6 +91,37 @@
           "discoveredRegionId": null,
           "grantedItemIds": []
         }
+      },
+      "growthPolicy": "legacy_daily"
+    },
+    {
+      "id": "daily_current",
+      "label": "Preview DEMO current DAILY without growth",
+      "gate": {
+        "state": "PARKED_ALLOWED"
+      },
+      "game": {
+        "avatar": {
+          "characterId": "tori",
+          "outfitItemId": null
+        },
+        "dailyGrowth": 0,
+        "ownedItemIds": [],
+        "discoveredRegionIds": [],
+        "decorationSlots": {},
+        "pendingReceipt": {
+          "journeyId": "00000000-0000-4000-8000-000000001001",
+          "source": "DEMO",
+          "kind": "DAILY",
+          "regionId": null,
+          "completedAtEpochMs": 1793408400000,
+          "elapsedSeconds": 1200,
+          "distanceMeters": 5000.0,
+          "growthBefore": 0,
+          "growthAfter": 0,
+          "discoveredRegionId": null,
+          "grantedItemIds": []
+        }
       }
     },
     {
@@ -104,7 +135,7 @@
           "characterId": "tori",
           "outfitItemId": null
         },
-        "dailyGrowth": 0,
+        "dailyGrowth": 1,
         "ownedItemIds": [
           "wonju_potato",
           "wonju_crown",
@@ -123,7 +154,7 @@
           "elapsedSeconds": null,
           "distanceMeters": null,
           "growthBefore": 0,
-          "growthAfter": 0,
+          "growthAfter": 1,
           "discoveredRegionId": "wonju",
           "grantedItemIds": [
             "wonju_potato",
@@ -145,7 +176,7 @@
           "characterId": "tori",
           "outfitItemId": "daejeon_hat"
         },
-        "dailyGrowth": 0,
+        "dailyGrowth": 1,
         "ownedItemIds": [
           "daejeon_bread",
           "daejeon_hat",
@@ -166,7 +197,7 @@
           "elapsedSeconds": 1200,
           "distanceMeters": 5000.0,
           "growthBefore": 0,
-          "growthAfter": 0,
+          "growthAfter": 1,
           "discoveredRegionId": "daejeon",
           "grantedItemIds": [
             "daejeon_bread",

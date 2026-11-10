@@ -212,15 +212,20 @@ class DemoScenarioRunnerTest {
     @Test fun dailyThenAdditionalDailyAndRegionRevisitFollowFixtureDependencies() = runBlocking {
         val f = Fixture()
         f.readyToComplete("D01"); assertTrue(f.runner.advance())
-        assertEquals(1, f.game.dailyGrowth)
+        assertEquals(0, f.game.dailyGrowth)
         f.readyToComplete("D02"); assertTrue(f.runner.advance())
-        assertEquals(1, f.game.dailyGrowth)
+        assertEquals(0, f.game.dailyGrowth)
         assertEquals(2, f.requests.size)
         f.readyToComplete("D03"); assertTrue(f.runner.advance())
-        val originalItems = f.game.ownedItemIds
+        val original = f.game
+        assertEquals(1, original.dailyGrowth)
+        assertEquals(3, original.ownedItemIds.size)
         f.runner.selectScenario("D04"); assertTrue(f.runner.advance())
+        assertEquals(original, f.game)
         f.readyToComplete("D05"); assertTrue(f.runner.advance())
-        assertEquals(originalItems, f.game.ownedItemIds)
+        assertEquals(1, f.game.dailyGrowth)
+        assertEquals(original.ownedItemIds, f.game.ownedItemIds)
+        assertTrue(f.game.pendingReceipt!!.grantedItemIds.isEmpty())
         assertEquals(4, f.requests.size) // Replay creates neither a destination request nor a new journey.
     }
 

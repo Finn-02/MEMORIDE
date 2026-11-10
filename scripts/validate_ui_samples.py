@@ -16,11 +16,15 @@ def validate_samples(catalog: dict, document: dict) -> int:
     slots = set(catalog['rules']['decorationSlotIds'])
     seen = set()
     for sample in samples:
+        require(isinstance(sample, dict), 'UI sample must be an object')
         sid = sample.get('id')
         require(isinstance(sid, str) and sid and sid not in seen, 'duplicate or missing UI sample id')
         seen.add(sid)
         require(sample.get('gate', {}).get('state') in {'UNKNOWN', 'RESTRICTED', 'PARKED_ALLOWED'}, f'{sid}: invalid gate')
-        g = sample.get('game', {})
+        growth_policy = sample.get('growthPolicy', 'current')
+        require(growth_policy in ('current', 'legacy_daily'), f'{sid}: invalid preview growth policy')
+        g = sample.get('game')
+        require(isinstance(g, dict) and 'pendingReceipt' in g, f'{sid}: invalid game snapshot')
         owned = g.get('ownedItemIds')
         require(isinstance(owned, list) and all(x in item for x in owned) and len(owned) == len(set(owned)), f'{sid}: invalid ownership')
         discovered = g.get('discoveredRegionIds')
@@ -37,7 +41,9 @@ def validate_samples(catalog: dict, document: dict) -> int:
         require(all(x in owned and item[x]['type'] == 'DECOR' for x in decorations.values()), f'{sid}: invalid decoration')
         receipt = g.get('pendingReceipt')
         if receipt is None:
+            require(growth_policy == 'current', f'{sid}: legacy DAILY preview requires a receipt')
             continue
+        require(isinstance(receipt, dict), f'{sid}: invalid pending receipt')
         require(receipt.get('source') == 'DEMO', f'{sid}: preview receipt must remain DEMO')
         try:
             uuid.UUID(receipt.get('journeyId', ''))
@@ -54,8 +60,13 @@ def validate_samples(catalog: dict, document: dict) -> int:
         require(found is None or (found == region and found in discovered), f'{sid}: receipt discovery mismatch')
         before, after = receipt.get('growthBefore'), receipt.get('growthAfter')
         require(type(before) is int and type(after) is int and 0 <= before <= after <= catalog['rules']['dailyGrowthCap'], f'{sid}: receipt growth invalid')
-        require(receipt['kind'] != 'REGION' or before == after, f'{sid}: REGION receipt must not show DAILY growth')
-        require(receipt['kind'] != 'DAILY' or after - before <= 1, f'{sid}: DAILY receipt growth must be 0 or 1')
+        delta = after - before
+        require(growth_policy != 'legacy_daily' or receipt['kind'] == 'DAILY', f'{sid}: legacy policy requires a DAILY receipt')
+        if receipt['kind'] == 'DAILY':
+            limit = 1 if growth_policy == 'legacy_daily' else 0
+            require(delta <= limit, f'{sid}: DAILY receipt growth exceeds the preview policy')
+        else:
+            require(delta <= (1 if region is not None else 0), f'{sid}: REGION receipt growth requires a registered region and at most one step')
         require(after == growth, f'{sid}: preview pending growth mismatch')
         require(type(receipt.get('completedAtEpochMs')) is int and receipt['completedAtEpochMs'] > 0, f'{sid}: invalid receipt time')
         for field in ['elapsedSeconds', 'distanceMeters']:

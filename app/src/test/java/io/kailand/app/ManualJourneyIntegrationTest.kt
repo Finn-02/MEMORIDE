@@ -269,46 +269,143 @@ class ManualJourneyIntegrationTest {
         }
     }
 
-    @Test fun failedDailySaveRetriedAfterKstMidnightUsesOriginalDateAndRestoresBothDays() = runBlocking {
+    @Test fun failedDailySaveRetriedAfterKstMidnightPreservesOriginalAndLegacyGrowthDate() = runBlocking {
         withTimeout(15_000) {
-            val p = pipeline()
+            val file = File(temp.newFolder(), "game.preferences_pb")
+            val legacy = GameSave(dailyGrowth = 1, lastDailyGrantDate = "2026-11-05")
+            withRestoredGame(file) { _, store -> store.update { legacy } }
+            val p = pipeline(file)
             try {
-                p.clock = Instant.parse("2026-11-06T14:59:59Z").toEpochMilli()
+                assertEquals(legacy.toSnapshot(), p.game.state.value)
+                val firstConfirmation = Instant.parse("2026-11-06T14:59:59Z").toEpochMilli()
+                p.clock = firstConfirmation
                 val token = p.question(JourneyKind.DAILY)
                 p.store.failNext = true
                 assertTrue(p.manual.choose(token, ManualJourneyChoice.ARRIVED) { true } is RequestResult.Failed)
-                assertNull(p.store.read())
+                assertEquals(legacy, p.store.read())
+                assertEquals(legacy.toSnapshot(), p.game.state.value)
+                val draft = checkNotNull(p.manual.state.value.confirmedDraft)
+                assertEquals(token, draft.token)
+
                 p.clock = Instant.parse("2026-11-06T15:00:01Z").toEpochMilli()
                 assertEquals(RequestResult.Accepted, p.manual.retry { true })
+                assertSame(draft, p.manual.state.value.confirmedDraft)
+                val receipt = checkNotNull(p.game.state.value.pendingReceipt)
+                assertEquals(token.journeyId, receipt.journeyId)
+                assertEquals(firstConfirmation, receipt.completedAtEpochMs)
+                assertEquals(JourneyKind.DAILY, receipt.kind)
+                assertEquals(DataSource.USER_CONFIRMED, receipt.source)
+                assertNull(receipt.regionId)
+                assertNull(receipt.elapsedSeconds)
+                assertNull(receipt.distanceMeters)
+                assertEquals(legacy.dailyGrowth, receipt.growthBefore)
+                assertEquals(legacy.dailyGrowth, receipt.growthAfter)
+                assertTrue(receipt.grantedItemIds.isEmpty())
+                val expected = legacy.copy(
+                    processedReceipts = mapOf(token.journeyId to SavedReceipt.fromContract(receipt)),
+                    pendingReceiptId = token.journeyId,
+                )
+                assertEquals(expected, p.store.read())
+                p.close()
+                withRestoredGame(p.file) { game, store ->
+                    assertEquals(expected, store.read())
+                    assertEquals(legacy.lastDailyGrantDate, store.read()!!.lastDailyGrantDate)
+                    assertEquals(expected.toSnapshot(), game.state.value)
+                    assertEquals(RegionVisitHistory.Available(emptyList()), game.regionVisitHistory.value)
+                }
+            } finally { p.close() }
+        }
+    }
+
+    @Test fun failedRegionSaveRetriedAfterKstMidnightUsesOriginalDateAndRestoresBothDays() = runBlocking {
+        withTimeout(15_000) {
+            val p = pipeline()
+            try {
+                val firstConfirmation = Instant.parse("2026-11-06T14:59:59Z").toEpochMilli()
+                val nextDate = Instant.parse("2026-11-06T15:00:01Z").toEpochMilli()
+                val gifts = catalog.regions.single { it.id == "wonju" }.itemIds
+                val emptySnapshot = p.game.state.value
+                val emptyHistory = p.game.regionVisitHistory.value
+                p.clock = firstConfirmation
+                val token = p.question(JourneyKind.REGION)
+                p.store.failNext = true
+                assertTrue(p.manual.choose(token, ManualJourneyChoice.ARRIVED) { true } is RequestResult.Failed)
+                assertNull(p.store.read())
+                assertEquals(emptySnapshot, p.game.state.value)
+                assertEquals(emptyHistory, p.game.regionVisitHistory.value)
+                val draft = checkNotNull(p.manual.state.value.confirmedDraft)
+                assertEquals(token, draft.token)
+
+                p.clock = nextDate
+                p.foreground = false
+                p.manual.updateHost()
+                assertTrue(p.manual.retry { true } is RequestResult.Failed)
+                assertNull(p.store.read())
+                p.foreground = true
+                p.manual.updateHost()
+                assertEquals(RequestResult.Accepted, p.manual.retry { true })
+                assertSame(draft, p.manual.state.value.confirmedDraft)
                 val original = checkNotNull(p.game.state.value.pendingReceipt)
-                assertEquals(Instant.parse("2026-11-06T14:59:59Z").toEpochMilli(), original.completedAtEpochMs)
+                assertEquals(token.journeyId, original.journeyId)
+                assertEquals(firstConfirmation, original.completedAtEpochMs)
+                assertEquals(DataSource.USER_CONFIRMED, original.source)
+                assertEquals("wonju", original.regionId)
+                assertEquals("wonju", original.discoveredRegionId)
+                assertEquals(0, original.growthBefore)
+                assertEquals(1, original.growthAfter)
+                assertEquals(3, gifts.size)
+                assertEquals(gifts, original.grantedItemIds)
+                assertNull(original.elapsedSeconds)
+                assertNull(original.distanceMeters)
                 assertEquals("2026-11-06", p.store.read()!!.lastDailyGrantDate)
-                assertEquals(1, p.game.state.value.dailyGrowth)
-                assertNull(original.elapsedSeconds); assertNull(original.distanceMeters)
+                assertTrue(p.manual.choose(token, ManualJourneyChoice.ARRIVED) { true } is RequestResult.Failed)
+
                 val closer = ReceiptCloseCoordinator(p.game, p.commands, 0) { p.allowed() }
                 assertEquals(MutationResult.Success, closer.close(original) {
                     p.manual.finishAcknowledged(original.journeyId)
                 })
-                val next = p.question(JourneyKind.DAILY)
+                assertNull(p.game.state.value.pendingReceipt)
+                assertEquals(original, p.store.read()!!.processedReceipts.getValue(token.journeyId).toContract())
+
+                val next = p.question(JourneyKind.REGION)
+                assertNotEquals(token.journeyId, next.journeyId)
                 assertEquals(RequestResult.Accepted, p.manual.choose(next, ManualJourneyChoice.ARRIVED) { true })
                 val second = checkNotNull(p.game.state.value.pendingReceipt)
-                assertEquals(2, p.game.state.value.dailyGrowth)
+                assertEquals(next.journeyId, second.journeyId)
+                assertEquals(nextDate, second.completedAtEpochMs)
+                assertEquals(1, second.growthBefore)
+                assertEquals(2, second.growthAfter)
+                assertTrue(second.grantedItemIds.isEmpty())
+                assertNull(second.discoveredRegionId)
                 assertEquals("2026-11-07", p.store.read()!!.lastDailyGrantDate)
                 assertEquals(MutationResult.Success, closer.close(second) {
                     p.manual.finishAcknowledged(second.journeyId)
                 })
-                // A different confirmation on that same KST day cannot grant daily growth again.
-                val sameDay = p.question(JourneyKind.DAILY)
+
+                p.clock = nextDate + 1_000
+                val sameDay = p.question(JourneyKind.REGION)
+                assertNotEquals(next.journeyId, sameDay.journeyId)
                 assertEquals(RequestResult.Accepted, p.manual.choose(sameDay, ManualJourneyChoice.ARRIVED) { true })
-                assertEquals(2, p.game.state.value.dailyGrowth)
-                val expected = p.store.read()
+                val third = checkNotNull(p.game.state.value.pendingReceipt)
+                assertEquals(sameDay.journeyId, third.journeyId)
+                assertEquals(nextDate + 1_000, third.completedAtEpochMs)
+                assertEquals(2, third.growthBefore)
+                assertEquals(2, third.growthAfter)
+                assertTrue(third.grantedItemIds.isEmpty())
+                assertNull(third.discoveredRegionId)
+                val expected = checkNotNull(p.store.read())
                 p.close()
                 withRestoredGame(p.file) { game, store ->
                     assertEquals(expected, store.read())
-                    assertEquals(3, store.read()!!.processedReceipts.size)
+                    assertEquals("2026-11-07", expected.lastDailyGrantDate)
+                    assertEquals(listOf(original, second, third).associateBy { it.journeyId },
+                        expected.processedReceipts.mapValues { it.value.toContract() })
                     assertEquals(2, game.state.value.dailyGrowth)
-                    assertTrue(game.state.value.ownedItemIds.isEmpty())
-                    assertEquals(sameDay.journeyId, game.state.value.pendingReceipt!!.journeyId)
+                    assertEquals(gifts.toSet(), game.state.value.ownedItemIds)
+                    assertEquals(third, game.state.value.pendingReceipt)
+                    assertEquals(RegionVisitHistory.Available(listOf(
+                        RegionVisitSummary("wonju", 3, firstConfirmation, third.completedAtEpochMs),
+                    )), game.regionVisitHistory.value)
                 }
             } finally { p.close() }
         }
@@ -367,14 +464,13 @@ class ManualJourneyIntegrationTest {
         } finally { scope.coroutineContext[Job]!!.cancelAndJoin() }
     }
 
-    private suspend fun pipeline(): Pipeline = Pipeline().also {
+    private suspend fun pipeline(file: File = File(temp.newFolder(), "game.preferences_pb")): Pipeline = Pipeline(file).also {
         assertEquals(GameReadiness.READY, it.game.readiness.first { value -> value != GameReadiness.LOADING })
         it.manual.updateHost()
     }
 
-    private inner class Pipeline {
+    private inner class Pipeline(val file: File) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val file = File(temp.newFolder(), "game.preferences_pb")
         val backend = PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
         val store = FailingStore(PreferencesGameSaveStore(backend))
         val game = BGameService(store, scope) { RegionRewards.fromJson(json) }
