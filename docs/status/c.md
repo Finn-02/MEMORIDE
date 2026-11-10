@@ -1,5 +1,13 @@
 # C 진행 상태
 
+## UX-C01~02 — 새 월드맵·지역 상세 PR 준비 — 2026-11-10 KST
+
+새 배정의 S04를 독립 화면 `WorldMapScreen`으로 구현했다. A의 `NewWorldSlot`/`RegionVisitHistory` 계약을 소비하고 기존 AppRoot는 교체하지 않는다.
+정적 대한민국 지도·발견 아이콘·지역 상세·KST 날짜·보유 기념품, 원본 Figma 빈 지도/원주/상세를 직접 대조했다.
+일반 API37 약411dp 세로/글자2.0에서 원주 선택·날짜/기념품·상세 닫기 도달과 배율 복원을 확인했다.
+세 지역 간격 회귀 포함 Python59/JUnit285/debug PASS. 실제 Pleos·live 기록/저장·섬 route·네 시연·전체 접근성은 NOT RUN이다.
+공통 Manifest는 변경하지 않고 A 연결 예제만 전달한다. [검사 범위·출처·연결·남은 항목](../UX_C01_WORLD_MAP_START.md)을 따른다.
+
 ## C05 후속 — Part B 외형 연결 검사 — 2026-11-09 KST
 
 PR24 `c0dbea6`의 C 독립 Python59/JUnit267/debug PASS, 승인 PNG36장 문서/실제 APK 해시 일치 확인.

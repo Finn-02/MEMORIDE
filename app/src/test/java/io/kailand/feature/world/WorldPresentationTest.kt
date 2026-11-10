@@ -36,6 +36,21 @@ class WorldPresentationTest {
     }
     private val allowed = InteractionGate(GateState.PARKED_ALLOWED)
 
+    @Test fun newMapIsEmptyBeforeDiscoveryEvenIfItemsAreOwned() {
+        val snapshot = sample("fresh").copy(ownedItemIds = catalog.items.map { it.id }.toSet())
+        assertTrue(discoveredWorldRegions(snapshot, catalog).isEmpty())
+    }
+
+    @Test fun newMapShowsOnlyUniqueRegisteredDiscoveriesAndDoesNotMutateSave() {
+        val original = sample("regional")
+        val snapshot = original.copy(discoveredRegionIds = original.discoveredRegionIds + "future_region")
+        assertEquals(original.discoveredRegionIds, discoveredWorldRegions(snapshot, catalog).map { it.id }.toSet())
+        val found = catalog.regions.single { it.id in original.discoveredRegionIds }
+        val ambiguous = catalog.copy(regions = catalog.regions + found)
+        assertTrue(discoveredWorldRegions(snapshot, ambiguous).isEmpty())
+        assertTrue("future_region" in snapshot.discoveredRegionIds)
+    }
+
     @Test fun freshCatalogRegionsAreLockedButEligibleAsFirstDestinations() {
         val view = worldPresentation(sample("fresh"), catalog)
         assertEquals(catalog.regions.map { it.name }, view.regions.map { it.name })
