@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun GameAppRoot(
     gate: InteractionGate, app: GameAppSession, owner: Any, developmentEntry: Boolean,
-    navigation: ProductNavigation, screens: ProductScreenSlots = ProductScreenSlots(),
+    navigation: ProductNavigation, screens: ProductScreenSlots? = null,
     launchNavigation: suspend () -> RequestResult = { RequestResult.Failed("내비 앱을 직접 열어 주세요.") },
 ) {
     // Retain feature saveable UI across temporary platform blocking, outside the gated subtree.
@@ -56,7 +56,7 @@ fun GameAppRoot(
     }
     savedUi.SaveableStateProvider("product") {
         ProductScreens(app, owner, loaded.catalog, snapshot, history, gate, session.generation,
-            developmentEntry, navigation, screens, launchNavigation)
+            developmentEntry, navigation, screens ?: productScreenSlots(snapshot), launchNavigation)
     }
 }
 
@@ -230,8 +230,8 @@ private fun ProductScreens(
                     ProductRoute.SAVE -> screens.save(
                         if (saving) ArrivalSaveUiState.Saving else ArrivalSaveUiState.Failed(
                             "저장을 마치지 못했어요. 최초 확인 내용으로 다시 시도해 주세요."), gate,
-                        { if (current() && !saving && manual != null) scope.launch { show(manual.retry(::current)) } },
-                        { if (!saving) open(ProductRoute.ISLAND) }, Modifier)
+                        { if (current() && manual != null && !manual.busy.value) scope.launch { show(manual.retry(::current)) } },
+                        { if (manual?.busy?.value != true) open(ProductRoute.ISLAND) }, Modifier)
                     ProductRoute.BRIEFING -> ProductColumn {
                         Text("기록 확인을 마쳤어요")
                         MemorideSecondaryButton("섬으로 돌아가기", { open(ProductRoute.ISLAND) })

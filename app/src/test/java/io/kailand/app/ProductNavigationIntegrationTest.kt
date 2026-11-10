@@ -2,6 +2,8 @@ package io.kailand.app
 
 import io.kailand.core.contract.*
 import io.kailand.feature.island.*
+import io.kailand.feature.briefing.BriefingActions
+import io.kailand.feature.briefing.BriefingAction
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.*
@@ -193,6 +195,75 @@ class ProductNavigationIntegrationTest {
             pending.await()
             assertEquals(ProductRoute.ISLAND, p.nav.state.value.route)
             assertFalse(p.nav.busy.value)
+        } finally { p.scope.cancel() }
+    }
+
+    @Test fun pmResultFailureKeepsReceiptAndBothDestinationsRetryThroughActualAcknowledge() = runBlocking {
+        for ((action, target) in listOf(BriefingAction.ISLAND to ProductRoute.ISLAND,
+            BriefingAction.SELECT_CHARACTER to ProductRoute.CHARACTER)) {
+            val p = Pipeline()
+            try {
+                val receipt = p.arrive()
+                p.nav.presentReceipt(receipt.journeyId)
+                val screen = p.nav.state.value
+                val closer = ReceiptCloseCoordinator(p.game, p.commands, 0) { p.owner }
+                val actions = BriefingActions(p.context.gate)
+                var calls = 0
+                val callback: suspend () -> MutationResult = {
+                    calls++
+                    closer.close(receipt, { p.nav.current(screen) }) {
+                        p.nav.acknowledged(screen, receipt.journeyId, target)
+                    }
+                }
+                p.store.fail = true
+                actions.perform(action, callback)
+                assertEquals(action, actions.state.value.failed)
+                assertFalse(actions.state.value.completed)
+                assertEquals(receipt, p.game.state.value.pendingReceipt)
+                assertEquals(ProductRoute.BRIEFING, p.nav.state.value.route)
+                actions.perform(action, callback)
+                assertTrue(actions.state.value.completed)
+                assertEquals(target, p.nav.state.value.route)
+                assertNull(p.game.state.value.pendingReceipt)
+                assertEquals(receipt, p.store.save.processedReceipts[receipt.journeyId]?.toContract())
+                actions.perform(action, callback)
+                assertEquals(2, calls)
+                assertEquals(1, p.store.save.processedReceipts.size)
+            } finally { p.scope.cancel() }
+        }
+    }
+
+    @Test fun pmResultButtonsAndBackShareOnePendingAcknowledgeAndPreserveDisplayedReceipt() = runBlocking {
+        val p = Pipeline()
+        try {
+            val receipt = p.arrive()
+            p.nav.presentReceipt(receipt.journeyId)
+            val screen = p.nav.state.value
+            val actions = BriefingActions(p.context.gate)
+            val closer = ReceiptCloseCoordinator(p.game, p.commands, 0) { p.owner }
+            var calls = 0
+            fun callback(target: ProductRoute): suspend () -> MutationResult = {
+                calls++
+                closer.close(receipt, { p.nav.current(screen) }) {
+                    p.nav.acknowledged(screen, receipt.journeyId, target)
+                }
+            }
+            val updatesBefore = p.store.updates
+            p.store.pause = true
+            val pending = launch(start = CoroutineStart.UNDISPATCHED) {
+                actions.perform(BriefingAction.ISLAND, callback(ProductRoute.ISLAND))
+            }
+            p.store.committed.await()
+            assertEquals(receipt, closer.heldReceipt.value)
+            actions.perform(BriefingAction.SELECT_CHARACTER, callback(ProductRoute.CHARACTER))
+            actions.perform(BriefingAction.ISLAND, callback(ProductRoute.ISLAND)) // physical Back uses same PM action
+            assertEquals(1, calls)
+            assertEquals(ProductRoute.BRIEFING, p.nav.state.value.route)
+            p.store.release.complete(Unit)
+            pending.join()
+            assertEquals(ProductRoute.ISLAND, p.nav.state.value.route)
+            assertTrue(actions.state.value.completed)
+            assertEquals(updatesBefore + 1, p.store.updates)
         } finally { p.scope.cancel() }
     }
 
