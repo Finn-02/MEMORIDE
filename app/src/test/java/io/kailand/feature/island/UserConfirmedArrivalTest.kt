@@ -70,20 +70,20 @@ class UserConfirmedArrivalTest {
         assertEquals(original, (service.completeArrival(command) as ArrivalResult.AlreadyApplied).receipt)
     }
 
-    @Test fun dailyUsesConfirmationKstDateAndExistingGrowthCapWithoutRegionRewards() = withService { service, store ->
+    @Test fun newDailyKeepsConfirmationTimeWithoutGrowthOrRegionRewards() = withService { service, store ->
         val times = listOf(
             "2026-11-05T14:59:59.999Z", // Nov 5, just before KST midnight.
             "2026-11-05T15:00:00Z",     // Nov 6, midnight.
             "2026-11-06T14:59:59.999Z", // Same KST date.
-            "2026-11-06T15:00:00Z",     // Nov 7, reaches cap.
-            "2026-11-07T15:00:00Z",     // Nov 8, remains at cap.
+            "2026-11-06T15:00:00Z",     // Nov 7.
+            "2026-11-07T15:00:00Z",     // Nov 8.
         )
-        val expected = listOf(1, 2, 2, 3, 3)
         times.forEachIndexed { index, time ->
             val input = confirmed("D01").copy(journeyId = id(index),
                 completedAtEpochMs = Instant.parse(time).toEpochMilli(), regionId = "daejeon")
             val receipt = (service.completeArrival(input) as ArrivalResult.Applied).receipt
-            assertEquals(expected[index], receipt.growthAfter)
+            assertEquals(0, receipt.growthBefore)
+            assertEquals(0, receipt.growthAfter)
             assertEquals(input.completedAtEpochMs, receipt.completedAtEpochMs)
             assertEquals(DataSource.USER_CONFIRMED, receipt.source)
             assertNull(receipt.regionId)
@@ -94,7 +94,7 @@ class UserConfirmedArrivalTest {
             assertTrue(store.save!!.ownedItemIds.isEmpty())
             assertTrue(store.save!!.discoveredRegionIds.isEmpty())
         }
-        assertEquals("2026-11-07", store.save!!.lastDailyGrantDate)
+        assertNull(store.save!!.lastDailyGrantDate)
     }
 
     @Test fun regionFirstVisitRevisitAndD06KeepCatalogRewardsAndNulls() = withService { service, store ->
@@ -107,13 +107,15 @@ class UserConfirmedArrivalTest {
             assertEquals(DataSource.USER_CONFIRMED, receipt.source)
             assertNull(receipt.elapsedSeconds)
             assertNull(receipt.distanceMeters)
-            assertEquals(0, receipt.growthBefore)
-            assertEquals(0, receipt.growthAfter)
+            assertEquals(if (region == "daejeon") 0 else 1, receipt.growthBefore)
+            assertEquals(1, receipt.growthAfter)
             assertEquals(receipt, store.save!!.processedReceipts.getValue(input.journeyId).toContract())
             val revisit = (service.completeArrival(input.copy(journeyId = id(region.length)))
                 as ArrivalResult.Applied).receipt
             assertTrue(revisit.grantedItemIds.isEmpty())
             assertNull(revisit.discoveredRegionId)
+            assertEquals(1, revisit.growthBefore)
+            assertEquals(1, revisit.growthAfter)
         }
         assertEquals(setOf("daejeon", "wonju"), store.save!!.discoveredRegionIds)
         assertEquals(6, store.save!!.ownedItemIds.size)
@@ -132,7 +134,7 @@ class UserConfirmedArrivalTest {
     }
 
     @Test fun failedSaveRetryKeepsFirstConfirmationAcrossKstMidnight() = withService { service, store ->
-        val input = confirmed("D01").copy(completedAtEpochMs = Instant.parse("2026-11-05T14:59:59.999Z").toEpochMilli())
+        val input = confirmed("D06").copy(completedAtEpochMs = Instant.parse("2026-11-05T14:59:59.999Z").toEpochMilli())
         val before = service.state.value
         store.failWrite = true
         assertTrue(service.completeArrival(input) is ArrivalResult.StorageFailure)
@@ -143,6 +145,7 @@ class UserConfirmedArrivalTest {
         // Retry exactly the first command, rather than replacing its ID or confirmation time.
         val original = (service.completeArrival(input) as ArrivalResult.Applied).receipt
         assertEquals(input.completedAtEpochMs, original.completedAtEpochMs)
+        assertEquals(1, original.growthAfter)
         assertEquals("2026-11-05", store.save!!.lastDailyGrantDate)
         val next = input.copy(journeyId = id(99), completedAtEpochMs = Instant.parse("2026-11-05T15:00:00Z").toEpochMilli())
         assertEquals(2, (service.completeArrival(next) as ArrivalResult.Applied).receipt.growthAfter)
