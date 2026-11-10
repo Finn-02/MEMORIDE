@@ -36,6 +36,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,7 +76,45 @@ import io.kailand.core.ui.MemorideSecondaryButton
 import io.kailand.core.ui.MemorideTheme
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+
+internal data class InventorySelection(val type: ItemType, val decorationId: String? = null) {
+    fun selectTab(tab: ItemType): InventorySelection = if (type == tab) this else InventorySelection(tab)
+
+    fun cancelDecoration(): InventorySelection = if (decorationId == null) this else copy(decorationId = null)
+
+    fun selectedDecoration(cards: List<InventoryCardModel>): InventoryCardModel? =
+        if (type == ItemType.DECOR && decorationId != null) {
+            cards.singleOrNull { it.item.id == decorationId && it.canChooseSlot }
+        } else null
+
+    fun revalidate(cards: List<InventoryCardModel>): InventorySelection =
+        if (selectedDecoration(cards) == null) cancelDecoration() else this
+
+    fun placement(
+        slot: IslandSlot, cards: List<InventoryCardModel>, slots: List<IslandSlot>,
+    ): GameAction.PlaceDecoration? =
+        selectedDecoration(cards)?.takeIf { slot in slots }?.placeIn(slot)
+
+    fun afterAction(action: GameAction, result: MutationResult): InventorySelection =
+        if (result == MutationResult.Success && action is GameAction.PlaceDecoration &&
+            action.itemId != null && action.itemId == decorationId
+        ) cancelDecoration() else this
+}
+
+// Only UI choices are saved, as a list of strings supported by the Android saveable registry.
+internal val InventorySelectionSaver = listSaver<InventorySelection, String>(
+    save = { listOfNotNull(it.type.name, it.decorationId) },
+    restore = { values ->
+        val type = ItemType.entries.firstOrNull { it.name == values.firstOrNull() }
+        if (type == null || values.size !in 1..2) null
+        else InventorySelection(type, values.getOrNull(1)?.takeIf { type == ItemType.DECOR && it.isNotBlank() })
+    },
+)
+
+internal fun IslandUiActions.canEditInventory(closed: Boolean): Boolean = !closed && enabled && !busy
 
 /** S03 standalone screen. The host owns readiness, navigation and the persisted snapshot. */
 @Composable
@@ -100,56 +140,59 @@ internal fun InventoryScreenContent(
     initialTab: ItemType,
 ) {
     val view = remember(snapshot, catalog) { islandPresentation(snapshot, catalog) }
-    val actions = rememberIslandActions(snapshot, view, gate, onAction)
-    var type by remember { mutableStateOf(initialTab) }
-    var decorationId by remember { mutableStateOf<String?>(null) }
+    var selection by rememberSaveable(stateSaver = InventorySelectionSaver) {
+        mutableStateOf(InventorySelection(initialTab))
+    }
     var closed by remember { mutableStateOf(false) }
+    val actions = rememberIslandActions(snapshot, view, gate) { action ->
+        val result = onAction(action)
+        currentCoroutineContext().ensureActive()
+        if (!closed) selection = selection.afterAction(action, result)
+        result
+    }
+    val shownSelection = selection
+    val type = shownSelection.type
     val cardsByType = remember(view, catalog) {
         ItemType.entries.associateWith { inventoryCards(it, view, catalog) }
     }
     val cards = cardsByType.getValue(type)
     val latestCards by rememberUpdatedState(cards)
     val latestView by rememberUpdatedState(view)
-    val enabled = !closed && actions.enabled && !actions.busy
+    val enabled = actions.canEditInventory(closed)
 
     fun currentCard(id: String) = latestCards.singleOrNull { it.item.id == id }
 
-    val picking = if (enabled && type == ItemType.DECOR) {
-        currentCard(decorationId.orEmpty())?.takeIf { it.canChooseSlot }
-    } else null
-
-    LaunchedEffect(decorationId, picking?.item?.id) {
-        if (picking == null) decorationId = null
+    val picking = shownSelection.selectedDecoration(cards)
+    LaunchedEffect(shownSelection, picking?.item?.id) {
+        if (selection == shownSelection) selection = selection.revalidate(latestCards)
     }
 
     val close = {
         if (!closed) {
             closed = true
-            decorationId = null
+            selection = InventorySelection(initialTab)
             actions.clearFeedback()
             onClose()
         }
     }
     val useCard: (InventoryCardModel) -> Unit = useCard@{ shown ->
-        if (closed || !actions.enabled || actions.busy || type != shown.item.type) return@useCard
+        if (!actions.canEditInventory(closed) || selection.type != shown.item.type) return@useCard
         val current = currentCard(shown.item.id) ?: return@useCard
         if (current.canChooseSlot && shown.canChooseSlot) {
-            decorationId = current.item.id
+            selection = selection.copy(decorationId = current.item.id)
         } else {
             val action = shown.action() ?: return@useCard
             actions.submit(action) {
-                !closed && type == shown.item.type && currentCard(shown.item.id)?.action() == action
+                !closed && selection.type == shown.item.type && currentCard(shown.item.id)?.action() == action
             }
         }
     }
     val place: (InventoryCardModel, IslandSlot) -> Unit = place@{ shown, slot ->
-        if (closed || type != ItemType.DECOR || decorationId != shown.item.id) return@place
-        val action = shown.placeIn(slot) ?: return@place
+        if (!actions.canEditInventory(closed) || selection.decorationId != shown.item.id) return@place
+        val action = selection.placement(slot, latestCards, latestView.slots) ?: return@place
         actions.submit(action) {
-            !closed && type == ItemType.DECOR && currentCard(shown.item.id)?.placeIn(slot) == action &&
-                latestView.slots.any { it == slot }
+            !closed && selection.placement(slot, latestCards, latestView.slots) == action
         }
-        decorationId = null
     }
 
     val panel: @Composable (Modifier) -> Unit = { panelModifier ->
@@ -158,10 +201,9 @@ internal fun InventoryScreenContent(
             hasCatalogIssues = view.hasCatalogIssues || cards.size != 3,
             allLocked = cardsByType.values.all { list -> list.size == 3 && list.none { it.item.owned } },
             onTab = { tab ->
-                if (!closed && !actions.busy && type != tab) {
-                    decorationId = null
+                if (actions.canEditInventory(closed) && selection.type != tab) {
+                    selection = selection.selectTab(tab)
                     actions.clearFeedback()
-                    type = tab
                 }
             },
             onUse = useCard, onClose = close, modifier = panelModifier,
@@ -171,7 +213,9 @@ internal fun InventoryScreenContent(
         Column(stageModifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             InventoryStage(snapshot, catalog, view, type, actions.eating && !closed, size)
             if (picking != null) {
-                DecorationSlotPicker(picking, view.slots, { decorationId = null }, place)
+                DecorationSlotPicker(picking, view.slots, enabled, {
+                    if (actions.canEditInventory(closed)) selection = selection.cancelDecoration()
+                }, place)
             }
         }
     }
@@ -273,7 +317,7 @@ private fun InventoryPanel(
         PrimaryTabRow(selectedTabIndex = type.ordinal) {
             ItemType.entries.forEach { tab ->
                 Tab(
-                    selected = type == tab, onClick = { onTab(tab) }, enabled = !actions.busy,
+                    selected = type == tab, onClick = { onTab(tab) }, enabled = enabled,
                     modifier = Modifier.heightIn(min = MemorideDimens.MinimumTouchTarget),
                     text = { Text(tab.inventoryLabel()) },
                 )
@@ -411,6 +455,7 @@ private fun InventoryThumbnail(path: String?, locked: Boolean) {
 private fun DecorationSlotPicker(
     card: InventoryCardModel,
     slots: List<IslandSlot>,
+    enabled: Boolean,
     onCancel: () -> Unit,
     onPlace: (InventoryCardModel, IslandSlot) -> Unit,
 ) {
@@ -432,10 +477,10 @@ private fun DecorationSlotPicker(
             MemorideSecondaryButton(
                 "슬롯 ${index + 1} · ${slot.label} · $label",
                 onClick = { onPlace(card, slot) },
-                enabled = card.placeIn(slot) != null,
+                enabled = enabled && card.placeIn(slot) != null,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        MemorideSecondaryButton("슬롯 선택 취소", onCancel, Modifier.fillMaxWidth())
+        MemorideSecondaryButton("슬롯 선택 취소", onCancel, Modifier.fillMaxWidth(), enabled)
     }
 }
