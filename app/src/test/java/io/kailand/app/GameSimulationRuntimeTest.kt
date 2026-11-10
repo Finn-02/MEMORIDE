@@ -84,8 +84,7 @@ class GameSimulationRuntimeTest {
         } finally { p.scope.cancel() }
     }
 
-    @Test fun committedFixtureMismatchCurrentlyOffersAnUnavailableStorageRetry() = runBlocking {
-        // Characterization for Part C. A stale expectation must never hide a committed receipt.
+    @Test fun committedFixtureMismatchRechecksWithoutRetryingStorage() = runBlocking {
         val outdated = plans.map { if (it.id == "D01") it.copy(expectedGrowth = 1) else it }
         val p = Pipeline(outdated)
         try {
@@ -101,12 +100,14 @@ class GameSimulationRuntimeTest {
             assertEquals(JourneyPhase.ARRIVED, p.runtime.snapshot.phase)
             assertEquals(0, receipt.growthAfter)
             assertEquals(receipt, committed.processedReceipts.getValue(receipt.journeyId).toContract())
-            assertEquals(DemoStep.RETRY_ARRIVAL, runner.state.value.step)
+            assertEquals(DemoStep.VERIFY_SAVED, runner.state.value.step)
+            val verificationMessage = runner.state.value.message
+            assertTrue(verificationMessage.orEmpty().contains("시연 기대값"))
 
-            p.store.beforeNextUpdate = { fail("Fixture mismatch retry must not produce another write") }
+            p.store.beforeNextUpdate = { fail("Verification must not produce another write") }
             assertFalse(runner.advance())
-            assertEquals(DemoStep.RETRY_ARRIVAL, runner.state.value.step)
-            assertEquals("재시도할 도착 기록이 없어요.", runner.state.value.message)
+            assertEquals(DemoStep.VERIFY_SAVED, runner.state.value.step)
+            assertEquals(verificationMessage, runner.state.value.message)
             assertEquals(committed, p.store.save)
             assertEquals(receipt, p.game.state.value.pendingReceipt)
         } finally { p.scope.cancel() }

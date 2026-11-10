@@ -24,6 +24,7 @@ class DemoScenarioRunnerTest {
         private val emptyGame = GameSnapshot(AvatarPreview("tori", null), 0, emptySet(), emptySet(), emptyMap(), null)
         var game = emptyGame
         var gameAvailable = true
+        var gameReadFails = false
         var daily: DestinationSpec? = catalog.regions.first().let { DestinationSpec(null, it.name, it.latitude, it.longitude) }
         val journeyState = MutableStateFlow(JourneySnapshot(null, DataSource.DEMO, JourneyKind.REGION, JourneyPhase.IDLE, 0, null))
         val requests = mutableListOf<DestinationSpec>()
@@ -66,7 +67,10 @@ class DemoScenarioRunnerTest {
                 }
             }
         }
-        val runner = DemoScenarioRunner(scenarios, catalog, journey, demo, { game.takeIf { gameAvailable } }, { daily }, {
+        val runner = DemoScenarioRunner(scenarios, catalog, journey, demo, {
+            check(!gameReadFails) { "snapshot read failed" }
+            game.takeIf { gameAvailable }
+        }, { daily }, {
             resetCalls++
             resetHook?.invoke() ?: run {
                 game = emptyGame
@@ -236,22 +240,87 @@ class DemoScenarioRunnerTest {
         f.dispatchHook = { RequestResult.Failed("storage failed") }
         assertFalse(f.runner.advance())
         assertEquals(DemoStep.RETRY_ARRIVAL, f.state.step)
+        assertEquals("storage failed", f.state.message)
         assertNull(f.game.pendingReceipt)
         assertTrue(f.runner.advance())
+        assertEquals(DemoStep.DONE, f.state.step)
         assertEquals(1, f.retries)
         assertEquals(id, f.game.pendingReceipt!!.journeyId)
         assertEquals(1, f.inputs.count { it is DemoInput.Complete })
     }
 
-    @Test fun acceptedWithoutStoredReceiptDoesNotFinish() = runBlocking {
+    @Test fun acceptedSaveWithUnavailableSnapshotOnlyRechecksTheResult() = runBlocking {
+        for (throwsOnRead in listOf(false, true)) {
+            val f = Fixture()
+            f.readyToComplete()
+            f.dispatchHook = { input ->
+                f.save(input as DemoInput.Complete).also {
+                    f.gameReadFails = throwsOnRead
+                    f.gameAvailable = false
+                }
+            }
+            assertFalse(f.runner.advance())
+            val committed = f.game
+            val sent = f.inputs.toList()
+            assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
+            assertEquals(1, committed.dailyGrowth)
+            assertEquals(3, committed.ownedItemIds.size)
+            assertNotNull(committed.pendingReceipt)
+
+            assertFalse(f.runner.advance())
+            assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
+            f.gameAvailable = true
+            f.gameReadFails = false
+            assertTrue(f.runner.advance())
+            assertEquals(DemoStep.DONE, f.state.step)
+            assertEquals(committed, f.game)
+            assertEquals(sent, f.inputs)
+            assertEquals(0, f.retries)
+        }
+    }
+
+    @Test fun replayVerificationRechecksWithoutDispatchingReplayAgain() = runBlocking {
+        val f = Fixture()
+        f.readyToComplete("D03")
+        assertTrue(f.runner.advance())
+        val original = f.game
+        assertTrue(f.runner.selectScenario("D04"))
+        f.dispatchHook = { input ->
+            assertEquals(DemoInput.RepeatLastArrival, input)
+            f.gameAvailable = false
+            RequestResult.Accepted
+        }
+        assertFalse(f.runner.advance())
+        assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
+        f.gameAvailable = true
+        assertTrue(f.runner.advance())
+        assertEquals(DemoStep.DONE, f.state.step)
+        assertEquals(original, f.game)
+        assertEquals(1, f.inputs.count { it == DemoInput.RepeatLastArrival })
+        assertEquals(0, f.retries)
+    }
+
+    @Test fun leavingForegroundInvalidatesSavedVerificationWithoutCancellingTheArrival() = runBlocking {
         val f = Fixture()
         f.readyToComplete()
-        f.dispatchHook = { f.journeyState.value = f.journeyState.value.copy(phase = JourneyPhase.ARRIVED); RequestResult.Accepted }
+        f.dispatchHook = { input ->
+            f.save(input as DemoInput.Complete).also { f.gameAvailable = false }
+        }
         assertFalse(f.runner.advance())
-        assertEquals(DemoStep.RETRY_ARRIVAL, f.state.step)
-        f.retryHook = { RequestResult.Accepted }
+        assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
+        val committed = f.game
+        val sent = f.inputs.toList()
+        assertFalse(f.runner.cancelJourney())
+
+        f.runner.updateContext(f.allowed.copy(foreground = false))
         assertFalse(f.runner.advance())
-        assertNotEquals(DemoStep.DONE, f.state.step)
+        f.runner.updateContext(f.allowed)
+        f.gameAvailable = true
+        assertEquals(DemoStep.CHOOSE, f.state.step)
+        assertFalse(f.runner.advance())
+        assertEquals(committed, f.game)
+        assertEquals(sent, f.inputs)
+        assertEquals(0, f.retries)
     }
 
     @Test fun wrongReceiptOrUnexpectedGameEffectsDoNotPassVerification() = runBlocking {
@@ -265,7 +334,12 @@ class DemoScenarioRunnerTest {
                 RequestResult.Accepted
             }
             assertFalse(f.runner.advance())
-            assertEquals(DemoStep.RETRY_ARRIVAL, f.state.step)
+            assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
+            val mismatched = f.game
+            assertFalse(f.runner.advance())
+            assertEquals(DemoStep.VERIFY_SAVED, f.state.step)
+            assertEquals(mismatched, f.game)
+            assertEquals(0, f.retries)
         }
     }
 
