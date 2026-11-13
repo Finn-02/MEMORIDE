@@ -15,6 +15,7 @@
     <uses-library android:name="android.car" android:required="false" />
     <activity
         android:name="io.kailand.app.MainActivity"
+        android:launchMode="singleTask"
         android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />

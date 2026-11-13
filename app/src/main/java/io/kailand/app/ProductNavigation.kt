@@ -12,9 +12,14 @@ import kotlinx.coroutines.sync.Mutex
 enum class ProductRoute { CHARACTER, ISLAND, INVENTORY, WORLD, CONFIRMATION, SAVE, BRIEFING, NAVIGATION_FAILURE }
 data class ProductScreen(val route: ProductRoute = ProductRoute.CHARACTER, val revision: Long = 0)
 
-/** Activity ViewModel owned: retained on resize/background, fresh on cold start. No game data writes. */
-class ProductNavigation {
-    private val mutable = MutableStateFlow(ProductScreen())
+/** ViewModel-owned UI navigation; only an admitted external-navigation return may restore the island. */
+class ProductNavigation(
+    resumeNavigationReturn: Boolean = false,
+    private val onNavigationReturnChanged: (Boolean) -> Unit = {},
+) {
+    private var awaitingNavigationReturn = resumeNavigationReturn
+    private val mutable = MutableStateFlow(ProductScreen(
+        if (resumeNavigationReturn) ProductRoute.ISLAND else ProductRoute.CHARACTER))
     val state = mutable.asStateFlow()
     private val selection = Mutex()
     private val selecting = MutableStateFlow(false)
@@ -22,11 +27,12 @@ class ProductNavigation {
     private var receiptId: String? = null
     private var destinationKey: String? = null
 
-    /** A newly received usable destination wins on return, but never bypasses cold-start selection. */
+    /** A usable destination wins on an admitted return, while ordinary cold-start selection remains required. */
     fun destinationObserved(key: String) {
         if (key == destinationKey || busy.value || receiptId != null ||
             state.value.route in setOf(ProductRoute.CHARACTER, ProductRoute.CONFIRMATION, ProductRoute.SAVE)) return
         destinationKey = key
+        setNavigationReturn(false)
         if (state.value.route != ProductRoute.ISLAND) move(ProductRoute.ISLAND)
     }
 
@@ -45,11 +51,13 @@ class ProductNavigation {
             ProductRoute.BRIEFING -> setOf(ProductRoute.ISLAND) // acknowledgement persisted while UI was inactive
         }
         if (target !in targets) return false
+        if (target == ProductRoute.CHARACTER) setNavigationReturn(false)
         move(target)
         return true
     }
 
     fun presentReceipt(id: String) {
+        setNavigationReturn(false)
         if (receiptId == id) return
         receiptId = id
         move(ProductRoute.BRIEFING)
@@ -77,7 +85,16 @@ class ProductNavigation {
                 screen.route !in setOf(ProductRoute.ISLAND, ProductRoute.NAVIGATION_FAILURE)) {
                 return RequestResult.Failed("현재 화면과 이용 상태를 다시 확인해 주세요.")
             }
-            val result = request()
+            // Set before starting the external Activity: onSaveInstanceState may follow immediately.
+            val previousReturn = awaitingNavigationReturn
+            setNavigationReturn(true)
+            val result = try {
+                request()
+            } catch (error: Exception) {
+                setNavigationReturn(previousReturn)
+                throw error
+            }
+            if (result is RequestResult.Failed) setNavigationReturn(previousReturn)
             currentCoroutineContext().ensureActive()
             if (current(screen) && receiptId == null && allowed()) {
                 if (result is RequestResult.Failed) move(ProductRoute.NAVIGATION_FAILURE)
@@ -107,6 +124,21 @@ class ProductNavigation {
             selecting.value = false
             selection.unlock()
         }
+    }
+
+    /** Invoked only after the confirmed, persisted demo reset succeeds. */
+    fun resetAfterDemo() {
+        if (busy.value) return
+        receiptId = null
+        destinationKey = null
+        setNavigationReturn(false)
+        move(ProductRoute.CHARACTER)
+    }
+
+    private fun setNavigationReturn(awaiting: Boolean) {
+        if (awaitingNavigationReturn == awaiting) return
+        awaitingNavigationReturn = awaiting
+        onNavigationReturnChanged(awaiting)
     }
 
     private fun move(target: ProductRoute) { mutable.value = ProductScreen(target, state.value.revision + 1) }

@@ -29,6 +29,21 @@ fun GameAppRoot(
     val snapshot by app.game.state.collectAsState()
     val history by app.game.regionVisitHistory.collectAsState()
     val session by app.commands.session.collectAsState()
+    val reset by app.demoResetState.collectAsState()
+    val observedScreen by navigation.state.collectAsState()
+    val resetScreen = observedScreen // Freeze the character route for asynchronous reset admission.
+    val rootScope = rememberCoroutineScope()
+    val resetCurrent = { navigation.current(resetScreen) && resetScreen.route == ProductRoute.CHARACTER && !navigation.busy.value }
+    val performReset: suspend () -> MutationResult = {
+        app.resetDemoFromCharacter(owner, resetCurrent) { navigation.resetAfterDemo() }
+    }
+    var previousRevision by remember { mutableStateOf(reset.revision) }
+    LaunchedEffect(reset.revision) {
+        if (previousRevision != reset.revision) {
+            savedUi.removeState("product:$previousRevision")
+            previousRevision = reset.revision
+        }
+    }
     if (!gate.canInteract) {
         GameMessage(if (gate.state == GateState.UNKNOWN) "이용 상태 미확인" else "지금은 이용할 수 없어요",
             gate.reason ?: "주차 상태와 이용 허용을 확인해 주세요.")
@@ -49,13 +64,22 @@ fun GameAppRoot(
         GameMessage("나의 섬을 준비하고 있어요", "저장된 기록과 콘텐츠를 확인 중입니다.")
         return
     }
+    if (reset.busy || reset.error != null) {
+        GameMessage(if (reset.busy) "시연용 기록을 초기화하고 있어요" else "초기화를 마치지 못했어요",
+            reset.error ?: "저장된 게임 기록과 내비 목적지를 정리하고 있습니다.") {
+            if (!reset.busy) MemorideSecondaryButton("초기화 다시 시도", {
+                rootScope.launch { performReset() }
+            })
+        }
+        return
+    }
     if (session.phase != GameCommandPhase.ACTIVE) {
         GameMessage("이용 상태를 정리하고 있어요", "잠시 후 다시 확인해 주세요.")
         return
     }
-    savedUi.SaveableStateProvider("product") {
+    savedUi.SaveableStateProvider("product:${reset.revision}") {
         ProductScreens(app, owner, loaded.catalog, snapshot, history, gate, session.generation,
-            developmentEntry, navigation, screens ?: productScreenSlots(snapshot), launchNavigation)
+            developmentEntry, navigation, screens ?: productScreenSlots(snapshot, history, onDemoReset = performReset), launchNavigation)
     }
 }
 
@@ -148,14 +172,24 @@ private fun ProductScreens(
             navigation.destinationObserved("${draft.id}:${draft.revision}")
         }
     }
+    // Presentation only: preserve a saved destination card while the existing refresh is in flight.
+    // Usability/currentness and every action permission below retain their original checks.
+    val waitingDestinationLabel = draft?.takeIf {
+        it.usable(System.currentTimeMillis())
+    }?.let { saved ->
+        saved.label.takeIf { it.isNotBlank() }
+            ?: catalog.regions.singleOrNull { it.id == saved.destination(catalog).regionId }?.name?.takeIf { it.isNotBlank() }
+    }
     val failedSave = manualState?.phase == ManualJourneyPhase.CONFIRMED &&
         (saveResult is ArrivalResult.StorageFailure || saveResult is ArrivalResult.Rejected)
+    // An empty inbox is the ordinary home, including immediately after demo reset.
     val destination = if (failedSave) IslandDestinationSlot(true) {
         MemoridePrimaryButton("저장 다시 시도", { open(ProductRoute.SAVE) }, Modifier.fillMaxWidth(), enabled = current())
-    } else if (draft?.status != NavigationDraftStatus.CONSUMED && (draft != null || !developmentEntry)) {
-        IslandDestinationSlot(usable) {
+    } else if (draft != null && draft.status != NavigationDraftStatus.CONSUMED) {
+        IslandDestinationSlot(usable, destinationLabel = waitingDestinationLabel) {
             NavigationDraftCard(inbox, connection, current(),
-                onRefresh = { if (current() && noReceipt()) app.navigationCapture.refresh() }, onFinish = ::finish, canFinish = usable)
+                onRefresh = { if (current() && noReceipt()) app.navigationCapture.refresh() }, onFinish = ::finish, canFinish = usable,
+                waitingLabel = waitingDestinationLabel, snapshot = snapshot, catalog = catalog)
         }
     } else null
 
@@ -174,10 +208,27 @@ private fun ProductScreens(
             else -> open(ProductRoute.ISLAND)
         }
     }
+    val confirmationVisible = receipt == null && screen.route == ProductRoute.CONFIRMATION
+    val question = manualState?.confirmation
+    val continueJourney: () -> Unit = {
+        if (question == null) open(ProductRoute.ISLAND)
+        else scope.launch {
+            val answer = manual?.choose(question.token, ManualJourneyChoice.CONTINUE, ::current)
+            if (answer != null) show(answer)
+            if (answer == RequestResult.Accepted) open(ProductRoute.ISLAND)
+        }
+    }
+    val visualRoute = when {
+        receipt != null -> ProductRoute.BRIEFING
+        screen.route == ProductRoute.CONFIRMATION -> ProductRoute.ISLAND
+        else -> screen.route
+    }
+    val visualKey: Any? = receipt?.journeyId
+        ?: if (visualRoute == ProductRoute.ISLAND) waitingDestinationLabel != null else null
     MemorideScreen {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().then(memorideModalBackdrop(confirmationVisible))) {
             if (developmentEntry) Text("개발 화면 · 실제 로컬 게임 기록 사용", Modifier.padding(8.dp))
-            Box(Modifier.weight(1f)) {
+            ProductScreenTransition(visualRoute, visualKey, Modifier.weight(1f)) {
                 if (receipt != null) {
                     // Existing pending receipts take precedence over cold-start selection; never discard them.
                     key(receipt.journeyId) {
@@ -202,30 +253,9 @@ private fun ProductScreens(
                         MemoridePrimaryButton("다시 시도", ::depart, Modifier.fillMaxWidth(), enabled = current() && !selecting)
                         MemorideSecondaryButton("섬으로 돌아가기", { open(ProductRoute.ISLAND) }, Modifier.fillMaxWidth())
                     }
-                    ProductRoute.CONFIRMATION -> ProductColumn {
-                        Text("목적지에 도착했나요?", style = MaterialTheme.typography.headlineMedium)
-                        val question = manualState?.confirmation
-                        if (question == null || manual?.isNavigationJourney != true) {
-                            Text("목적지를 다시 확인해 주세요.")
-                        } else {
-                            Text(question.destination.label)
-                            Text("사용자 확인으로 기록해요. 실제 방문 인증이 아니며 시간과 거리는 측정하지 않아요.")
-                            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                            MemoridePrimaryButton("도착했어요", {
-                                if (current() && navigation.open(screen, ProductRoute.SAVE)) {
-                                    val savingScreen = navigation.state.value
-                                    scope.launch { show(manual.choose(question.token, ManualJourneyChoice.ARRIVED) {
-                                        active() && navigation.current(savingScreen) && noReceipt()
-                                    }) }
-                                }
-                            }, Modifier.fillMaxWidth(), enabled = current() && !saving)
-                            MemorideSecondaryButton("아직 아니에요", { scope.launch {
-                                val answer = manual.choose(question.token, ManualJourneyChoice.CONTINUE, ::current)
-                                show(answer)
-                                if (answer == RequestResult.Accepted) open(ProductRoute.ISLAND)
-                            } }, Modifier.fillMaxWidth(), enabled = current() && !saving)
-                        }
-                    }
+                    ProductRoute.CONFIRMATION -> screens.island(snapshot, catalog, gate, destination,
+                        { open(ProductRoute.CHARACTER) }, ::depart,
+                        { open(ProductRoute.INVENTORY) }, { open(ProductRoute.WORLD) }, Modifier)
                     ProductRoute.SAVE -> screens.save(
                         if (saving) ArrivalSaveUiState.Saving else ArrivalSaveUiState.Failed(
                             "저장을 마치지 못했어요. 최초 확인 내용으로 다시 시도해 주세요."), gate,
@@ -238,6 +268,26 @@ private fun ProductScreens(
                 }
             }
         }
+        ArrivalConfirmationPopup(
+            visible = confirmationVisible, destination = question?.destination, catalog = catalog, snapshot = snapshot,
+            enabled = current() && question != null && manual?.isNavigationJourney == true,
+            saving = saving, error = error, onBack = continueJourney,
+            onContinue = {
+                if (question != null && manual != null) scope.launch {
+                    val answer = manual.choose(question.token, ManualJourneyChoice.CONTINUE, ::current)
+                    show(answer)
+                    if (answer == RequestResult.Accepted) open(ProductRoute.ISLAND)
+                }
+            },
+            onArrive = {
+                if (question != null && manual != null && current() && navigation.open(screen, ProductRoute.SAVE)) {
+                    val savingScreen = navigation.state.value
+                    scope.launch { show(manual.choose(question.token, ManualJourneyChoice.ARRIVED) {
+                        active() && navigation.current(savingScreen) && noReceipt()
+                    }) }
+                }
+            },
+        )
     }
 }
 

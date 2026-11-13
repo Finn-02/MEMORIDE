@@ -3,6 +3,8 @@
   <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
   <uses-permission android:name="pleos.car.permission.NAVI_CUSTOM_MAP" />
   <application>
+    <activity android:name="io.kailand.app.ArrivalModalPreviewActivity"
+        android:exported="true" android:label="MEMORIDE 도착 팝업 UI 표본" />
     <activity android:name="io.kailand.app.NavigationLaunchRehearsalActivity"
         android:exported="true" android:label="MEMORIDE 내비 실행 시험" />
     <activity android:name="io.kailand.app.UxRehearsalActivity"

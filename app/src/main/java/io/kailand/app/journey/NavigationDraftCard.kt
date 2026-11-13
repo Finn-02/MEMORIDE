@@ -5,11 +5,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.kailand.core.contract.Catalog
+import io.kailand.core.contract.GameSnapshot
 
 @Composable
 fun NavigationDraftCard(state: NavigationInboxState, connection: String, enabled: Boolean,
-    onRefresh: () -> Unit, onFinish: (NavigationDraft) -> Unit, canFinish: Boolean = true) {
+    onRefresh: () -> Unit, onFinish: (NavigationDraft) -> Unit, canFinish: Boolean = true,
+    waitingLabel: String? = null, snapshot: GameSnapshot? = null, catalog: Catalog? = null) {
     val draft = state.draft
+    if (waitingLabel != null && draft != null) {
+        NavigationWaitingContent(waitingLabel, state, snapshot, catalog,
+            onRefresh = onRefresh, onFinish = { onFinish(draft) },
+            refreshEnabled = enabled && state.ready && !state.saving,
+            finishEnabled = enabled && canFinish && state.ready && !state.saving && state.error == null && draft.usable(System.currentTimeMillis()))
+        return
+    }
     Card(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("내비 목적지 · ${draft?.label ?: "수신 대기"}", style = MaterialTheme.typography.titleMedium)
@@ -26,7 +36,7 @@ fun NavigationDraftCard(state: NavigationInboxState, connection: String, enabled
                 TextButton(onClick = onRefresh, enabled = enabled && state.ready && !state.saving) { Text("다시 조회") }
                 if (draft != null) Button(onClick = { onFinish(draft) },
                     enabled = enabled && canFinish && state.ready && !state.saving && state.error == null && draft.usable(System.currentTimeMillis())) {
-                    Text("이동 마무리")
+                    Text("목적지에 도착했어요")
                 }
             }
         }

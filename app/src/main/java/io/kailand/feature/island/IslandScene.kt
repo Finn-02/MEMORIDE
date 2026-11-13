@@ -99,6 +99,7 @@ internal fun IslandScene(
     characterName: String,
     eating: Boolean,
     slots: List<IslandSlot>,
+    avatarScale: Float = 1f,
 ) {
     val assets = LocalContext.current.applicationContext.assets
 
@@ -153,9 +154,11 @@ internal fun IslandScene(
 
                 // Overlay the CURRENT saved avatar, not a hardcoded character.
                 // The avatar remains independently composited body/face/outfit.
-                val side = (maxWidth * 0.22f).coerceIn(58.dp, 92.dp)
+                val originalSide = (maxWidth * 0.22f).coerceIn(58.dp, 92.dp)
+                val side = originalSide * avatarScale
                 val x = maxWidth * 0.48f - side / 2f
-                val y = maxWidth * 0.47f - side / 2f
+                // Keep the feet grounded at the same point while increasing the avatar.
+                val y = maxWidth * 0.47f + originalSide * 0.395f - side * 0.895f
                 // Fixed-slot render is placed behind the character.
                 IslandDecorationLayers(
                     slots = slots,
@@ -206,6 +209,7 @@ internal fun IslandScene(
                     expressionKey = if (eating) "eat" else "idle",
                     modifier = Modifier.offset(x = x, y = y),
                     avatarSize = side,
+                    highResolution = avatarScale > 1f,
                 )
             }
         }

@@ -56,27 +56,39 @@ internal class AvatarAssetLoader<T : Any>(
 
 private var cachedAssets: AssetManager? = null
 private var sharedLoader: AvatarAssetLoader<ImageBitmap>? = null
+private var sharedInventoryLoader: AvatarAssetLoader<ImageBitmap>? = null
 
 @Synchronized
-internal fun androidAvatarAssetLoader(assets: AssetManager): AvatarAssetLoader<ImageBitmap> {
-    if (cachedAssets === assets) sharedLoader?.let { return it }
-    return AvatarAssetLoader(cacheCapacity = 36) { path -> decodeAvatarPng(assets, path) }.also {
+internal fun androidAvatarAssetLoader(assets: AssetManager, highResolution: Boolean = false): AvatarAssetLoader<ImageBitmap> {
+    if (cachedAssets !== assets) {
         cachedAssets = assets
-        sharedLoader = it
+        sharedLoader = null
+        sharedInventoryLoader = null
     }
+    if (highResolution) {
+        sharedInventoryLoader?.let { return it }
+        // Six 768px frames bound the larger inventory cache to about 13.5MiB.
+        return AvatarAssetLoader<ImageBitmap>(cacheCapacity = 6) { path -> decodeAvatarPng(assets, path) }
+            .also { sharedInventoryLoader = it }
+    }
+    sharedLoader?.let { return it }
+    return AvatarAssetLoader<ImageBitmap>(cacheCapacity = 36) { path -> decodeAvatarPng(assets, path) }
+        .also { sharedLoader = it }
 }
 
 private fun decodeAvatarPng(assets: AssetManager, path: String): ImageBitmap? {
+    val sourceSize = if (path.startsWith("avatars/approved_hd/")) 1024 else AVATAR_CANVAS_SIZE
+    val decodedSize = if (sourceSize == 1024) 768 else AVATAR_CANVAS_SIZE
     val bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(assets, path)) { decoder, info, _ ->
         if (info.mimeType != "image/png" ||
-            info.size.width != AVATAR_CANVAS_SIZE || info.size.height != AVATAR_CANVAS_SIZE
+            info.size.width != sourceSize || info.size.height != sourceSize
         ) {
-            throw IOException("Avatar layer must be a 256 × 256 PNG")
+            throw IOException("Avatar layer dimensions do not match its approved asset family")
         }
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-        decoder.setTargetSize(AVATAR_CANVAS_SIZE, AVATAR_CANVAS_SIZE)
+        decoder.setTargetSize(decodedSize, decodedSize)
         decoder.setOnPartialImageListener { false }
     }
-    return bitmap.takeIf { it.width == AVATAR_CANVAS_SIZE && it.height == AVATAR_CANVAS_SIZE && it.hasAlpha() }
+    return bitmap.takeIf { it.width == decodedSize && it.height == decodedSize && it.hasAlpha() }
         ?.asImageBitmap()
 }

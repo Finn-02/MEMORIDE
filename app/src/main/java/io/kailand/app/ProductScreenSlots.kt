@@ -4,16 +4,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.kailand.core.contract.*
 import io.kailand.core.ui.*
 import io.kailand.feature.briefing.ArrivalSaveScreen
 import io.kailand.feature.briefing.RegionBriefingScreen
-import io.kailand.feature.island.AvatarView
 import io.kailand.feature.island.CharacterSelectionScreen
-import io.kailand.feature.island.IslandScene
+import io.kailand.feature.island.IslandHomeStage
 import io.kailand.feature.island.NewIslandScreen
 import io.kailand.feature.island.islandPresentation
 import io.kailand.feature.world.WorldMapScreen
@@ -38,19 +36,19 @@ data class ProductScreenSlots(
 )
 
 /** Inject B's read-only scene through PM's scene slot, without a feature-to-feature import. */
-internal fun productScreenSlots(snapshot: GameSnapshot) = ProductScreenSlots(
+internal fun productScreenSlots(
+    snapshot: GameSnapshot, history: RegionVisitHistory = RegionVisitHistory.Loading,
+    onDemoReset: (suspend () -> MutationResult)? = null,
+) = ProductScreenSlots(
+    character = { state, catalog, gate, select, modifier ->
+        CharacterSelectionScreen(state, catalog, gate, select, modifier, onDemoReset = onDemoReset)
+    },
     briefing = { receipt, catalog, avatar, gate, island, select, modifier ->
         RegionBriefingScreen(receipt, catalog, avatar, gate, island, select, modifier, applyInsets = false,
-            scene = { firstVisit ->
+            scene = { _ ->
                 val view = remember(snapshot, catalog) { islandPresentation(snapshot, catalog) }
-                BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    val size = minOf(maxWidth, maxHeight)
-                    Box(Modifier.size(size)) {
-                        if (firstVisit) AvatarView(avatar, catalog, "idle", Modifier.fillMaxSize())
-                        else IslandScene(view.growth, snapshot.avatar, catalog, view.characterName, false, view.slots)
-                    }
-                }
-            })
+                IslandHomeStage(snapshot, catalog, view, animate = gate.canInteract, modifier = Modifier.fillMaxSize())
+            }, gameSnapshot = snapshot, visitHistory = history)
     },
 )
 

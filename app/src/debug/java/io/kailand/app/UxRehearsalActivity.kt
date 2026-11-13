@@ -42,6 +42,25 @@ class UxRehearsalActivity : MainActivity() {
             Text("DEMO 리허설 · 별도 시험 저장 · 목적지는 합성 표본 / 도착 입력은 사용자 확인",
                 Modifier.padding(12.dp))
             if (rehearsal.showApp) {
+                // Explicit debug opt-in; never supplied to the product or release entry.
+                if (intent.getBooleanExtra("storageQa", false)) {
+                    var faultLabel by remember { mutableStateOf("저장 QA · 분리된 시험 파일") }
+                    Text(faultLabel)
+                    Row {
+                        MemorideSecondaryButton("다음 쓰기 20초 지연", {
+                            if (allowed() && !run.probe.writing) {
+                                run.probe.nextWriteDelayMs = 20_000L
+                                faultLabel = "다음 쓰기 지연 준비 · 20초"
+                            }
+                        }, enabled = gate.canInteract && !run.probe.writing)
+                        MemorideSecondaryButton("다음 확인 저장 실패", {
+                            if (allowed() && !run.probe.writing) {
+                                run.probe.failNextAcknowledgement = true
+                                faultLabel = "다음 확인 저장 실패 준비 · 1회"
+                            }
+                        }, enabled = gate.canInteract && !run.probe.writing)
+                    }
+                }
                 MemorideSecondaryButton("시연 제어로 돌아가기", {
                     if (allowed() && !run.probe.writing && !run.navigation.busy.value && !run.arrivalBusy())
                         rehearsal.showApp = false

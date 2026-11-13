@@ -10,6 +10,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
@@ -26,12 +27,17 @@ fun AvatarView(
     expressionKey: String,
     modifier: Modifier = Modifier,
     avatarSize: Dp = 128.dp,
+    highResolution: Boolean = false,
 ) {
     val assets = LocalContext.current.applicationContext.assets
-    val loader = remember(assets) { androidAvatarAssetLoader(assets) }
+    val loader = remember(assets, highResolution) { androidAvatarAssetLoader(assets, highResolution) }
     val paths = remember(avatar, catalog, expressionKey) { AvatarAssetResolver.resolve(avatar, catalog, expressionKey) }
     val approved = remember(avatar, expressionKey, paths) { AvatarAssetResolver.approvedFrames(avatar, expressionKey, paths) }
-    val frame = avatarFrame(loader, approved)
+    val candidates = remember(approved, highResolution) {
+        if (highResolution) approved.map { it.replace("avatars/approved/", "avatars/approved_hd/") } + approved
+        else approved
+    }
+    val frame = avatarFrame(loader, candidates)
     val placeholder = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
 
     Canvas(modifier.size(avatarSize)) {
@@ -44,7 +50,8 @@ fun AvatarView(
             val origin = IntOffset(((size.width - side) / 2).toInt(), ((size.height - side) / 2).toInt())
             val destination = IntSize(side, side)
             // Keep the approved frame's full transparent canvas at the existing placement.
-            drawImage(frame, dstOffset = origin, dstSize = destination)
+            drawImage(frame, dstOffset = origin, dstSize = destination,
+                filterQuality = if (highResolution) FilterQuality.High else FilterQuality.Low)
         }
     }
 }

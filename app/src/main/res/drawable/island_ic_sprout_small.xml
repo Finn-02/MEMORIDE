@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Figma 4:2; Lucide ISC license: docs/licenses/island_lucide_LICENSE.txt -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="18dp" android:height="18dp" android:viewportWidth="18" android:viewportHeight="18">
+  <path android:pathData="M5.25 15H12.75" android:fillColor="#00000000" android:strokeColor="#2A7F9E" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+  <path android:pathData="M7.5 15C11.625 13.125 8.1 10.2 9.75 7.5" android:fillColor="#00000000" android:strokeColor="#2A7F9E" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+  <path android:pathData="M7.125 7.05C7.95 7.65 8.475 8.7 8.85 9.825C7.35 10.125 6.225 10.125 5.25 9.6C4.35 9.15 3.525 8.175 3 6.45C5.1 6.075 6.3 6.45 7.125 7.05Z" android:fillColor="#00000000" android:strokeColor="#2A7F9E" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+  <path android:pathData="M10.575 4.5C10.0032 5.39367 9.71555 6.43961 9.75 7.5C11.175 7.425 12.225 7.05 12.975 6.45C13.725 5.7 14.175 4.725 14.25 3C12.225 3.075 11.25 3.75 10.575 4.5Z" android:fillColor="#00000000" android:strokeColor="#2A7F9E" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

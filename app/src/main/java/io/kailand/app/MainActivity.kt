@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import io.kailand.BuildConfig
@@ -102,8 +103,15 @@ open class MainActivity : ComponentActivity() {
     }
 }
 
-/** Stable through configuration recreation, distinct for another Activity or a process restart. */
-class GameEntryModel : ViewModel() {
+/** Restore only an outbound navigation continuation, never a save/reward or vehicle permission. */
+class GameEntryModel(private val savedState: SavedStateHandle) : ViewModel() {
     val owner = Any()
-    val navigation = ProductNavigation()
+    val navigation = ProductNavigation(
+        resumeNavigationReturn = savedState.get<Boolean>(NAVIGATION_RETURN) == true,
+        onNavigationReturnChanged = { savedState[NAVIGATION_RETURN] = it },
+    )
+
+    companion object {
+        private const val NAVIGATION_RETURN = "product.navigation.return"
+    }
 }
