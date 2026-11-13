@@ -3,30 +3,12 @@
   <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
   <uses-permission android:name="pleos.car.permission.NAVI_CUSTOM_MAP" />
   <application>
-    <activity android:name="io.kailand.app.ArrivalModalPreviewActivity"
-        android:exported="true" android:label="MEMORIDE 도착 팝업 UI 표본" />
-    <activity android:name="io.kailand.app.NavigationLaunchRehearsalActivity"
-        android:exported="true" android:label="MEMORIDE 내비 실행 시험" />
-    <activity android:name="io.kailand.app.UxRehearsalActivity"
-        android:exported="true" android:label="MEMORIDE 네 시연 리허설" />
-    <activity
-        android:name="io.kailand.app.UxFoundationActivity"
-        android:exported="true"
-        android:label="MEMORIDE 공통 UI 확인" />
-    <activity
-        android:name="io.kailand.app.DevelopmentGameActivity"
-        android:taskAffinity="io.kailand.development"
-        android:exported="false"
-        android:label="MEMORIDE 실제 저장 개발 화면" />
-    <activity
-        android:name="io.kailand.app.PleosProbeActivity"
-        android:exported="true"
-        android:label="MEMORIDE A03 SDK 진단" />
-    <activity
-        android:name="io.kailand.app.DevelopmentActivity"
-        android:taskAffinity="io.kailand.development"
-        android:exported="true"
-        android:label="MEMORIDE 개발 DEMO">
+    <activity android:name="io.kailand.app.ArrivalModalPreviewActivity" android:exported="true" android:label="MEMORIDE 도착 팝업 UI 표본" android:excludeFromRecents="true" />
+    <activity android:name="io.kailand.app.NavigationLaunchRehearsalActivity" android:exported="true" android:label="MEMORIDE 내비 실행 시험" android:excludeFromRecents="true" />
+    <activity android:name="io.kailand.app.UxFoundationActivity" android:exported="true" android:label="MEMORIDE 공통 UI 확인" android:excludeFromRecents="true" />
+    <activity android:name="io.kailand.app.DevelopmentGameActivity" android:taskAffinity="io.kailand.development" android:exported="false" android:label="MEMORIDE 실제 저장 개발 화면" android:excludeFromRecents="true" android:enabled="false" />
+    <activity android:name="io.kailand.app.PleosProbeActivity" android:exported="true" android:label="MEMORIDE A03 SDK 진단" android:excludeFromRecents="true" />
+    <activity android:name="io.kailand.app.DevelopmentActivity" android:taskAffinity="io.kailand.development" android:exported="false" android:label="MEMORIDE 개발 DEMO" android:excludeFromRecents="true" android:enabled="false">
     </activity>
   </application>
 </manifest>

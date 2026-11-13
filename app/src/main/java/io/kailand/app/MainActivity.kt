@@ -1,5 +1,6 @@
 package io.kailand.app
 
+import android.app.ActivityManager
 import android.app.UiModeManager
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -70,11 +71,32 @@ open class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        removeObsoleteDebugTasks()
         foreground = true
         publishGameContext()
         if (!developmentEntry && observePlatformNavigation) gameSession.navigationCapture.refresh()
         val monitor = vehicleGateMonitor
         if (monitor != null) monitor.start() else updateGate(foreground = true)
+    }
+
+    /** Updating the manifest does not remove old development tasks from Android recents. */
+    private fun removeObsoleteDebugTasks() {
+        if (!BuildConfig.DEBUG || javaClass != MainActivity::class.java) return
+        val obsolete = setOf(
+            "io.kailand.app.DevelopmentActivity", "io.kailand.app.DevelopmentGameActivity",
+            "io.kailand.app.UxRehearsalActivity", "io.kailand.app.UxFoundationActivity",
+            "io.kailand.app.PleosProbeActivity", "io.kailand.app.NavigationLaunchRehearsalActivity",
+            "io.kailand.app.ArrivalModalPreviewActivity",
+        )
+        runCatching {
+            getSystemService(ActivityManager::class.java).appTasks.forEach { appTask ->
+                val task = appTask.taskInfo ?: return@forEach
+                val component = task.baseIntent.component
+                // Never close the current task, normal product task or another package's task.
+                if (task.taskId != taskId && component != null && component.packageName == packageName &&
+                    component.className in obsolete) appTask.finishAndRemoveTask()
+            }
+        }.onFailure { Log.w("MemorideLauncher", "Could not remove an old debug task", it) }
     }
 
     override fun onPause() {
