@@ -1,5 +1,11 @@
 # 저장소 초기 반영 상태
 
+## 현재 제출 상태 — 2026-11-14
+
+통합 PR #29, 제출 정리 PR #30, Release 게시 문서 PR #31은 merge commit으로 main에 반영됐다. signed release v6는 [GitHub Releases](https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6)에 게시됐고 빌드 소스는 `17bea5438af9ea7b4fb3f3a431a19ab33777adc5`다. 실행과 검수 범위는 [README](README.md)를 따른다. 전체 제품 인수는 HOLD이며 아래 A01/초기 등록 절은 당시 이력이다.
+
+공개 전 파일·이력 점검은 [공개 준비 검토](docs/PUBLICATION_REVIEW_20261114.md)를 따른다. 소스 점검 완료와 실제 GitHub 공개 전환·접수 메일 발송은 별개다.
+
 ## A01 로컬 작업 브랜치 — 2026-11-02
 
 `part/a-a01-bootstrap`에 단일 app·공통 계약·wrapper·임시 라우터·debug 전용 개발 샘플을 추가했다. Windows에서 단위 시험과 debug APK 빌드를 확인했다. 이 절은 A01 PR 전달용 변경을 설명하며 아래 초기 등록 기록과 구분한다. 실제 공유·main 반영 여부는 GitHub PR 상태로 확인한다. 실행 방법은 [A01 안내](docs/A01_QUICKSTART.md), 실제 버전·검증 범위는 [환경 기록](docs/ENVIRONMENT.md)을 따른다. 실제 Pleos·release·다른 PC는 NOT RUN이다.
@@ -19,7 +25,7 @@ DOCX·ZIP·문서 열람용 TTF·공식 빈 동의서·캐시·서명키는 초�
 
 ## PM이 실제로 확인할 설정
 
-PM은 팀원 초대를 완료했다고 알렸다. 실제 수락·로컬 clone은 각 팀원이 확인한다. 파트 결정 후 정확한 GitHub ID를 config/team.json에 기록한다. Actions는 Settings → Actions → General에서 우선 Disable하고, 필요할 때만 비용을 확인한 뒤 수동 검사에 사용한다. 기본 브랜치·squash merge·리뷰 규칙은 REPO_SETUP.md를 따른다. 계정에 없는 유료 보호 기능을 전제로 하지 않는다.
+PM은 팀원 초대를 완료했다고 알렸다. 실제 수락·로컬 clone은 각 팀원이 확인한다. 파트 결정 후 정확한 GitHub ID를 config/team.json에 기록한다. Actions는 Settings → Actions → General에서 우선 Disable하고, 필요할 때만 비용을 확인한 뒤 수동 검사에 사용한다. main 기본 브랜치·merge commit·파트 브랜치 유지 원칙은 REPO_SETUP.md를 따른다. 계정에 없는 유료 보호 기능을 전제로 하지 않는다.
 
 이번 작업에서는 collaborator 초대, 저장소 Actions 활성/비활성, 예산·결제·브랜치 보호 설정을 변경하지 않았다. 제공 workflow는 수동 실행 전용이며 push/PR 자동 트리거가 없다. 실제 실행 건수는 배포 직전 원격에서 별도 확인한다.
 

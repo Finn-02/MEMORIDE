@@ -39,6 +39,12 @@ venv/
 .cxx/
 *.p12
 *.pfx
+*.key
+id_rsa
+id_ed25519
+credentials*.json
+service-account*.json
+*.hprof
 
 # Release snapshots and optional document-only fonts are distributed in the development ZIP
 *.zip

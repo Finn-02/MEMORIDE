@@ -3,7 +3,7 @@
 ## Goal and scope
 Build a small Android vehicle-game prototype in 14 days with no new paid services.
 Concept Baseline 1.2 preserves the frozen 1.1 feature scope. The display name is MEMORIDE; keep io.kailand, content IDs and save keys.
-The shared A01 Android scaffold is present and its debug build and development DEMO were verified on A's Windows PC. Game storage/rewards and actual vehicle/Pleos integration are not implemented yet; other PCs and release remain unverified.
+The integrated first-round prototype and signed release v6 are available. The APK build source is 17bea5438af9ea7b4fb3f3a431a19ab33777adc5; the default branch also contains submission documentation and asset provenance. Follow README.md for the current release and verified scope. Full product acceptance remains HOLD; do not promote earlier debug/device results to v6 release PASS.
 
 ## Read a small working set
 - Start with README.md and docs/FIRST_TASKS.md for onboarding and your first task.
@@ -61,7 +61,7 @@ Read docs/18_final_review.md for navigation, action ownership and asynchronous a
 
 ## Review ZIP delivery
 - After each MEMORIDE task that produces results for ChatGPT review, package the relevant report and deliverables into one ZIP.
-- On PM Junkyung's local Mac only, save the ZIP to /Users/jujunkyung/Downloads/ with a unique task and KST timestamp in its filename. Do not ask for that location again.
+- On the PM's local Mac only, save the ZIP to the current user's Downloads directory (~/Downloads/) with a unique task and KST timestamp in its filename. Do not ask for that location again.
 - Include a concise REPORT.md with actual OS, branch/SHA, changes, commands/results, NOT RUN items and next steps; include only necessary logs and relevant changes.
 - Exclude credentials, signing keys, private forms, caches and unrelated files; do not archive the whole repository or home directory. Do not commit review ZIPs.
 - Verify that the ZIP exists, is nonempty and passes an integrity check, then report its actual full path.

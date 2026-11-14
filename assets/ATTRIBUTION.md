@@ -31,3 +31,17 @@ Blender 5.2.3에서 캐릭터 원본 6개를 검사했을 때 이미지 databloc
 AI 사용 고지: C 작업은 AI 코딩·스크립트·문서 작성 보조를 사용했다. 별도로 생성했던 모모 이미지 생성형 AI 방향 초안 1장은 최종 81개에서 제외했다. 최종 81개는 Blender 렌더 및 축소 결과다. B 원본의 과거 생성형 AI 사용 여부·외부 재료의 최초 출처는 B 확인 대기이며, 전체 제작 이력을 AI 미사용으로 단정하지 않는다.
 
 기존 팀 프로젝트 사용 조건을 승계하며 임의의 CC0·독점권·법적 권리 보증을 추가하지 않는다. 고해상도 로딩·화면 품질·최종 기기 검수는 별도 항목이다.
+
+## 현재 앱 글꼴·아이콘과 고지 위치
+
+앱에 포함된 글꼴은 위의 문서용 NanumGothic과 별개다. 다음 저작권·라이선스 원문은 저장소에서 유지한다.
+
+| 대상 | 라이선스 원문 |
+| --- | --- |
+| `app/src/main/res/font/memoride_asta_sans.ttf` | [Asta Sans / SIL OFL 1.1](../docs/licenses/memoride_asta_sans_OFL.txt) |
+| `app/src/main/res/font/island_baloo2.ttf` | [Baloo 2 / SIL OFL 1.1](../docs/licenses/island_baloo2_OFL.txt) |
+| `app/src/main/res/font/island_jua.ttf` | [Jua / SIL OFL 1.1](../docs/licenses/island_jua_OFL.txt) |
+| Lucide 유래 아이콘 | [Lucide·Feather 고지](../docs/licenses/island_lucide_LICENSE.txt) |
+| Natural Earth 지도 | [원본·버전·수정 및 재현 기록](../docs/ux_c_map/SOURCE.md) |
+
+공개 준비 검토는 현재 3개 TTF를 수령 v6 APK의 파일 바이트와 Git blob SHA로 대조했다. 이 고지 표는 새 포괄 라이선스 부여나 B 제작 원본의 미확인 이력을 해결한 것으로 해석하지 않는다.

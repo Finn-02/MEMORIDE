@@ -1,13 +1,13 @@
-# private 저장소 초기 적용
+# 저장소 설정과 공개 제출
 
-이 파일은 사람이 적용할 절차다. Finn-02/MEMORIDE private 저장소는 확인했다. 초기 반영 결과는 REPOSITORY_STATUS.md를 따른다. PM은 팀원 초대를 완료했다고 알렸다. 팀원은 수락·접근을 확인하고, Actions 비활성화·비용·merge 설정은 아래 절차대로 PM이 실제 화면에서 확인한다.
+이 파일은 사람이 적용할 절차다. 초기 개발 기록은 REPOSITORY_STATUS.md, 현재 APK와 실행 안내는 README.md를 따른다. 2026-11-14 공개 준비 점검 당시 저장소는 private이며, 공개 전 점검 범위와 남은 확인은 [공개 준비 검토](docs/PUBLICATION_REVIEW_20261114.md)에 기록한다. 설정 파일만으로 실제 GitHub 설정이 적용됐다고 판단하지 않는다.
 
 ## PM 준비
 
-1. https://github.com/Finn-02/MEMORIDE 저장소가 private인지 확인한다. 이 배포의 초기 자료가 이미 반영되었다면 새로 git init하거나 같은 파일을 중복 업로드하지 않는다.
+1. https://github.com/Finn-02/MEMORIDE 저장소의 현재 공개 범위와 기본 브랜치를 확인한다. 초기 자료를 다시 git init하거나 중복 업로드하지 않는다. 공개는 아래 제출 안내와 점검 결과에 맞춰 진행한다.
 2. 이미 보낸 초대의 수락 여부와 A·B·C의 정확한 GitHub ID를 확인한다. 재초대가 필요한지는 실제 접근 실패 때만 확인한다. 개인정보 동의서는 저장소에 올리지 않는다.
 3. Settings → Actions → General에서 이 저장소 Actions를 우선 Disable한다. 다른 저장소나 계정 전체 결제 설정은 바꾸지 않는다.
-4. main 기본 브랜치와 squash merge·병합 후 브랜치 삭제를 설정한다. 계정이 지원하면 main 보호·리뷰 1개를 적용한다. Free private 지원을 가정하지 않는다.
+4. main을 기본 브랜치로 사용하고 **Create a merge commit**으로 병합한다. 파트 브랜치는 유지하며 자동 삭제·자동 병합·force push를 사용하지 않는다. 계정이 지원하면 main 보호·리뷰를 적용하되 유료 기능을 전제로 하지 않는다.
 5. 역할과 리뷰 짝 A↔PM, B↔C를 정한다. CODEOWNERS.example은 참고용이며 강제 기능이 아니다.
 
 ## 파트 1의 공통 앱 추가
@@ -45,7 +45,9 @@ content와 fixtures는 Gradle sourceSets 또는 작은 복사 과정 중 하나�
 
 ## 제출
 
-공지된 심사용 계정은 이번 읽은 공개 문서에서 실제 ID를 찾지 못했다. 임의 ID를 만들지 말고 공지·운영 안내에서 확정한다. 심사용 작품 소개에는 개발자 실명·소속·연락처를 넣지 않고, 개인정보는 공식 운영용 신청서·동의서에서만 관리한다. 내부 개발 기준서와 역할 문서를 그대로 심사용 기획서에 붙이지 않는다. 서류·동의서·서명·팀원 CC, README, apk/팀명_앱이름_release.apk 또는 Release 링크, private 접근을 templates/acceptance_checklist.md로 확인한다. 아직 이 항목들이 완료됐다고 기록하지 않는다.
+2026-11-14 확인한 [공식 제출 안내](https://appdevchallenge.auto-hmg.io/guide/submission)에 따르면 심사용 계정을 Collaborator로 초대할 필요가 없다. 비공개로 접수할 수 있으나 11월 16일까지 Public으로 전환하고 11월 23일까지 공개 상태를 유지한다. 공개가 어려우면 마감 전 소스+APK 압축파일 다운로드 주소를 접수 메일로 보내는 대체 방법을 따른다.
+
+접수 메일에는 저장소 URL·최종 제출 커밋·실제 Release 페이지를 기재한다. 현재 v6의 빌드 소스와 제출 문서가 있는 최종 main 커밋은 구분한다. 개인정보·개별 동의·서명은 운영용 접수 자료로 관리하며 저장소에 올리지 않는다. 팀원 전원 CC와 제출 항목은 [인수 확인표](templates/acceptance_checklist.md)에서 확인한다. 실제 메일 발송·공개 전환을 확인하기 전에 완료로 기록하지 않는다.
 
 
 앱 런처 라벨은 MEMORIDE, 내부 applicationId 기본안은 io.kailand다. 이름 변경 때문에 데이터 ID·저장 키·공통 package를 일괄 치환하지 않는다. 실제 파트 배정은 config/team.json의 null을 채우고 카드·작업 ID는 유지한다.
