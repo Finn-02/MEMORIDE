@@ -1,6 +1,6 @@
 # MEMORIDE
 
-**오늘의 이동을 캐릭터와 섬의 성장으로 남기는 Pleos 차량용 애플리케이션 프로토타입입니다.**
+**사용자의 여정(Ride)에 함께하는 가족의 소중한 기억(Memory)을 캐릭터와 섬의 성장으로 남기는 Pleos Connect 차량용 애플리케이션 프로토타입입니다.**
 
 Ride Becomes a Memory — 오늘의 이동이, 내일의 추억이 된다.
 
@@ -11,19 +11,22 @@ Ride Becomes a Memory — 오늘의 이동이, 내일의 추억이 된다.
 | 항목 | 값 |
 | --- | --- |
 | 팀 / 앱 | 독수리4형제 / MEMORIDE |
-| APK 배포 경로 | [GitHub Release `v0.1.0-v6` — MEMORIDE signed release v6](https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6) (태그 대상 = APK 빌드 소스 `17bea54`) |
-| 다운로드할 파일 | `독수리4형제_MEMORIDE_release.apk` — GitHub가 첨부 파일명의 한글을 지원하지 않아 [실제 다운로드 이름은 `4._MEMORIDE_release.apk`](https://github.com/Finn-02/MEMORIDE/releases/download/v0.1.0-v6/4._MEMORIDE_release.apk)입니다. 바이트·SHA-256은 같으며 필요하면 원래 이름으로 바꿔 사용합니다 |
+| 기본 APK 경로 | [apk/독수리4형제_MEMORIDE_release.apk](apk/독수리4형제_MEMORIDE_release.apk) |
+| 보조 배포 경로 | [GitHub Release `v0.1.0-v6`](https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6) · 태그는 실제 APK 빌드 소스 `17bea54`에 고정 |
+| 제출 파일명 | `독수리4형제_MEMORIDE_release.apk` |
 | 패키지 / 버전 | `io.kailand` / `0.1.0` / versionCode `6` |
 | APK 빌드 소스 | `17bea5438af9ea7b4fb3f3a431a19ab33777adc5` |
 | APK 크기 | 58,201,427 bytes |
 | APK SHA-256 | `7f6f2ae9ee4cf74145368add969c8f978b5c5e8195a4fa9980d47273600cb311` |
 | 팀 서명 인증서 SHA-256 | `8c842e7249d09f67f425bc90ed944bbdbc6393444cbb0845bcfb1bc17193cebb` |
 
-소스는 이 저장소에, APK는 용량을 고려해 GitHub Releases에 배포합니다. 최종 제출 커밋과 APK 빌드 소스는 구분합니다. 빌드 소스 이후의 제출 정리는 문서·출처·지도 생성 도구이며 앱 실행 코드와 패키징 입력 자산을 변경하지 않습니다. 키와 비밀번호는 포함하지 않습니다.
+소스와 제출 APK를 이 저장소에 함께 제공합니다. 기본 파일은 위 `apk/` 경로를 사용하며 기존 Release도 같은 바이트의 보조 배포 경로로 유지합니다. 최종 제출 커밋과 APK 빌드 소스는 구분합니다. 빌드 소스 이후의 제출 정리는 문서·출처·지도 생성 도구이며 앱 실행 코드와 패키징 입력 자산을 변경하지 않습니다. 키와 비밀번호는 포함하지 않습니다.
 
 ## 설치·실행
 
-1. [GitHub Release `v0.1.0-v6`](https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6)에서 v6 APK(`4._MEMORIDE_release.apk`로 내려받아짐)를 받아 `독수리4형제_MEMORIDE_release.apk`로 이름을 바꿉니다. 파일 크기와 SHA-256을 확인합니다.
+1. [제출 APK](apk/독수리4형제_MEMORIDE_release.apk)의 파일 화면에서 다운로드하거나, main의 **Code → Download ZIP**을 받아 `apk/독수리4형제_MEMORIDE_release.apk`를 사용합니다. 파일 크기와 SHA-256을 확인합니다.
+
+   보조 Release 첨부의 실제 다운로드명은 `4._MEMORIDE_release.apk`입니다. 이 파일을 사용하면 `독수리4형제_MEMORIDE_release.apk`로 바꿔 설치할 수 있으며 바이트·서명·SHA-256은 동일합니다. Release 태그의 소스 ZIP은 빌드 소스 `17bea54` 기준이므로 제출 APK가 포함된 최종 main ZIP과 구분합니다.
 2. Pleos Connect 에뮬레이터와 기본 내비게이션을 준비합니다. 실제 기어 P 및 플랫폼의 앱 이용 허용이 필요합니다.
 3. 아래 명령에서 연결된 기기의 `SERIAL`과 현재 사용자 번호 `USER_ID`를 사용합니다. 검수 환경의 사용자 번호는 10이었습니다.
 
@@ -79,6 +82,10 @@ adb -s <SERIAL> shell am start --user <USER_ID> -W -n io.kailand/.app.MainActivi
 
 개발·빌드 안내는 [개발 README](docs/DEVELOPMENT_README.md), [환경 준비](docs/ONBOARDING.md), [공통 실행](docs/A01_QUICKSTART.md), [v6 서명·환경 기록](docs/SUBMISSION_RELEASE_V6_20261114.md)에 있습니다. 기존 개발 README의 v4 설명은 당시 이력입니다. 이번 제출본은 위의 v6입니다.
 
-자산의 제작 근거와 남은 출처 확인은 [ATTRIBUTION](assets/ATTRIBUTION.md), [이미지 81개 대응표](docs/asset_manifests/C_ART_PROVENANCE_20261113.json), [Natural Earth 지도 출처](docs/ux_c_map/SOURCE.md)를 따릅니다. C의 Blender 재렌더 근거와 B 원본의 과거 제작 경위는 구분하며 전체 권리 검증 완료나 AI 미사용을 주장하지 않습니다. 저장소 전체에 새 오픈소스 라이선스를 부여하지 않습니다.
+자산의 제작 근거는 [ATTRIBUTION](assets/ATTRIBUTION.md), [이미지 81개 대응표](docs/asset_manifests/C_ART_PROVENANCE_20261113.json), [Natural Earth 지도 출처](docs/ux_c_map/SOURCE.md)를 따릅니다. PM은 B 자산의 공개 배포가 가능함을 확인했습니다. C의 Blender 재렌더 기록과 과거 AI 사용 여부 등 상세 제작 이력은 구분하며 독립적인 권리 감사 완료나 AI 미사용을 주장하지 않습니다. 저장소 전체에 새 오픈소스 라이선스를 부여하지 않습니다.
 
 공개 준비를 위한 파일·Git 이력 점검 범위와 남은 설정 확인은 [공개 준비 검토](docs/PUBLICATION_REVIEW_20261114.md)에 기록했습니다. 저장소 열람 공개는 전체 제품 인수 PASS나 제3자 자산의 권리 보증을 뜻하지 않습니다.
+
+## 접수 자료
+
+팀명은 **독수리4형제**, 앱 이름은 **MEMORIDE**입니다. 제출 정보는 [최종 제출 점검표](docs/FINAL_SUBMISSION_REVIEW_20261114.md)를 따릅니다. 접수 메일에는 저장소 URL·최종 제출 커밋과 위 APK 경로를 기재하고, 선택 제출하는 시연 영상은 v6의 실제 확인 범위에 맞춥니다. 서명·개인정보 동의서는 저장소에 올리지 않습니다.
