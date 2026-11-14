@@ -16,6 +16,7 @@ keystore.properties
 *.pem
 # Build outputs; add final contest APK intentionally with git add -f if needed
 *.apk
+!apk/독수리4형제_MEMORIDE_release.apk
 *.aab
 # Documentation snapshots are delivered in ZIP; MD is the development source
 *.docx
