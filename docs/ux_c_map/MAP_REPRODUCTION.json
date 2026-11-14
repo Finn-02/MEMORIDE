@@ -1,0 +1,38 @@
+{
+  "candidate_sha": "a342825ea02550f4cb90d346494b748cae605cbb",
+  "map_source_sha256": "ce1ac7036499a0edd641fbc093cd209a98f96a49d2eca8480aaacad35138a7f6",
+  "vector_sha256": "5be83ba3e703a820bae7c517139ee600613f5bc25e8eb9e8aa43bb2ff72e6ad5",
+  "generator_sha256": "c964ebfd91837d1b739cb210823af81e8c99cf546ddbf66571c4b434d9d3e556",
+  "ring_count": 53,
+  "point_count": 3060,
+  "styles": {
+    "fill": "#FFF6E0",
+    "stroke": "#EBCF96",
+    "strokeWidth": "3"
+  },
+  "commands": [
+    {
+      "command": "build_world_map.py pinned-source --output map_run_1.xml",
+      "exit": 0,
+      "output": "Generated map_run_1.xml: 53 rings, 3060 points; SHA256=5be83ba3e703a820bae7c517139ee600613f5bc25e8eb9e8aa43bb2ff72e6ad5"
+    },
+    {
+      "command": "build_world_map.py pinned-source --output map_run_2.xml",
+      "exit": 0,
+      "output": "Generated map_run_2.xml: 53 rings, 3060 points; SHA256=5be83ba3e703a820bae7c517139ee600613f5bc25e8eb9e8aa43bb2ff72e6ad5"
+    },
+    {
+      "command": "build_world_map.py pinned-source --check --output a_latest_map.xml",
+      "exit": 0,
+      "output": "Verified a_latest_map.xml: 53 rings, 3060 points; SHA256=5be83ba3e703a820bae7c517139ee600613f5bc25e8eb9e8aa43bb2ff72e6ad5"
+    },
+    {
+      "command": "check intentionally wrong style",
+      "exit": 1,
+      "expected_failure": true,
+      "file_preserved": true
+    }
+  ],
+  "deterministic_repeat": true,
+  "byte_identical_to_A": true
+}
