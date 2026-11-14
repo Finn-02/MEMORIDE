@@ -67,17 +67,6 @@ adb -s <SERIAL> shell am start --user <USER_ID> -W -n io.kailand/.app.MainActivi
 
 앱 이용에는 실제 플랫폼 주차 상태와 UX 허용 입력이 필요합니다. 설치·SDK 준비·내비 검색 및 경로 서비스에는 네트워크가 필요할 수 있습니다. 별도 유료 서비스·사용자 API 키는 필요하지 않습니다. APK에 ARM 계열 ABI가 포함돼 있지만 이번 기기 검수는 x86_64이며 실차·ARM 동작을 확인한 것은 아닙니다.
 
-## 검증 상태와 제한
-
-1차 프로토타입 제출 산출물로 v6를 선택했습니다. **전체 제품 인수 판정은 HOLD**이며 과거 버전의 PASS를 v6에 합산하지 않습니다.
-
-- A 기록: 같은 제품 소스의 정적 검사, Python 66개, Android JUnit 398개, debug 빌드 PASS. PM이 이 환경에서 다시 실행한 결과가 아닙니다.
-- signed v6 기록 및 전달 증거: 서명·정식 launcher·non-debuggable 검증, 기존 signed v4→v6 업데이트, 실제 내비 복귀와 위 속초 첫 방문 결과 확인.
-- 미확인: v6 결과 닫기·재실행 복원 완료·아이템 사용/저장·재방문·분할/글자 전환·실차·장시간 안정성. 이전 창 복원 FAIL도 유지합니다.
-- 일부 AVD에서 입력/표시 문제와 QEMU 종료가 기록됐으며 원인은 미확정입니다. 후속 최소 동선 재시도는 AVD 디스크 부족으로 APK 설치 전에 중단됐습니다. 이를 앱 실행 실패나 해결 완료로 바꾸지 않습니다.
-
-상세 범위는 [v6 전달 기록](docs/SUBMISSION_RELEASE_V6_20261114.md), [PM 인수 이력](docs/UX_P03_ACCEPTANCE.md), [1차 제출 결정과 배포 상태](docs/FIRST_ROUND_SUBMISSION_20261114.md)를 참고하세요. 미검수 항목은 2차 준비에서 보완할 대상으로 남깁니다.
-
 ## 소스와 출처
 
 개발·빌드 안내는 [개발 README](docs/DEVELOPMENT_README.md), [환경 준비](docs/ONBOARDING.md), [공통 실행](docs/A01_QUICKSTART.md), [v6 서명·환경 기록](docs/SUBMISSION_RELEASE_V6_20261114.md)에 있습니다. 기존 개발 README의 v4 설명은 당시 이력입니다. 이번 제출본은 위의 v6입니다.
