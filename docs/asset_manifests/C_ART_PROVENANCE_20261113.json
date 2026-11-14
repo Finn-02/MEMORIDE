@@ -1,0 +1,543 @@
+{
+  "candidate_sha": "a342825ea02550f4cb90d346494b748cae605cbb",
+  "archive": "MEMORIDE_C_INVENTORY_ART_45_CANDIDATE_20261112_223330_KST.zip",
+  "archive_sha256": "0db8636134662d67d43a8d285f74813920e15cb83c89246c3361bbb59f36a5c1",
+  "count": 81,
+  "assets": [
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/eat__bread_hat.png",
+      "sha256": "fdc9567505cf58bc7999a3306c95784ee175f7182968d473213ad9a10fd9654b",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/eat__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/eat__ginkgo_crown.png",
+      "sha256": "364c01915a3538c480df98bc0c6ba7bce62da9ca15296ea6dec8e71eb1cf6d20",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/eat__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/eat__none.png",
+      "sha256": "368158216e0b1ae926ccc5c3bb00b74ceba54d714a589a813df66aa33eabbbe8",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/eat__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/eat__wave_scarf.png",
+      "sha256": "7df08e5e305562599460183e2368ee5b14523d3a97617bbebf0a47842c38e6b1",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/eat__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/happy__bread_hat.png",
+      "sha256": "e432935702305af451f23b7cebb17b8feb5dddc9f6c1deed54641906cee059bf",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/happy__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/happy__ginkgo_crown.png",
+      "sha256": "062097727750a6f20f2abc2b9979d85bd0f542a80914e7d389ef55d50f272a77",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/happy__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/happy__none.png",
+      "sha256": "d502a84d6b9ee255d965d1c160442512356068a4f89805489920026e49efd5b6",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/happy__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/happy__wave_scarf.png",
+      "sha256": "9b54badd617bf5ec12eb2f0134a5158eb61d913575a79c4c5e9097f898972a00",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/happy__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/idle__bread_hat.png",
+      "sha256": "6ddc0915f700adc6df6afa6b33504960f91e92472bc83599c7d0bbc47569a2cb",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/idle__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/idle__ginkgo_crown.png",
+      "sha256": "495d9084e620b6c0e88b5b3987dcc3a04c5c1facc189cf5beda1e55315384ce6",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/idle__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/idle__none.png",
+      "sha256": "78a5728f84b35b4cfc0612b67cd0d3fe5fcfdf503338bc41adaca07ff4497e52",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/idle__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/lulu/idle__wave_scarf.png",
+      "sha256": "805fb802652e2dc869003f1e9726b61eaf2fd297e3b8a2af435e6d962810f6af",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/lulu/idle__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/eat__bread_hat.png",
+      "sha256": "c3fc40adf83b8c9882245b783674ab40947c6996cb6f5cbf3754404b01b924a5",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/eat__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/eat__ginkgo_crown.png",
+      "sha256": "0744f88304396265ada4a94201152b6c43a9d66d8093fe6ee3e4eba1215a04d4",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/eat__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/eat__none.png",
+      "sha256": "091591733db1df8693fbcf3202c1c6665f9dcfdcab7bf78ea17af7a21e50191f",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/eat__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/eat__wave_scarf.png",
+      "sha256": "dcb6e0bec40ae139dbb256594002b5396d0fb42584e60fd1f53b24acd3698fde",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/eat__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/happy__bread_hat.png",
+      "sha256": "0e172a714c880f990ff1c6326a4437ede6fccd6a219cdfc51dd063ecf3a5a59b",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/happy__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/happy__ginkgo_crown.png",
+      "sha256": "6f442807cfcbb681aa16c19bffa7460b54ea3b3febe24ae6b868f6279d9d7eff",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/happy__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/happy__none.png",
+      "sha256": "ec2476478642f389e9a780f0004068741bfba832ee2512bd07b90392051a6e03",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/happy__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/happy__wave_scarf.png",
+      "sha256": "0f0d146bcb5343098c4e0ff1488d83bab3ddfd1f062e52dc95846d3d1e7d3546",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/happy__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/idle__bread_hat.png",
+      "sha256": "a20ded19130bc947e7598dbca96d8778d222416363e5d83d9be138633f5ab6ad",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/idle__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/idle__ginkgo_crown.png",
+      "sha256": "732f598d7feaec2853dd87d2965f1dc1ec98fa44077a08c114b3fbb47014624c",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/idle__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/idle__none.png",
+      "sha256": "323b09d34f06c0e7ab6fde17c4ee24fdfaa778a25da2b069d17330fb22bc44d2",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/idle__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/momo/idle__wave_scarf.png",
+      "sha256": "8adcd2f2d41a2965396eb310fc2fcc37d20e7002389b10da8448f250e2736f6a",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/momo/idle__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/eat__bread_hat.png",
+      "sha256": "35d29b611c894386cc199346f4b409fd60c93bb7cefc52f6f741dedb88641fbd",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/eat__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/eat__ginkgo_crown.png",
+      "sha256": "326a1bf5cc6c2a15ff8e95eeba8a324ba89636dfe1eadad6eb4c83c32af16d10",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/eat__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/eat__none.png",
+      "sha256": "164b6e3ea64cca456894b678478265eb7d629d4ae3bc9e10e433441b6cc3d903",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/eat__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/eat__wave_scarf.png",
+      "sha256": "789e16dee0d886a2d7593b97da5ff25c90755b161d19568bfed70669e68e60af",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/eat__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/happy__bread_hat.png",
+      "sha256": "9c91a33b31126768767a55cd46e571213a3a36704a6f3353c934e92afa0d308d",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/happy__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/happy__ginkgo_crown.png",
+      "sha256": "867f2e9aa2ce9412226e7916a209eda6b94263599ac1935bfc4c09916bd6648f",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/happy__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/happy__none.png",
+      "sha256": "6e36422fff6011ee170b8d5fa0d39a483169733d460aa2cb14bcdb499b9b434f",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/happy__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/happy__wave_scarf.png",
+      "sha256": "1c16fc06254be711096790bb91cb8fd1ad588571a4161e9cb283407354ed31d8",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/happy__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/idle__bread_hat.png",
+      "sha256": "63e3f72f89fe550c2ec703eaf45a634f1aba96ac6f26c0eab8ab3e730409a33e",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/idle__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/idle__ginkgo_crown.png",
+      "sha256": "96743d78e18bcc4f4d6b5877b72002a34bcf753e0f13a80c370cb733c6a8bfe9",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/idle__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/idle__none.png",
+      "sha256": "a8a5bb296be37ee5b320ae9e967924536b800590b2e21524b0929a440b67a00e",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/idle__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved/tori/idle__wave_scarf.png",
+      "sha256": "f1978c42dcff785ee018639e932b45e888a6da0ace73655c8a2550cc6544ac6f",
+      "source_entry": "compatible_256/app/src/main/assets/avatars/approved/tori/idle__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/decor_bakery_sign.png",
+      "sha256": "641869517c142bbc1fdf6f5111b9f97c0bd2d91df06a0d60849464be668ab3eb",
+      "source_entry": "compatible_256/assets/starter/decor_bakery_sign.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/decor_ginkgo.png",
+      "sha256": "a2a3e21600f28dad9375dc252916d285a0d3be34832d6ce8c5b952cf98b308f6",
+      "source_entry": "compatible_256/assets/starter/decor_ginkgo.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/decor_shell.png",
+      "sha256": "f958e80f70eede2edfa5a7218d0123622505d4139b1b9d99132a4fd7caba466e",
+      "source_entry": "compatible_256/assets/starter/decor_shell.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/food_bread.png",
+      "sha256": "2ce349a46f5dedf5a5a12fa7001745ac5e665d53b00ade4e72e38fd76d677015",
+      "source_entry": "compatible_256/assets/starter/food_bread.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/food_potato.png",
+      "sha256": "0a5cabf15e442b84261658f6786afd4b1f7b366d9b4df6d0be25fbb1fa184a8a",
+      "source_entry": "compatible_256/assets/starter/food_potato.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/food_sashimi.png",
+      "sha256": "c832cf0082d32d0722b1fe8013287c2ef1f7e3f83d6c8b2ac777310736fe8a94",
+      "source_entry": "compatible_256/assets/starter/food_sashimi.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/outfit_bread_hat.png",
+      "sha256": "493bee5cf394cb5874fa920a411f2f04eb25a83f8407dab9803416fab03b2aa7",
+      "source_entry": "compatible_256/assets/starter/outfit_bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/outfit_ginkgo_crown.png",
+      "sha256": "410c872c8ce00dba8ca166b6d953c947ac0f7a2168d9a45cd57447c407563908",
+      "source_entry": "compatible_256/assets/starter/outfit_ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "assets/starter/outfit_wave_scarf.png",
+      "sha256": "c2dff7a3cb5c3df8bf6911148b222f0ecdef326c76dad5c5e4e7fc92e604008b",
+      "source_entry": "compatible_256/assets/starter/outfit_wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/eat__bread_hat.png",
+      "sha256": "5c6708dbfbfbdce1a3a34b96afe9c6fab002f67dbca81c674727d23b796e2d7b",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/eat__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/eat__ginkgo_crown.png",
+      "sha256": "c4aa1fbd7c22e0d1d379b991ba253a8edf8e9d0d463f382b060d295b88166c15",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/eat__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/eat__none.png",
+      "sha256": "0851b55f5c00332f759583bcb5fe13404e8a87e9922d7a011a2e9689f3e8a97c",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/eat__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/eat__wave_scarf.png",
+      "sha256": "bd9c5ce958d6fcdd1325cad27733fc80fce35c6948c134aa3676ca0c95a757e5",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/eat__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/happy__bread_hat.png",
+      "sha256": "db3a32edd5e56d80b1231862430d8064177b9b5bb767fee18b563d486d19c0e4",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/happy__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/happy__ginkgo_crown.png",
+      "sha256": "c6832580a7ac22f16f3d7d2e41378c0a29ab55fdc382089468287587ba0fa7d3",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/happy__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/happy__none.png",
+      "sha256": "d391366aadc51037c8b01c98d95c89124240ce2aa1b5218cf51186ffb834653e",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/happy__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/happy__wave_scarf.png",
+      "sha256": "8d3b1afa9706715800f23b890b227beff1444a7c48a013351cce01370d25422c",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/happy__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/idle__bread_hat.png",
+      "sha256": "9c94cdd5df180577e31c50a18b7762ec6a61aca0ca563162aa2cf4d7ba619c93",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/idle__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/idle__ginkgo_crown.png",
+      "sha256": "96cf929c6f90246e25c32373bccdbe764c0b7fa3d54d056acb3c320a7bddc475",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/idle__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/idle__none.png",
+      "sha256": "ec059bb03d2d637d6c360ba92d9cdbee68ad5d6d8e937b193d11a2389a14b942",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/idle__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/lulu/idle__wave_scarf.png",
+      "sha256": "b3fa574be4883747b6361e2c374a0124893cfc60c08640a9d1ba2e4c7f01cb6d",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/lulu/idle__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/eat__bread_hat.png",
+      "sha256": "7fc846f13c693d0cdd403d227be55bcb07a3e4e48836c166ca59ebf57c546e35",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/eat__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/eat__ginkgo_crown.png",
+      "sha256": "95cf65c6d53ca39b95a8dc9c29463634aaaf69b5a0c06871404bb3262ead154d",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/eat__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/eat__none.png",
+      "sha256": "7b4d11b138c9bccb6cd08274346e20dda4472ff84bf2a92eeaaba37fe5334c64",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/eat__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/eat__wave_scarf.png",
+      "sha256": "62518b182631df97948d996e27676a6faf0a3601fca33f755ffdb9a6d61cf537",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/eat__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/happy__bread_hat.png",
+      "sha256": "c45bb1752d08a9a2f0750e093e642c00592628280b663f1258b1b034e22f55f7",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/happy__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/happy__ginkgo_crown.png",
+      "sha256": "6f32b267bcb92f42cadceb593a604b1f4de9a5920dccf4a463ea043f3983c026",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/happy__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/happy__none.png",
+      "sha256": "ae403e7ef6b55a69aaf5a29ed6d029d1c86ad0f0093e0670b1e3d74f10cae82a",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/happy__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/happy__wave_scarf.png",
+      "sha256": "51b22d9c4cb049021e3c8a02186c943cddc86f7ee1e1bc90f2f4af0cae2c5f58",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/happy__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/idle__bread_hat.png",
+      "sha256": "143962eb35d649c9df5015110abbcedd586bb4631a7091aa0196e3dfbf8bd82e",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/idle__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/idle__ginkgo_crown.png",
+      "sha256": "a4e4321eaafaa2f9b3eaf9ebba992b3476b892594ebf1eb76a7423e5d0fb626d",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/idle__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/idle__none.png",
+      "sha256": "7527af951b643ac8992f95ae6f8dead1aefd9672942500fa1390dcfa034d34f3",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/idle__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/momo/idle__wave_scarf.png",
+      "sha256": "8214185600422eb3bf1b63703c4f23d569f59ef0ad1444b5ed3536e1992544ba",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/momo/idle__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/eat__bread_hat.png",
+      "sha256": "9df3c37a98365fb2c4c2b6114631a6e24fa1a10d8471dee9947b6b8d43838ea1",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/eat__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/eat__ginkgo_crown.png",
+      "sha256": "c7c5ca397b95902219c0f9bbefb68800cc1a2efeadb9efed1c817a8f9e9612c3",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/eat__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/eat__none.png",
+      "sha256": "f3016e97dbeb85124f56f17f87addf67b0346f6bef4080729177b6e1bcb06ba5",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/eat__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/eat__wave_scarf.png",
+      "sha256": "5bb22c24b03a51d115ed2b7cabf7fc4b798b3bc32b13161bd6b3d6945c3799c3",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/eat__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/happy__bread_hat.png",
+      "sha256": "8ae31f4c6ff3522fa1a5c3956cf984f1113790ce941672c6dade4af4cc88cddb",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/happy__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/happy__ginkgo_crown.png",
+      "sha256": "c4bdedbb5986d4e821a432ad508cefbbba22da74d4a90237fd92ed3dbce0577e",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/happy__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/happy__none.png",
+      "sha256": "2ea3d7b1110f4a1595146b93287c49fed2ba032b25fc30d67a5787d60ddf3019",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/happy__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/happy__wave_scarf.png",
+      "sha256": "e3ddcacdd086379b6335e76e68f82990b2ef202100e549f202148168c5a05ff2",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/happy__wave_scarf.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/idle__bread_hat.png",
+      "sha256": "2043956497b0201a64f4447addb1f43001dd8391aadaf1a73471033202351fb4",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/idle__bread_hat.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/idle__ginkgo_crown.png",
+      "sha256": "6a473e78a089112421ff4f24455cdd3aa3bb828cec12d7963a7416d5ab6d3882",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/idle__ginkgo_crown.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/idle__none.png",
+      "sha256": "2b02c61e81dfa13ea3e3100bd2f935429f5b4071b4ebc405dfb89aa45e932e46",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/idle__none.png",
+      "status": "PASS"
+    },
+    {
+      "path": "app/src/main/assets/avatars/approved_hd/tori/idle__wave_scarf.png",
+      "sha256": "23454e53f1b2236528f8b5def023de24f95621e2149674fc9810c48cedca3cf4",
+      "source_entry": "highres/app/src/main/assets/avatars/approved/tori/idle__wave_scarf.png",
+      "status": "PASS"
+    }
+  ],
+  "source_blends": [
+    {
+      "zip_entry": "codex-character-redesign/tori_review_v06/tori_EDITABLE.blend",
+      "size_bytes": "34669875",
+      "sha256": "ecc6e8dff716a2f85972cd43794baad43c0cd77ef604c547d549954361323b9e",
+      "status": "included"
+    },
+    {
+      "zip_entry": "codex-character-redesign/momo-lulu-review-v01/momo/momo_EDITABLE.blend",
+      "size_bytes": "30862944",
+      "sha256": "779a2863ab1f507070e395f90b55c3df4221f6154e8aba938b95dae901e8ff00",
+      "status": "included"
+    },
+    {
+      "zip_entry": "codex-character-redesign/momo-lulu-review-v01/lulu/lulu_EDITABLE.blend",
+      "size_bytes": "34165472",
+      "sha256": "e21d0c9a3c44caf129e9c81b2aa98ae1eb811b6adeb5b0e9392e284c89e6765f",
+      "status": "included"
+    },
+    {
+      "zip_entry": "Headwear-3D-Review-20261109/models/tori_headwear_review.blend",
+      "size_bytes": "35279952",
+      "sha256": "20fded74d1af511c970d45e88634ff487c7e6b1d273cab08068e04291ef77bde",
+      "status": "included"
+    },
+    {
+      "zip_entry": "Headwear-3D-Review-20261109/models/momo_headwear_review.blend",
+      "size_bytes": "31446992",
+      "sha256": "6c70899d7e421da66629b4654b310c5ba5e52ec16c9350a3f52fe695d655228d",
+      "status": "included"
+    },
+    {
+      "zip_entry": "Headwear-3D-Review-20261109/models/lulu_headwear_review.blend",
+      "size_bytes": "34796947",
+      "sha256": "d56d9a1810d6d4ef3a35f89b841cb38669aacb8dad1180cd2877b230844679c8",
+      "status": "included"
+    }
+  ],
+  "production": {
+    "tool": "Blender 5.2.3; Pillow alpha-aware downsampling",
+    "original_archive": "MEMORIDE_PART_B_APPROVED_ART_SOURCES_20261112.zip",
+    "reproduction_scripts_archive_directory": "reproduce/",
+    "external_materials_added_by_C": false,
+    "AI_coding_script_document_assistance": true,
+    "image_generation_draft_in_final_assets": false,
+    "B_historical_AI_and_external_origin_confirmation": "PENDING_B",
+    "rights": "Existing team project conditions; no new CC0 or exclusive-rights assertion",
+    "scope": "File provenance and integrity; not device acceptance"
+  }
+}
