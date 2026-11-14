@@ -80,3 +80,5 @@ adb -s <SERIAL> shell am start --user <USER_ID> -W -n io.kailand/.app.MainActivi
 개발·빌드 안내는 [개발 README](docs/DEVELOPMENT_README.md), [환경 준비](docs/ONBOARDING.md), [공통 실행](docs/A01_QUICKSTART.md), [v6 서명·환경 기록](docs/SUBMISSION_RELEASE_V6_20261114.md)에 있습니다. 기존 개발 README의 v4 설명은 당시 이력입니다. 이번 제출본은 위의 v6입니다.
 
 자산의 제작 근거와 남은 출처 확인은 [ATTRIBUTION](assets/ATTRIBUTION.md), [이미지 81개 대응표](docs/asset_manifests/C_ART_PROVENANCE_20261113.json), [Natural Earth 지도 출처](docs/ux_c_map/SOURCE.md)를 따릅니다. C의 Blender 재렌더 근거와 B 원본의 과거 제작 경위는 구분하며 전체 권리 검증 완료나 AI 미사용을 주장하지 않습니다. 저장소 전체에 새 오픈소스 라이선스를 부여하지 않습니다.
+
+공개 준비를 위한 파일·Git 이력 점검 범위와 남은 설정 확인은 [공개 준비 검토](docs/PUBLICATION_REVIEW_20261114.md)에 기록했습니다. 저장소 열람 공개는 전체 제품 인수 PASS나 제3자 자산의 권리 보증을 뜻하지 않습니다.

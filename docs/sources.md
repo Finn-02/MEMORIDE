@@ -5,7 +5,7 @@
 | ID | 1차 출처 | 사용한 범위와 한계 |
 |---|---|---|
 | S01 | [공모전 심사와 시상](https://appdevchallenge.auto-hmg.io/guide/judging-awards) | 네 가지 1차 기준, 비공개 배점, 선택 산출물·PT 동작 요구. 우승 보장 근거 아님 |
-| S02 | [공모전 지원과 제출](https://appdevchallenge.auto-hmg.io/guide/submission) | 접수일, 양식, 소스·release APK·private 초대·README. 실제 심사 계정은 공지 확인 |
+| S02 | [공모전 지원과 제출](https://appdevchallenge.auto-hmg.io/guide/submission) | 2026-11-14 재확인: 소스·release APK·README·최종 커밋, 심사용 초대 불필요. private 접수 후 11/16까지 공개·11/23까지 유지 또는 소스+APK ZIP 대체 제출 |
 | S03 | [Pleos 프로젝트와 SDK 신청](https://document.pleos.ai/docs/pleos-only/create-my-project) | Vehicle State·NaviHelper 신청 없이 사용, 음성 등 준비 상태. 실제 런타임 성공 아님 |
 | S04 | [NaviHelper 소개](https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro) | 3.0.5, 내비 요청·조회·콜백·해제. 오버레이 허용 근거 아님 |
 | S05 | [NaviHelper 이벤트](https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/event-listeners) | 경로 탐색과 목적지 도착 구분, 구현별 차이 |
