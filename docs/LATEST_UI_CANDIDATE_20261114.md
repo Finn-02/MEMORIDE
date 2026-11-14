@@ -1,6 +1,6 @@
 # 최신 UI·도시명 인식 후보 — 2026-11-14 KST
 
-이 문서는 PR #29의 후속 코드 변경 기준이다. PR은 Ready for review로 유지하며 병합은 PM이 담당한다. 전체 기기 인수 HOLD는 해제하지 않는다. 이전 [최종 검증·서명 release 기록](FINAL_UI_VALIDATION_20261114.md)은 당시 소스의 이력으로 보존한다.
+이 문서는 PR #29의 후속 코드 변경 기준이다. 이후 같은 제품 소스17bea543의 [signed release v6·설치 검수·README 입력 자료](SUBMISSION_RELEASE_V6_20261114.md)를 추가했다. 아래 미커밋 후보/NOT RUN 표기는 최초 코드 전달 당시 이력이며 후속 실기기 결과는 v6 문서를 따른다. PR은 Ready for review로 유지하며 병합은 PM이 담당한다. 전체 기기 인수 HOLD는 해제하지 않는다. 이전 [최종 검증·서명 release 기록](FINAL_UI_VALIDATION_20261114.md)은 당시 소스의 이력으로 보존한다.
 
 ## 이번 동작
 
@@ -17,7 +17,7 @@ Windows AMD64/build26200, Python3.10.4, 기록된 Android Studio JBR25, committe
 - PR 반영 전 최신 코드 전체 `python scripts/check_all.py --android`: 정적/Python66/Android398/debug PASS. 실패·오류·skip0. 도시명 인식 신규6개와 도착 저장 통합 신규1개 포함.
 - 순서/간격 UI 변경 후 debug 빌드 PASS. 이번 최신 전체 검사는 이 최종 UI 변경까지 포함한다. 화면 캡처/기기 설치/실제 내비 최신 문자열 재검증은 NOT RUN.
 - 검수 debug APK SHA-256: `091c1ca8fc5a2e83a6ddd201ad2a7ce85a3e0acadaa81b0a7d6b56dcbf1d6c37`. 미커밋 후보 당시 빌드했으며 커밋 전후 제품 소스4파일의 바이트 일치를 별도로 확인한다. debug APK/ZIP/서명키는 Git에 추가하지 않는다.
-- 기존 제출용 signed release v5 소스는 `434abae4f58787230f18e2860ee9761fb9d7dcc4`, APK SHA-256은 `b609491fe468a1003d3cd1bb22f41693ad88742f9611b73b849b0fc5687aea5c`다. **이번 도시명/UI 수정은 이 release에 포함되지 않는다.** 최종 제출 전 새 소스 SHA를 기준으로 release 재서명·설치 검수가 필요하다.
+- 기존 signed release v5 소스는 `434abae4f58787230f18e2860ee9761fb9d7dcc4`, APK SHA-256은 `b609491fe468a1003d3cd1bb22f41693ad88742f9611b73b849b0fc5687aea5c`다. **이번 도시명/UI 수정은 v5에 포함되지 않는다.** 후속 v6는 소스17bea543으로 재서명·설치 검수했으며, 파일명·새 해시·완료/미완료 범위는 위 v6 문서에 기록했다.
 
 ## B 대리 검수와 남은 범위
 
