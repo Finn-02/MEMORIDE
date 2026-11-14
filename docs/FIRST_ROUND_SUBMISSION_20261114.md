@@ -23,9 +23,19 @@ C가 제공한 지도 생성 도구·출처·재현 기록과 이미지 81개 �
 
 ## 배포 상태와 남은 제출 작업
 
-**APK는 수령·해시 확인 완료, GitHub Releases 게시는 대기다.** 연결의 전송 한도 때문에 58,201,427-byte APK 직접 업로드가 완료되지 않았다. APK 없이 소스 정리만 된 상태를 제출 완료라고 표시하지 않는다.
+이전 기록: APK는 수령·해시 확인 완료, GitHub Releases 게시는 대기였다. 당시 연결의 전송 한도 때문에 58,201,427-byte APK 직접 업로드가 완료되지 않았다.
 
-저장소 소스 정리 후 GitHub의 Releases에서 새 release를 만들고 기존 v6 APK를 첨부한다. 새 빌드·재서명·버전 변경은 필요 없다. 업로드 후 이 문서의 게시 상태를 갱신하고, 실제 Release 주소·최종 main 커밋을 접수 메일에 기재한다. API로 서명키나 자격증명을 전달하지 않는다.
+**2026-11-14 갱신 — GitHub Release 게시 완료.** PM Mac에서 기존 v6 APK를 재빌드·재서명 없이 그대로 첨부했다.
+
+| 항목 | 결과 |
+| --- | --- |
+| Release | [https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6](https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6) · 제목 `MEMORIDE signed release v6` · 정식 게시(draft·prerelease 아님) · 2026-11-14 14:56 KST |
+| 태그 | `v0.1.0-v6` → `17bea5438af9ea7b4fb3f3a431a19ab33777adc5` (APK 빌드 소스) |
+| 첨부 파일 | 표시 이름(label) `독수리4형제_MEMORIDE_release.apk`. GitHub가 첨부 파일명의 한글을 지원하지 않아 실제 파일명·다운로드 이름은 `4._MEMORIDE_release.apk`이고, API로 이름을 바꿔도 같은 결과였다. 다운로드: https://github.com/Finn-02/MEMORIDE/releases/download/v0.1.0-v6/4._MEMORIDE_release.apk |
+| 게시 전 원본 확인 | 58,201,427 bytes · SHA-256 `7f6f2ae9ee4cf74145368add969c8f978b5c5e8195a4fa9980d47273600cb311` · `io.kailand` versionName 0.1.0 / versionCode 6 · apksigner v2 검증 PASS, 서명 인증서 SHA-256 `8c842e72…3cebb`(팀 인증서 기록과 일치) |
+| 게시 후 다운로드 확인 | 다시 내려받은 파일 58,201,427 bytes · SHA-256 `7f6f2ae9…600cb311` — **원본과 일치**. GitHub 첨부 파일 digest도 같은 값 |
+
+게시는 v6 APK 배포 완료를 뜻하며 전체 제품 인수 HOLD와 위 미확인 범위는 그대로다. 접수 메일에는 위 Release 주소와 최종 main 커밋을 기재한다. 저장소 공개 전환과 접수 메일 발송은 이번 게시 작업에 포함하지 않았다. 서명키나 자격증명은 전달하지 않았다.
 
 공식 기준: https://appdevchallenge.auto-hmg.io/guide/submission
 
