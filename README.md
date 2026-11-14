@@ -11,8 +11,8 @@ Ride Becomes a Memory — 오늘의 이동이, 내일의 추억이 된다.
 | 항목 | 값 |
 | --- | --- |
 | 팀 / 앱 | 독수리4형제 / MEMORIDE |
-| APK 배포 경로 | [GitHub Releases](https://github.com/Finn-02/MEMORIDE/releases) — signed release v6 |
-| 다운로드할 파일 | `독수리4형제_MEMORIDE_release.apk` |
+| APK 배포 경로 | [GitHub Release `v0.1.0-v6` — MEMORIDE signed release v6](https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6) (태그 대상 = APK 빌드 소스 `17bea54`) |
+| 다운로드할 파일 | `독수리4형제_MEMORIDE_release.apk` — GitHub가 첨부 파일명의 한글을 지원하지 않아 [실제 다운로드 이름은 `4._MEMORIDE_release.apk`](https://github.com/Finn-02/MEMORIDE/releases/download/v0.1.0-v6/4._MEMORIDE_release.apk)입니다. 바이트·SHA-256은 같으며 필요하면 원래 이름으로 바꿔 사용합니다 |
 | 패키지 / 버전 | `io.kailand` / `0.1.0` / versionCode `6` |
 | APK 빌드 소스 | `17bea5438af9ea7b4fb3f3a431a19ab33777adc5` |
 | APK 크기 | 58,201,427 bytes |
@@ -23,7 +23,7 @@ Ride Becomes a Memory — 오늘의 이동이, 내일의 추억이 된다.
 
 ## 설치·실행
 
-1. GitHub Releases에서 위 파일명의 v6 APK를 내려받습니다. 파일 크기와 SHA-256을 확인합니다.
+1. [GitHub Release `v0.1.0-v6`](https://github.com/Finn-02/MEMORIDE/releases/tag/v0.1.0-v6)에서 v6 APK(`4._MEMORIDE_release.apk`로 내려받아짐)를 받아 `독수리4형제_MEMORIDE_release.apk`로 이름을 바꿉니다. 파일 크기와 SHA-256을 확인합니다.
 2. Pleos Connect 에뮬레이터와 기본 내비게이션을 준비합니다. 실제 기어 P 및 플랫폼의 앱 이용 허용이 필요합니다.
 3. 아래 명령에서 연결된 기기의 `SERIAL`과 현재 사용자 번호 `USER_ID`를 사용합니다. 검수 환경의 사용자 번호는 10이었습니다.
 
