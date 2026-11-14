@@ -1,5 +1,6 @@
 package io.kailand.app
 
+import android.app.ActivityManager
 import android.app.UiModeManager
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -12,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import io.kailand.BuildConfig
@@ -21,15 +23,19 @@ import io.kailand.core.contract.DataSource
 import io.kailand.core.platform.developmentGate
 import io.kailand.core.platform.VehicleGateMonitor
 import io.kailand.core.ui.MemorideTheme
+import io.kailand.app.journey.createNavigationLauncher
+import io.kailand.core.contract.RequestResult
 
 open class MainActivity : ComponentActivity() {
     protected open val developmentEntry: Boolean = false
     private var gate by mutableStateOf(InteractionGate(GateState.UNKNOWN))
     private var vehicleGateMonitor: VehicleGateMonitor? = null
     private var foreground = false
+    private val navigationLauncher by lazy { createNavigationLauncher(this) }
     private val entryModel by lazy { ViewModelProvider(this)[GameEntryModel::class.java] }
     protected val gameOwner: Any get() = entryModel.owner
-    protected val gameSession: GameAppSession
+    protected open val observePlatformNavigation: Boolean = true
+    protected open val gameSession: GameAppSession
         get() = (application as MemorideApplication).gameSession
 
     private fun publishGameContext() {
@@ -39,6 +45,7 @@ open class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!developmentEntry && observePlatformNavigation) gameSession.navigationCapture.start()
         if (!developmentEntry && Build.VERSION.SDK_INT >= 29 &&
             packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) {
             vehicleGateMonitor = VehicleGateMonitor(this) {
@@ -54,15 +61,42 @@ open class MainActivity : ComponentActivity() {
 
     @Composable
     protected open fun AppContent(gate: InteractionGate) {
-        GameAppRoot(gate, gameSession, gameOwner, developmentEntry)
+        GameAppRoot(gate, gameSession, gameOwner, developmentEntry, entryModel.navigation,
+            launchNavigation = { launchExternalNavigation() })
     }
+
+    protected open fun launchExternalNavigation(): RequestResult =
+        if (developmentEntry) RequestResult.Failed("실제 내비는 정식 앱의 주차 허용 상태에서 열어 주세요.")
+        else navigationLauncher.launch { foreground && gate.canInteract && gameSession.canUse(gameOwner) }
 
     override fun onResume() {
         super.onResume()
+        removeObsoleteDebugTasks()
         foreground = true
         publishGameContext()
+        if (!developmentEntry && observePlatformNavigation) gameSession.navigationCapture.refresh()
         val monitor = vehicleGateMonitor
         if (monitor != null) monitor.start() else updateGate(foreground = true)
+    }
+
+    /** Updating the manifest does not remove old development tasks from Android recents. */
+    private fun removeObsoleteDebugTasks() {
+        if (!BuildConfig.DEBUG || javaClass != MainActivity::class.java) return
+        val obsolete = setOf(
+            "io.kailand.app.DevelopmentActivity", "io.kailand.app.DevelopmentGameActivity",
+            "io.kailand.app.UxRehearsalActivity", "io.kailand.app.UxFoundationActivity",
+            "io.kailand.app.PleosProbeActivity", "io.kailand.app.NavigationLaunchRehearsalActivity",
+            "io.kailand.app.ArrivalModalPreviewActivity",
+        )
+        runCatching {
+            getSystemService(ActivityManager::class.java).appTasks.forEach { appTask ->
+                val task = appTask.taskInfo ?: return@forEach
+                val component = task.baseIntent.component
+                // Never close the current task, normal product task or another package's task.
+                if (task.taskId != taskId && component != null && component.packageName == packageName &&
+                    component.className in obsolete) appTask.finishAndRemoveTask()
+            }
+        }.onFailure { Log.w("MemorideLauncher", "Could not remove an old debug task", it) }
     }
 
     override fun onPause() {
@@ -91,7 +125,15 @@ open class MainActivity : ComponentActivity() {
     }
 }
 
-/** Stable through configuration recreation, distinct for another Activity or a process restart. */
-class GameEntryModel : ViewModel() {
+/** Restore only an outbound navigation continuation, never a save/reward or vehicle permission. */
+class GameEntryModel(private val savedState: SavedStateHandle) : ViewModel() {
     val owner = Any()
+    val navigation = ProductNavigation(
+        resumeNavigationReturn = savedState.get<Boolean>(NAVIGATION_RETURN) == true,
+        onNavigationReturnChanged = { savedState[NAVIGATION_RETURN] = it },
+    )
+
+    companion object {
+        private const val NAVIGATION_RETURN = "product.navigation.return"
+    }
 }

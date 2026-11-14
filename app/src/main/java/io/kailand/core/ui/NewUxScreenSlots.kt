@@ -18,6 +18,8 @@ typealias CharacterSelectionSlot = @Composable (
  */
 data class IslandDestinationSlot(
     val replacesActions: Boolean,
+    // Display-only label for the waiting panel/stage. Never an interaction permission.
+    val destinationLabel: String? = null,
     val content: @Composable () -> Unit,
 )
 

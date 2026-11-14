@@ -2,7 +2,6 @@ package io.kailand.feature.island
 
 import io.kailand.core.contract.AvatarPreview
 import io.kailand.core.contract.ItemType
-import java.awt.image.BufferedImage
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
@@ -88,43 +87,40 @@ class AvatarAssetLoaderTest {
         assertTrue(AvatarAssetResolver.approvedFrames(avatar, "eat", wrongBody).isEmpty())
     }
 
-    @Test fun all36CombinationsCanBeCompositedFromRealPngsOnTheJvm() = runBlocking {
+    @Test fun all36HighResolutionFramesDecodeWithDistinctExpressionsAndOutfits() = runBlocking {
         val catalog = islandTestCatalog
         val reads = mutableMapOf<String, Int>()
-        // Host decoder. The Android ImageDecoder adapter requires a device or emulator.
-        val loader = AvatarAssetLoader(Dispatchers.Unconfined) { path ->
+        // AvatarView renders approved full frames, never composites inventory thumbnails.
+        // Host ImageIO checks the actual HD source files; Android downsampling needs a device.
+        val loader = AvatarAssetLoader(Dispatchers.Unconfined, cacheCapacity = 6) { path ->
             reads[path] = reads.getOrDefault(path, 0) + 1
-            ImageIO.read(islandTestRoot.resolve(path)).also {
-                assertEquals(256, it.width)
-                assertEquals(256, it.height)
-                assertTrue(it.colorModel.hasAlpha())
-            }
+            ImageIO.read(islandTestRoot.resolve("app/src/main/assets").resolve(path))
         }
         val combinations = mutableSetOf<Int>()
         val outfits = listOf(null) + catalog.items.filter { it.type == ItemType.OUTFIT }.map { it.id }
         for (character in catalog.characters) {
             for (expression in listOf("idle", "happy", "eat")) {
                 for (outfit in outfits) {
-                    val paths = AvatarAssetResolver.resolve(AvatarPreview(character.id, outfit), catalog, expression)
-                    val body = checkNotNull(loader.loadFirst(listOf(checkNotNull(paths.body))))
-                    val face = checkNotNull(loader.loadFirst(paths.faceCandidates))
-                    val clothing = paths.outfit?.let { checkNotNull(loader.loadFirst(listOf(it))) }
-                    val composite = BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB)
-                    val canvas = composite.createGraphics()
-                    try {
-                        for (layer in listOfNotNull(body, face, clothing)) canvas.drawImage(layer, 0, 0, null)
-                    } finally {
-                        canvas.dispose()
-                    }
-                    assertEquals(0, composite.getRGB(0, 0) ushr 24)
-                    assertEquals(255, composite.getRGB(102, 237) ushr 24)
-                    combinations += composite.getRGB(0, 0, 256, 256, null, 0, 256).contentHashCode()
+                    val avatar = AvatarPreview(character.id, outfit)
+                    val layers = AvatarAssetResolver.resolve(avatar, catalog, expression)
+                    val approved = AvatarAssetResolver.approvedFrames(avatar, expression, layers)
+                    val hd = approved.map { it.replace("avatars/approved/", "avatars/approved_hd/") }
+                    val path = hd.first()
+                    val frame = checkNotNull(loader.loadFirst(hd + approved))
+                    assertEquals(1024, frame.width)
+                    assertEquals(1024, frame.height)
+                    assertTrue(frame.colorModel.hasAlpha())
+                    assertEquals(0, frame.getRGB(0, 0) ushr 24)
+                    assertTrue(loader.cached(path) === loader.loadFirst(listOf(path)))
+                    combinations += frame.getRGB(0, 0, 1024, 1024, null, 0, 1024).contentHashCode()
                 }
             }
         }
         assertEquals(36, combinations.size)
-        assertEquals(9, reads.size)
+        assertEquals(36, reads.size)
+        assertTrue(reads.keys.all { it.startsWith("avatars/approved_hd/") })
         assertTrue(reads.values.all { it == 1 })
+        assertEquals(6, reads.keys.count { loader.cached(it) != null })
     }
 
     @Test fun missingCorruptAndRejectedDecodesFallBackWithoutCachingFailures() = runBlocking {

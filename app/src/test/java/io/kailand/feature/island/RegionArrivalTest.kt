@@ -6,6 +6,7 @@ import io.kailand.core.contract.DataSource
 import io.kailand.core.contract.GameAction
 import io.kailand.core.contract.GameSnapshot
 import io.kailand.core.contract.MutationResult
+import io.kailand.core.contract.RegionVisitHistory
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
@@ -27,14 +27,15 @@ class RegionArrivalTest {
     private val d04 = IslandTestData.arrival("D04")
     private val d05 = IslandTestData.arrival("D05")
 
-    @Test fun d03CommitsGiftsDiscoveryOriginalAndPendingTogether() = withService { service, store ->
+    @Test fun d03CommitsGrowthGiftsDiscoveryOriginalAndPendingTogether() = withService { service, store ->
         val result = service.completeArrival(d03) as ArrivalResult.Applied
         val expected = IslandTestData.expected("D03")
         val gifts = expected.getValue("grantedItemIds").jsonArray.map { it.jsonPrimitive.content }
         val receipt = result.receipt
         assertEquals(gifts, receipt.grantedItemIds)
         assertEquals(expected.getValue("discoveredRegionId").jsonPrimitive.content, receipt.discoveredRegionId)
-        assertEquals(expected.getValue("growthDelta").jsonPrimitive.int, receipt.growthAfter - receipt.growthBefore)
+        assertEquals(0, receipt.growthBefore)
+        assertEquals(1, receipt.growthAfter)
         assertEquals(d03.journeyId, receipt.journeyId)
         assertEquals(d03.source, receipt.source)
         assertEquals(d03.kind, receipt.kind)
@@ -44,6 +45,8 @@ class RegionArrivalTest {
         assertEquals(d03.distanceMeters, receipt.distanceMeters)
         assertEquals(1, store.commits.size)
         val saved = store.commits.single()
+        assertEquals(1, saved.dailyGrowth)
+        assertEquals("2026-10-31", saved.lastDailyGrantDate)
         assertEquals(gifts.toSet(), saved.ownedItemIds)
         assertEquals(setOf("daejeon"), saved.discoveredRegionIds)
         assertEquals(receipt, saved.processedReceipts.getValue(d03.journeyId).toContract())
@@ -80,19 +83,30 @@ class RegionArrivalTest {
     @Test fun arrivalFailureAfterCalculationChangesNeitherStorageNorPublishedState() = withService { service, store ->
         val before = service.state.value
         val beforeSave = store.save
+        val beforeHistory = service.regionVisitHistory.value
         val observed = mutableListOf<GameSnapshot>()
         val collector = CoroutineScope(Dispatchers.Unconfined).launch { service.state.collect { observed += it } }
+        val history = mutableListOf<RegionVisitHistory>()
+        val historyCollector = CoroutineScope(Dispatchers.Unconfined).launch { service.regionVisitHistory.collect { history += it } }
         try {
             store.failWrite = true
             assertTrue(service.completeArrival(d03) is ArrivalResult.StorageFailure)
             assertSame(before, service.state.value)
             assertEquals(beforeSave, store.save)
             assertEquals(listOf(before), observed)
+            assertEquals(listOf(beforeHistory), history)
             assertTrue(store.commits.isEmpty())
             store.failWrite = false
-            assertTrue(service.completeArrival(d03) is ArrivalResult.Applied)
+            val committed = (service.completeArrival(d03) as ArrivalResult.Applied).receipt
+            assertEquals(d03.completedAtEpochMs, committed.completedAtEpochMs)
+            assertEquals(1, committed.growthAfter)
+            assertEquals(committed, (service.completeArrival(d03) as ArrivalResult.AlreadyApplied).receipt)
             assertEquals(1, store.commits.size)
-        } finally { collector.cancel() }
+            assertEquals(1, (service.regionVisitHistory.value as RegionVisitHistory.Available).regions.single().visitCount)
+        } finally {
+            collector.cancel()
+            historyCollector.cancel()
+        }
     }
 
     @Test fun regeneratedServiceReturnsOriginalEvenIfReplayPayloadChanged() = withService { service, store ->
@@ -140,7 +154,7 @@ class RegionArrivalTest {
         assertNull(service.state.value.pendingReceipt)
     }
 
-    @Test fun pleosAndNullMeasurementsArePreservedWithoutDailyGrowth() = withService(
+    @Test fun pleosNullMeasurementsAndOutOfOrderGrowthKeepTheLatestGrantDate() = withService(
         GameSave(dailyGrowth = 2, lastDailyGrantDate = "2026-11-01"),
     ) { service, store ->
         val input = d03.copy(source = DataSource.PLEOS, evidence = ArrivalEvidence.PLEOS_FINAL_DESTINATION,
@@ -150,7 +164,7 @@ class RegionArrivalTest {
         assertNull(receipt.elapsedSeconds)
         assertNull(receipt.distanceMeters)
         assertEquals(2, receipt.growthBefore)
-        assertEquals(2, receipt.growthAfter)
+        assertEquals(3, receipt.growthAfter)
         assertEquals("2026-11-01", store.save!!.lastDailyGrantDate)
     }
 
@@ -176,6 +190,25 @@ class RegionArrivalTest {
         assertTrue(receipt.grantedItemIds.isEmpty())
         assertTrue(store.save!!.discoveredRegionIds.isEmpty())
         assertTrue(store.save!!.ownedItemIds.isEmpty())
+        assertEquals(0, receipt.growthBefore)
+        assertEquals(0, receipt.growthAfter)
+        assertNull(store.save!!.lastDailyGrantDate)
+        val registered = (service.completeArrival(d05) as ArrivalResult.Applied).receipt
+        assertEquals(1, registered.growthAfter)
+        assertEquals(IslandTestData.rewards.itemsFor("daejeon"), registered.grantedItemIds)
+    }
+
+    @Test fun firstDiscoveryStillGrantsGiftsWhenGrowthIsCapped() = withService(
+        GameSave(dailyGrowth = 3, lastDailyGrantDate = "2026-10-30"),
+    ) { service, store ->
+        val receipt = (service.completeArrival(d03) as ArrivalResult.Applied).receipt
+        assertEquals(3, receipt.growthBefore)
+        assertEquals(3, receipt.growthAfter)
+        assertEquals(IslandTestData.rewards.itemsFor("daejeon"), receipt.grantedItemIds)
+        assertEquals("daejeon", receipt.discoveredRegionId)
+        val committed = store.commits.single()
+        assertEquals("2026-10-30", committed.lastDailyGrantDate)
+        assertEquals(receipt.grantedItemIds.toSet(), committed.ownedItemIds)
     }
 
     @Test fun concurrentDuplicatesCommitOnlyOneReward() = withService { service, store ->
@@ -187,6 +220,8 @@ class RegionArrivalTest {
         assertEquals(1, store.commits.size)
         val original = (results.first { it is ArrivalResult.Applied } as ArrivalResult.Applied).receipt
         results.filterIsInstance<ArrivalResult.AlreadyApplied>().forEach { assertEquals(original, it.receipt) }
+        assertEquals(1, original.growthAfter)
+        assertEquals(1, service.state.value.dailyGrowth)
     }
 
     @Test fun corruptHistoricalReceiptBlocksReadAndEveryWrite() = withService { service, store ->

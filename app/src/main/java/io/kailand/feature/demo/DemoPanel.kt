@@ -99,6 +99,7 @@ private fun stepLabel(step: DemoStep) = when (step) {
     DemoStep.COMPLETE -> "모의 완료 · 저장 결과 대기"
     DemoStep.RETRY_ARRIVAL -> "같은 도착 저장 재시도"
     DemoStep.REPEAT -> "마지막 원본 도착 반복"
+    DemoStep.VERIFY_SAVED -> "저장 결과 다시 확인"
     DemoStep.CHOOSE -> "시나리오 선택"
     DemoStep.RESET -> "전체 초기화 확인"
     DemoStep.DONE -> "저장 결과 확인 완료"

@@ -27,6 +27,9 @@ class BriefingTextTest {
         assertEquals("발견 기록 · 대전", text.discovery)
         assertEquals(text, formatBriefing(receipt.copy(), sample.catalog, sample.avatar))
         assertEquals(3, receipt.grantedItemIds.size)
+        assertEquals(0, receipt.growthBefore)
+        assertEquals(1, receipt.growthAfter)
+        assertEquals("성장 기록 · 0 → 1단계", text.growth)
         assertTrue(text.notices.isEmpty())
     }
 
@@ -37,9 +40,19 @@ class BriefingTextTest {
         assertEquals("성장 기록 · 0 → 1단계", text.growth)
         assertNull(text.discovery)
         assertTrue(text.souvenirs.isEmpty())
+        val current = fixture("daily_current")
+        val currentText = formatBriefing(requireNotNull(current.receipt), current.catalog, current.avatar)
+        assertEquals("추가 성장 없음 · 0단계", currentText.growth)
+        assertTrue(currentText.souvenirs.isEmpty())
+        assertNull(currentText.discovery)
+
         val regional = fixture("regional")
-        val revisit = formatBriefing(requireNotNull(regional.receipt).copy(discoveredRegionId = null, grantedItemIds = emptyList()), regional.catalog, regional.avatar)
-        assertEquals("추가 성장 없음 · 0단계", revisit.growth)
+        val first = requireNotNull(regional.receipt)
+        val revisit = formatBriefing(
+            first.copy(growthBefore = first.growthAfter, discoveredRegionId = null, grantedItemIds = emptyList()),
+            regional.catalog, regional.avatar,
+        )
+        assertEquals("추가 성장 없음 · 1단계", revisit.growth)
         assertTrue(revisit.souvenirs.isEmpty())
         assertNull(revisit.discovery)
     }

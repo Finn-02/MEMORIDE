@@ -14,7 +14,7 @@ internal data class AvatarLayerPaths(
 
 private val starterPngPath = Regex("assets/starter/[a-zA-Z0-9_][a-zA-Z0-9_-]*\\.png")
 private val approvedPngPath = Regex(
-    "avatars/approved/(tori|momo|lulu)/(idle|happy|eat)__(none|bread_hat|ginkgo_crown|wave_scarf)\\.png",
+    "avatars/(approved|approved_hd)/(tori|momo|lulu)/(idle|happy|eat)__(none|bread_hat|ginkgo_crown|wave_scarf)\\.png",
 )
 
 internal fun isAvatarAssetPath(path: String): Boolean =

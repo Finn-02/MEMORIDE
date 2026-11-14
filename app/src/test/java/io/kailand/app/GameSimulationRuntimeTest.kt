@@ -24,22 +24,92 @@ class GameSimulationRuntimeTest {
             assertEquals("D01", p.runtime.runner.state.value.selected?.id)
             assertEquals(DemoStep.PREPARE, p.runtime.runner.state.value.step)
             assertEquals(GameCommandSession(1), p.commands.session.value)
+            fun verify(id: String, before: Int, after: Int, discovered: String? = null): ArrivalReceipt {
+                val plan = plans.single { it.id == id }
+                val snapshot = p.game.state.value
+                val receipt = checkNotNull(snapshot.pendingReceipt)
+                assertEquals(id, p.runtime.runner.state.value.selected?.id)
+                assertEquals(DemoStep.DONE, p.runtime.runner.state.value.step)
+                assertEquals(plan.kind, receipt.kind)
+                assertEquals(DataSource.DEMO, receipt.source)
+                assertEquals(plan.regionId, receipt.regionId)
+                assertEquals(plan.completedAtEpochMs, receipt.completedAtEpochMs)
+                assertEquals(plan.elapsedSeconds, receipt.elapsedSeconds)
+                assertEquals(plan.distanceMeters, receipt.distanceMeters)
+                assertEquals(before, receipt.growthBefore)
+                assertEquals(after, receipt.growthAfter)
+                assertEquals(after, snapshot.dailyGrowth)
+                assertEquals(discovered, receipt.discoveredRegionId)
+                val gifts = catalog.regions.singleOrNull { it.id == discovered }?.itemIds.orEmpty()
+                assertEquals(gifts, receipt.grantedItemIds)
+                assertEquals(receipt, p.store.save.processedReceipts.getValue(receipt.journeyId).toContract())
+                return receipt
+            }
+
             p.finishSelected()
-            assertEquals(1, p.game.state.value.dailyGrowth)
+            val firstDaily = verify("D01", 0, 0)
             p.runScenario("D02")
-            assertEquals(1, p.game.state.value.dailyGrowth)
+            val secondDaily = verify("D02", 0, 0)
+            assertNotEquals(firstDaily.journeyId, secondDaily.journeyId)
+            assertEquals(setOf(firstDaily.journeyId, secondDaily.journeyId), p.store.save.processedReceipts.keys)
+            assertNull(p.store.save.lastDailyGrantDate)
+            assertTrue(p.game.state.value.ownedItemIds.isEmpty())
+
             p.runScenario("D03")
-            val original = p.game.state.value.pendingReceipt
+            val original = verify("D03", 0, 1, "daejeon")
+            assertEquals(GameCommandSession(2), p.commands.session.value)
+            assertEquals(3, original.grantedItemIds.size)
+            val discovered = p.store.save
+            assertEquals(setOf(original.journeyId), discovered.processedReceipts.keys)
             p.runScenario("D04")
-            assertEquals(original, p.game.state.value.pendingReceipt)
-            assertEquals(3, p.game.state.value.ownedItemIds.size)
-            p.runScenario("D05")
-            assertEquals(3, p.game.state.value.ownedItemIds.size)
-            p.runScenario("D06")
-            assertEquals("wonju", p.game.state.value.pendingReceipt?.regionId)
-            assertNull(p.game.state.value.pendingReceipt?.elapsedSeconds)
-            assertNull(p.game.state.value.pendingReceipt?.distanceMeters)
             assertEquals(DemoStep.DONE, p.runtime.runner.state.value.step)
+            assertEquals(original, p.game.state.value.pendingReceipt)
+            assertEquals(discovered, p.store.save)
+
+            p.runScenario("D05")
+            val revisit = verify("D05", 1, 1)
+            assertNotEquals(original.journeyId, revisit.journeyId)
+            assertEquals(setOf(original.journeyId, revisit.journeyId), p.store.save.processedReceipts.keys)
+            assertEquals(original.grantedItemIds.toSet(), p.game.state.value.ownedItemIds)
+
+            p.runScenario("D06")
+            val wonju = verify("D06", 0, 1, "wonju")
+            assertEquals(GameCommandSession(3), p.commands.session.value)
+            assertNull(wonju.elapsedSeconds)
+            assertNull(wonju.distanceMeters)
+            assertEquals(3, wonju.grantedItemIds.size)
+            assertEquals(wonju.grantedItemIds.toSet(), p.game.state.value.ownedItemIds)
+            assertEquals(setOf("wonju"), p.game.state.value.discoveredRegionIds)
+            assertEquals(setOf(wonju.journeyId), p.store.save.processedReceipts.keys)
+        } finally { p.scope.cancel() }
+    }
+
+    @Test fun committedFixtureMismatchRechecksWithoutRetryingStorage() = runBlocking {
+        val outdated = plans.map { if (it.id == "D01") it.copy(expectedGrowth = 1) else it }
+        val p = Pipeline(outdated)
+        try {
+            val runner = p.runtime.runner
+            assertTrue(runner.selectScenario("D01"))
+            assertTrue(runner.resetConfirmed())
+            repeat(3) { assertTrue(runner.advance()) }
+            assertEquals(DemoStep.COMPLETE, runner.state.value.step)
+
+            assertFalse(runner.advance())
+            val committed = p.store.save
+            val receipt = checkNotNull(p.game.state.value.pendingReceipt)
+            assertEquals(JourneyPhase.ARRIVED, p.runtime.snapshot.phase)
+            assertEquals(0, receipt.growthAfter)
+            assertEquals(receipt, committed.processedReceipts.getValue(receipt.journeyId).toContract())
+            assertEquals(DemoStep.VERIFY_SAVED, runner.state.value.step)
+            val verificationMessage = runner.state.value.message
+            assertTrue(verificationMessage.orEmpty().contains("시연 기대값"))
+
+            p.store.beforeNextUpdate = { fail("Verification must not produce another write") }
+            assertFalse(runner.advance())
+            assertEquals(DemoStep.VERIFY_SAVED, runner.state.value.step)
+            assertEquals(verificationMessage, runner.state.value.message)
+            assertEquals(committed, p.store.save)
+            assertEquals(receipt, p.game.state.value.pendingReceipt)
         } finally { p.scope.cancel() }
     }
 
@@ -226,7 +296,7 @@ class GameSimulationRuntimeTest {
         }
     }
 
-    private inner class Pipeline {
+    private inner class Pipeline(scenarios: List<DemoScenario> = plans) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val store = Store()
         val game = BGameService(store, scope) { RegionRewards.fromJson(catalogJson) }
@@ -242,14 +312,16 @@ class GameSimulationRuntimeTest {
             DestinationSpec(it.id, it.name, it.latitude, it.longitude)
         }
         init {
-            runtime = GameSimulationRuntime(scope, game, commands, catalog, plans, { host }, { mode }, clock, timer)
+            runtime = GameSimulationRuntime(scope, game, commands, catalog, scenarios, { host }, { mode }, clock, timer)
             runtime.updateHost(GameCommandContext(parked, true, mode))
             runtime.setScreens(demo = true, visit = false)
         }
         suspend fun finishSelected() {
             repeat(8) {
                 if (runtime.runner.state.value.step == DemoStep.DONE) return
-                assertTrue("step=${runtime.runner.state.value.step}, message=${runtime.runner.state.value.message}", runtime.runner.advance())
+                val advanced = runtime.runner.advance()
+                val state = runtime.runner.state.value
+                assertTrue("step=${state.step}, message=${state.message}", advanced)
                 yield()
             }
             fail("Runner did not finish")

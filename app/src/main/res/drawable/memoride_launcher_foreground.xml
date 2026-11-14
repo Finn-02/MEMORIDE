@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original Figma 4:53 logo paths. Resolution-independent glyph inside adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="22" android:translateY="22" android:scaleX="1.3333333" android:scaleY="1.3333333">
+        <path android:pathData="M12 36C18 26 30 30 34 16" android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="4" android:strokeLineCap="round" />
+        <path android:pathData="M12 36C12.18 35.7 12.3654 35.4126 12.5559 35.1369M34 16C33.903 16.3394 33.8013 16.6683 33.6951 16.987M14.5498 32.7998C15.0558 32.3175 15.582 31.8828 16.1239 31.4853M18.7364 29.8655C19.3415 29.5434 19.9558 29.2437 20.5739 28.9543M23.373 27.6759C23.9936 27.3886 24.61 27.0931 25.2169 26.7772M27.848 25.1879C28.3958 24.7969 28.9272 24.3694 29.4371 23.8945M31.4493 21.5752C31.8234 21.0388 32.177 20.4566 32.5072 19.8218" android:fillColor="#00000000" android:strokeColor="#1F4E79" android:strokeWidth="1.2" />
+        <path android:pathData="M34 19C36.7614 19 39 16.7614 39 14C39 11.2386 36.7614 9 34 9C31.2386 9 29 11.2386 29 14C29 16.7614 31.2386 19 34 19Z" android:fillColor="#FFD27A" />
+    </group>
+</vector>

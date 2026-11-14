@@ -61,7 +61,7 @@ class UiSamplesTests(unittest.TestCase):
         self.data = load(root/'fixtures/ui_samples.json')
 
     def test_current_samples(self):
-        self.assertEqual(validate_samples(self.catalog, self.data), 5)
+        self.assertEqual(validate_samples(self.catalog, self.data), 6)
 
     def test_unowned_outfit_rejected(self):
         self.data['samples'][0]['game']['avatar']['outfitItemId'] = 'daejeon_hat'
@@ -84,7 +84,7 @@ class UiSamplesTests(unittest.TestCase):
             validate_samples(self.catalog, self.data)
 
     def test_null_metrics_valid(self):
-        sample = self.data['samples'][3]['game']['pendingReceipt']
+        sample = next(s for s in self.data['samples'] if s['id'] == 'missing_metrics')['game']['pendingReceipt']
         self.assertIsNone(sample['distanceMeters'])
         self.assertIsNone(sample['elapsedSeconds'])
         validate_samples(self.catalog, self.data)

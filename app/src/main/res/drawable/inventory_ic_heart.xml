@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Figma 10:2; Lucide ISC license: docs/licenses/island_lucide_LICENSE.txt -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="22dp" android:height="22dp" android:viewportWidth="22" android:viewportHeight="22">
+  <path android:pathData="M17.4167 12.8333C18.7825 11.495 20.1667 9.89083 20.1667 7.79167C20.1667 6.45453 19.6355 5.17217 18.69 4.22667C17.7445 3.28117 16.4621 2.75 15.125 2.75C13.5117 2.75 12.375 3.20833 11 4.58333C9.625 3.20833 8.48833 2.75 6.875 2.75C5.53787 2.75 4.2555 3.28117 3.31 4.22667C2.36451 5.17217 1.83333 6.45453 1.83333 7.79167C1.83333 9.9 3.20833 11.5042 4.58333 12.8333L11 19.25L17.4167 12.8333Z" android:fillColor="#00000000" android:strokeColor="#E9798A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

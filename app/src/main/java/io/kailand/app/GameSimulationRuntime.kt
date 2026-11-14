@@ -20,6 +20,7 @@ class GameSimulationRuntime(
     private val mode: () -> DataSource,
     clock: VisitClock,
     scheduler: VisitScheduler,
+    private val beforeReset: suspend () -> Unit = {},
 ) {
     private data class Binding(val generation: Long, val adapter: DemoJourneyAdapter)
     private var binding = makeBinding(commands.session.value.generation)
@@ -100,6 +101,7 @@ class GameSimulationRuntime(
         var visitToken: Long? = null
         return try {
             commands.resetDemo(commands.session.value.generation, hostAllowed) {
+                beforeReset()
                 visitToken = visit.beginReset()
                 binding.adapter.invalidate() // Outside the command mutex, never joins the reset requester.
                 binding = makeBinding(commands.session.value.generation)

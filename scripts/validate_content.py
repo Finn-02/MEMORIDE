@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Small offline content checks. Does not validate Android, SDK behavior or safety."""
 from __future__ import annotations
+from datetime import date, datetime, timedelta, timezone
 import json
 import math
 from pathlib import Path
 import sys
 import uuid
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,6 +31,19 @@ def unique(records: list, label: str) -> dict:
         require(item_id not in result, f'{label}: duplicate id {item_id}')
         result[item_id] = item
     return result
+
+
+def kst_day(epoch_ms: int) -> date:
+    try:
+        seoul = ZoneInfo('Asia/Seoul')
+    except ZoneInfoNotFoundError:
+        # Windows Python may not ship the IANA database. Contemporary Korea uses UTC+09:00.
+        require(epoch_ms >= 946684800000, 'historical fixture dates require Asia/Seoul timezone data')
+        seoul = timezone(timedelta(hours=9))
+    try:
+        return datetime.fromtimestamp(epoch_ms // 1000, timezone.utc).astimezone(seoul).date()
+    except (OverflowError, OSError, ValueError) as error:
+        raise ValueError('fixture completion time outside supported date range') from error
 
 
 def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
@@ -89,12 +104,24 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
             and len(set(slots)) == 3, 'MVP decoration slots must be 3 unique nonempty strings')
     require(type(fixtures.get('schemaVersion')) is int and fixtures['schemaVersion'] == 1, 'fixture schemaVersion must be integer 1')
     scenarios = unique(fixtures.get('scenarios'), 'scenarios')
-    seen = set()
+    completed = set()
     seen_journeys = set()
+    region_days = set()
+    stage = 0
+    last_completed = None
     for sid, scenario in scenarios.items():
         predecessor = scenario.get('dependsOn')
-        require(predecessor is None or predecessor in seen, f'{sid}: dependency missing or not earlier')
-        require(scenario.get('resetBefore') is True or predecessor is not None, f'{sid}: reset or dependency required')
+        replay = scenario.get('replayOf')
+        reset = scenario.get('resetBefore', False)
+        require(type(reset) is bool, f'{sid}: resetBefore must be bool')
+        require(reset or predecessor is not None, f'{sid}: reset or dependency required')
+        require(predecessor is None or predecessor in completed, f'{sid}: dependency missing or not earlier in this session')
+        if reset:
+            require(replay is None, f'{sid}: reset cannot replay a previous arrival')
+            completed.clear()
+            region_days.clear()
+            stage = 0
+            last_completed = None
         command = scenario.get('arrival', {})
         require(command.get('source') == 'DEMO', f'{sid}: fixture must remain DEMO')
         require(command.get('evidence') == 'DEMO_FINAL_DESTINATION', f'{sid}: invalid evidence')
@@ -122,15 +149,21 @@ def validate(catalog: dict, fixtures: dict, root: Path = ROOT) -> dict:
         discovery = expected.get('discoveredRegionId')
         require(discovery is None or discovery == region, f'{sid}: discovery mismatch')
         require(all(items[i]['regionId'] == region for i in grants), f'{sid}: reward region mismatch')
-        replay = scenario.get('replayOf')
         require(expected['duplicate'] == (replay is not None), f'{sid}: duplicate expectation requires replay')
         require(command['journeyId'] not in seen_journeys or replay is not None, f'{sid}: duplicate journey requires explicit replay')
         if replay is not None:
-            require(replay in seen, f'{sid}: replay target missing')
+            require(replay in completed and replay == last_completed, f'{sid}: replay target must be the last completed arrival')
             require(command == scenarios[replay]['arrival'], f'{sid}: replay command differs')
             require(expected['duplicate'] and not grants and expected['growthDelta'] == 0, f'{sid}: replay must have no new effect')
-        require(command['kind'] != 'REGION' or expected['growthDelta'] == 0, f'{sid}: REGION must not expect DAILY growth')
-        seen.add(sid)
+        growth = 0
+        if replay is None and command['kind'] == 'REGION' and region is not None:
+            date = kst_day(command['completedAtEpochMs'])
+            growth = int(date not in region_days and stage < rules['dailyGrowthCap'])
+            region_days.add(date)
+        require(expected['growthDelta'] == growth, f"{sid}: {command['kind']} growth delta must be {growth}")
+        stage += growth
+        completed.add(sid)
+        last_completed = sid
         seen_journeys.add(command['journeyId'])
     return {'regions': len(regions), 'items': len(items), 'characters': len(characters), 'assets': len(assets), 'scenarios': len(scenarios)}
 

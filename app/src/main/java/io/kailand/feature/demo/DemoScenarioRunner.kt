@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class DemoStep { CHOOSE, RESET, PREPARE, WAIT_READY, START, COMPLETE, RETRY_ARRIVAL, REPEAT, DONE }
+enum class DemoStep { CHOOSE, RESET, PREPARE, WAIT_READY, START, COMPLETE, RETRY_ARRIVAL, REPEAT, VERIFY_SAVED, DONE }
 data class DemoContext(
     val gate: InteractionGate = InteractionGate(GateState.UNKNOWN),
     val foreground: Boolean = false, val screenActive: Boolean = false,
@@ -190,7 +190,7 @@ class DemoScenarioRunner(
                 if (!allowed() || state.value.busy || journey.state.value.source != DataSource.DEMO) return@coroutineScope false
                 val plan = state.value.selected ?: return@coroutineScope false
                 if (state.value.step !in setOf(DemoStep.PREPARE, DemoStep.WAIT_READY, DemoStep.START,
-                        DemoStep.COMPLETE, DemoStep.RETRY_ARRIVAL, DemoStep.REPEAT)) return@coroutineScope false
+                        DemoStep.COMPLETE, DemoStep.RETRY_ARRIVAL, DemoStep.REPEAT, DemoStep.VERIFY_SAVED)) return@coroutineScope false
                 operation = job
                 publish(state.value.copy(busy = true, message = null))
                 Triple(generation, plan, state.value.step)
@@ -203,7 +203,8 @@ class DemoScenarioRunner(
                         journey.requestDestination(it, plan.kind)
                     }
                         ?: RequestResult.Failed("지역 정보 또는 일상 목적지 입력을 확인해 주세요.")
-                    DemoStep.WAIT_READY -> RequestResult.Accepted
+                    // These steps only inspect current state; they never dispatch a command.
+                    DemoStep.WAIT_READY, DemoStep.VERIFY_SAVED -> RequestResult.Accepted
                     DemoStep.START -> if (validJourney(JourneyPhase.READY)) demo.dispatch(DemoInput.StartTravel)
                         else RequestResult.Failed("같은 DEMO 여정의 READY를 먼저 확인해 주세요.")
                     DemoStep.COMPLETE -> if (validJourney(JourneyPhase.TRAVELLING)) {
@@ -248,7 +249,7 @@ class DemoScenarioRunner(
                         DemoStep.START -> if (validJourney(JourneyPhase.TRAVELLING)) {
                             publish(state.value.copy(busy = false, step = DemoStep.COMPLETE)); true
                         } else { publish(state.value.copy(busy = false, message = "출발 단계 확인이 필요해요.")); false }
-                        else -> verifySaved(plan, step)
+                        else -> verifySaved(plan)
                     }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
@@ -268,9 +269,15 @@ class DemoScenarioRunner(
         val j = journey.state.value
         j.source == DataSource.DEMO && j.journeyId == expectedJourneyId && !j.journeyId.isNullOrBlank() && j.phase == phase
     }
-    private fun verifySaved(plan: DemoScenario, step: DemoStep): Boolean {
+    private fun verifySaved(plan: DemoScenario): Boolean {
         val before = beforeGame
-        val after = readGame()
+        val after = try {
+            readGame()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
         val receipt = after?.pendingReceipt
         val repeated = plan.replayOf?.let { completed[it] }
         val valid = validJourney(JourneyPhase.ARRIVED) && before != null && after != null && receipt != null &&
@@ -281,11 +288,11 @@ class DemoScenarioRunner(
             after.ownedItemIds - before.ownedItemIds == plan.expectedItems &&
             after.ownedItemIds.containsAll(before.ownedItemIds) && after.discoveredRegionIds.containsAll(before.discoveredRegionIds) &&
             after.discoveredRegionIds - before.discoveredRegionIds == setOfNotNull(plan.expectedDiscovery) &&
-            (repeated == null || (receipt == repeated && after.avatar == before.avatar && after.decorationSlots == before.decorationSlots &&
+            (plan.replayOf == null || (receipt == repeated && after.avatar == before.avatar && after.decorationSlots == before.decorationSlots &&
                 after.ownedItemIds == before.ownedItemIds && after.discoveredRegionIds == before.discoveredRegionIds))
         if (!valid) {
-            publish(state.value.copy(busy = false, step = if (step == DemoStep.REPEAT) DemoStep.REPEAT else DemoStep.RETRY_ARRIVAL,
-                message = "접수만으로 성공 처리하지 않아요. 저장 상태와 원본 영수증을 확인해 주세요."))
+            publish(state.value.copy(busy = false, step = DemoStep.VERIFY_SAVED,
+                message = "저장 결과가 시연 기대값과 일치하지 않아요. 결과를 다시 확인해 주세요."))
             return false
         }
         completed[plan.id] = receipt!!

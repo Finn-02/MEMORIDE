@@ -67,18 +67,90 @@ class P02ContentContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'packaged PNG'):
                 validate(self.catalog, self.fixtures, root)
 
-    def test_region_scenario_cannot_also_expect_daily_growth(self):
-        scenario = next(s for s in self.fixtures['scenarios'] if s['arrival']['kind'] == 'REGION' and not s.get('replayOf'))
-        scenario['expected']['growthDelta'] = 1
-        with self.assertRaisesRegex(ValueError, 'REGION.*growth'):
+    def test_current_daily_scenario_cannot_expect_growth(self):
+        self.fixtures['scenarios'][0]['expected']['growthDelta'] = 1
+        with self.assertRaisesRegex(ValueError, 'D01.*DAILY growth delta must be 0'):
             validate(self.catalog, self.fixtures)
 
-    def test_region_ui_receipt_cannot_also_show_daily_growth(self):
-        game = next(s['game'] for s in self.ui['samples'] if (s['game'].get('pendingReceipt') or {}).get('kind') == 'REGION')
-        game['pendingReceipt'].update(growthBefore=0, growthAfter=1)
-        game['dailyGrowth'] = 1
+    def test_registered_region_first_completion_must_expect_growth(self):
+        self.assertEqual(validate(self.catalog, self.fixtures)['scenarios'], 6)
+        self.fixtures['scenarios'][2]['expected']['growthDelta'] = 0
+        with self.assertRaisesRegex(ValueError, 'D03.*REGION growth delta must be 1'):
+            validate(self.catalog, self.fixtures)
+
+    def test_same_kst_day_and_midnight_use_actual_completion_time(self):
+        revisit = self.fixtures['scenarios'][4]
+        midnight = 1793458800000  # 2026-11-01 00:00 KST, Oct 31 in UTC.
+        revisit['arrival']['completedAtEpochMs'] = midnight - 1
+        validate(self.catalog, self.fixtures)
+        revisit['expected']['growthDelta'] = 1
+        with self.assertRaisesRegex(ValueError, 'D05.*REGION growth delta must be 0'):
+            validate(self.catalog, self.fixtures)
+        revisit['arrival']['completedAtEpochMs'] = midnight
+        validate(self.catalog, self.fixtures)
+
+    def test_region_growth_stops_at_cap_across_distinct_days(self):
+        scenarios = self.fixtures['scenarios']
+        first = scenarios[-1]
+        for offset, delta in enumerate((1, 1, 0), 1):
+            scenarios.append({
+                'id': f'cap-{offset}', 'dependsOn': scenarios[-1]['id'],
+                'arrival': dict(first['arrival'],
+                                journeyId=f'00000000-0000-4000-8000-{offset + 100:012d}',
+                                completedAtEpochMs=first['arrival']['completedAtEpochMs'] + offset * 86_400_000),
+                'expected': dict(growthDelta=delta, grantedItemIds=[], duplicate=False),
+            })
+        validate(self.catalog, self.fixtures)
+        scenarios[-1]['expected']['growthDelta'] = 1
+        with self.assertRaisesRegex(ValueError, 'cap-3.*REGION growth delta must be 0'):
+            validate(self.catalog, self.fixtures)
+
+    def test_unknown_region_and_item_are_rejected(self):
+        for field, message in [('regionId', 'unknown destination'), ('grantedItemIds', 'unknown expected reward')]:
+            with self.subTest(field=field):
+                fixtures = copy.deepcopy(self.fixtures)
+                scenario = fixtures['scenarios'][2]
+                if field == 'regionId':
+                    scenario['arrival'][field] = 'unknown'
+                else:
+                    scenario['expected'][field] = ['unknown']
+                with self.assertRaisesRegex(ValueError, message):
+                    validate(self.catalog, fixtures)
+
+    def test_current_region_sample_allows_one_step_but_not_two(self):
+        self.assertEqual(validate_samples(self.catalog, self.ui), 6)
+        game = self.ui['samples'][1]['game']
+        game['pendingReceipt']['growthAfter'] = 2
+        game['dailyGrowth'] = 2
         with self.assertRaisesRegex(ValueError, 'REGION.*growth'):
             validate_samples(self.catalog, self.ui)
+
+    def test_only_explicit_legacy_daily_can_show_daily_growth(self):
+        legacy = next(s for s in self.ui['samples'] if s['id'] == 'daily')
+        current = next(s for s in self.ui['samples'] if s['id'] == 'daily_current')
+        self.assertEqual(legacy['game']['pendingReceipt']['growthAfter'], 1)
+        self.assertEqual(current['game']['pendingReceipt']['growthAfter'], 0)
+        validate_samples(self.catalog, self.ui)
+        del legacy['growthPolicy']
+        with self.assertRaisesRegex(ValueError, 'DAILY.*growth'):
+            validate_samples(self.catalog, self.ui)
+
+    def test_legacy_policy_cannot_bypass_region_receipt_checks(self):
+        self.ui['samples'][1]['growthPolicy'] = 'legacy_daily'
+        with self.assertRaisesRegex(ValueError, 'legacy policy requires a DAILY'):
+            validate_samples(self.catalog, self.ui)
+
+    def test_preview_rejects_malformed_receipt_and_mismatched_growth(self):
+        for receipt, message in [([], 'invalid pending receipt'), (None, 'preview pending growth mismatch')]:
+            with self.subTest(message=message):
+                ui = copy.deepcopy(self.ui)
+                game = ui['samples'][1]['game']
+                if receipt is None:
+                    game['dailyGrowth'] = 0
+                else:
+                    game['pendingReceipt'] = receipt
+                with self.assertRaisesRegex(ValueError, message):
+                    validate_samples(self.catalog, ui)
 
     def test_daily_ui_receipt_cannot_show_two_growth_steps(self):
         game = next(s['game'] for s in self.ui['samples'] if (s['game'].get('pendingReceipt') or {}).get('kind') == 'DAILY')

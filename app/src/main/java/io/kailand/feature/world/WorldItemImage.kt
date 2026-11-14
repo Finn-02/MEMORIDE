@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +25,7 @@ private sealed interface WorldImage {
 }
 
 @Composable
-internal fun WorldItemImage(path: String?, label: String) {
+internal fun WorldItemImage(path: String?, label: String, size: Dp = 64.dp) {
     val assets = LocalContext.current.assets
     key(path, assets) {
         val result by produceState<WorldImage>(WorldImage.Loading, path, assets) {
@@ -41,7 +42,7 @@ internal fun WorldItemImage(path: String?, label: String) {
         when (val image = result) {
             WorldImage.Loading -> Text("이미지 불러오는 중")
             WorldImage.Missing -> Text("◇ 이미지 없음 · $label")
-            is WorldImage.Loaded -> Image(image.bitmap, label, Modifier.size(64.dp))
+            is WorldImage.Loaded -> Image(image.bitmap, label, Modifier.size(size))
         }
     }
 }

@@ -35,6 +35,10 @@ class UserConfirmedStoreTest {
             val service = readyService(store, firstScope)
             val first = (service.completeArrival(daily) as ArrivalResult.Applied).receipt
             val last = (service.completeArrival(region) as ArrivalResult.Applied).receipt
+            assertEquals(0, first.growthBefore)
+            assertEquals(0, first.growthAfter)
+            assertEquals(0, last.growthBefore)
+            assertEquals(1, last.growthAfter)
             assertTrue(file.isFile)
             first to last
         } finally { firstScope.coroutineContext[Job]?.cancelAndJoin() }

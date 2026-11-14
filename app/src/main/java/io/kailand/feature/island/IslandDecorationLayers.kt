@@ -13,6 +13,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import io.kailand.core.contract.Catalog
@@ -56,6 +57,54 @@ private fun decodeDecoration(assets: AssetManager, filename: String): ImageBitma
     }
     require(bitmap.hasAlpha()) { "Decoration layer must have alpha: $filename" }
     return bitmap.asImageBitmap()
+}
+
+/** Normalized visible bounds from the same fixed-slot PNG that the scene draws. */
+internal data class DecorationPlacementArea(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+    val centerX: Float get() = (left + right) / 2f
+}
+
+/** Read-only marker geometry; no guessed slot coordinates or new saved positions. */
+internal suspend fun decorationPlacementAreas(
+    assets: AssetManager, assetKey: String?,
+): Map<String, DecorationPlacementArea> = withContext(Dispatchers.IO) {
+    if (assetKey == null || assetKey !in supportedDecorAssets) return@withContext emptyMap()
+    supportedSlots.mapNotNull { slotId ->
+        try {
+            val bitmap = decodeDecoration(assets, "${assetKey}_${slotId}_v3.png").asAndroidBitmap()
+            try {
+                var left = bitmap.width
+                var top = bitmap.height
+                var right = -1
+                var bottom = -1
+                val row = IntArray(bitmap.width)
+                for (y in 0 until bitmap.height) {
+                    bitmap.getPixels(row, 0, bitmap.width, 0, y, bitmap.width, 1)
+                    for (x in row.indices) {
+                        // Ignore the faint contact shadow and transparent padding.
+                        if ((row[x] ushr 24) >= 128) {
+                            left = minOf(left, x)
+                            top = minOf(top, y)
+                            right = maxOf(right, x)
+                            bottom = maxOf(bottom, y)
+                        }
+                    }
+                }
+                if (right < left || bottom < top) null else slotId to DecorationPlacementArea(
+                    left.toFloat() / bitmap.width, top.toFloat() / bitmap.height,
+                    (right + 1f) / bitmap.width, (bottom + 1f) / bitmap.height,
+                )
+            } finally {
+                // This decode is temporary geometry data, never a displayed/shared image.
+                bitmap.recycle()
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.w("MemorideIsland", "Cannot read decoration marker bounds: $slotId", error)
+            null
+        }
+    }.toMap()
 }
 
 // IslandPresentation already verifies ownership, known slot IDs and

@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" />
+  <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+  <queries>
+    <package android:name="ai.umos.maps.android.navigation.app" />
+    <package android:name="ai.pleos.playground.service.navi" />
+  </queries>
   <application
       android:name="io.kailand.app.MemorideApplication"
       android:allowBackup="false"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher"
       android:label="@string/app_name"
       android:supportsRtl="true"
       android:theme="@style/Theme.Memoride">
     <uses-library android:name="android.car" android:required="false" />
     <activity
         android:name="io.kailand.app.MainActivity"
+        android:launchMode="singleTask"
         android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
