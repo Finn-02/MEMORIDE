@@ -31,8 +31,17 @@ data class NavigationDraft(
         now >= observedAtEpochMs && now - observedAtEpochMs <= 24 * 60 * 60 * 1000L
 
     fun destination(catalog: Catalog): DestinationSpec {
-        // The catalog contains reference points, NOT administrative boundaries. Never infer a city radius.
-        val region = catalog.regions.singleOrNull {
+        // A city named in the navigation destination is a locality hint, not proof of a visit.
+        val namedRegions = catalog.regions.filter { region ->
+            label.trim() == region.name || when (region.id) {
+                "wonju" -> label.contains("원주시")
+                "sokcho" -> label.contains("속초시")
+                "daejeon" -> label.contains("대전광역시") || label.contains("대전시")
+                else -> false
+            }
+        }
+        // Multiple named cities are ambiguous. Do not choose one or infer a radius from a reference point.
+        val region = if (namedRegions.isNotEmpty()) namedRegions.singleOrNull() else catalog.regions.singleOrNull {
             abs(it.latitude - latitude) < 0.00001 && abs(it.longitude - longitude) < 0.00001
         }
         return DestinationSpec(region?.id, label, latitude, longitude)

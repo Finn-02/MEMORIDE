@@ -157,7 +157,6 @@ private fun ResultPanel(
 ) {
     Surface(modifier, shape = RoundedCornerShape(28.dp), color = Color.White, shadowElevation = 8.dp) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-        val recordHeight = maxHeight * .32f
         val shortWindow = maxHeight < 600.dp * LocalDensity.current.fontScale
         val panelModifier = if (shortWindow) Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             else Modifier.fillMaxSize()
@@ -165,7 +164,7 @@ private fun ResultPanel(
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             val contentModifier = if (shortWindow) Modifier.fillMaxWidth()
                 else Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
-            Column(contentModifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(contentModifier.padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (result == null) {
                     ResultLabel("이 기록은 새 결과 화면으로 표시할 수 없어요", 30, weight = FontWeight.Bold)
                     ResultLabel("섬으로 돌아가면 이전 기록 확인을 마칠 수 있어요.", 22, color = ResultSub)
@@ -178,18 +177,18 @@ private fun ResultPanel(
                         ResultLabel(result.summary, if (result.firstVisit) 22 else 23, color = ResultSub)
                     }
                     ResultSouvenirs(result, Modifier.fillMaxWidth())
+                    Box(Modifier.padding(top = 16.dp)) {
+                        ResultGrowth(result)
+                    }
                 }
                 if (state.pending != null || state.error != null) ResultLabel(state.error ?: "확인 내용을 처리하고 있어요…", 20,
                     Modifier.semantics { liveRegion = LiveRegionMode.Polite }, color = ResultSub)
-            }
-            // Anchor both visit variants to the same footer, outside the souvenir scroller.
-            if (result != null) {
-                val recordsModifier = if (shortWindow) Modifier.fillMaxWidth()
-                    else Modifier.fillMaxWidth().heightIn(max = recordHeight).verticalScroll(rememberScrollState())
-                Column(recordsModifier) {
-                    ResultTripRecords(result, compact)
+                // Both visit variants share one content scroller; records keep their full natural height.
+                if (result != null) {
+                    Box(Modifier.padding(top = 16.dp)) {
+                        ResultTripRecords(result, compact)
+                    }
                 }
-                ResultGrowth(result)
             }
             ResultIslandButton(result, state, onIsland)
         }

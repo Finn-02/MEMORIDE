@@ -476,6 +476,32 @@ class ManualJourneyIntegrationTest {
         } finally { p.close() }
     }
 
+    @Test fun detailedCityNavigationReceivesItsRegionGiftsOnlyAfterConfirmation() = runBlocking {
+        mapOf("원주시 중앙로 1 카페" to "wonju", "속초시 중앙시장로 12" to "sokcho",
+            "대전광역시 유성구 대학로 1" to "daejeon").forEach { (label, regionId) ->
+            val p = pipeline()
+            try {
+                val draft = NavigationDraft("66666666-6666-4666-8666-666666666666", 0, label,
+                    37.5, 127.1, p.clock, NavigationDraftStatus.ACTIVE)
+                val destination = draft.destination(catalog)
+                assertEquals(regionId, destination.regionId)
+                assertEquals(RequestResult.Accepted, p.manual.adoptNavigation(draft, destination,
+                    { true }, saved = {}, caller = { true }))
+                assertNull(p.game.state.value.pendingReceipt)
+                assertTrue(p.game.state.value.ownedItemIds.isEmpty())
+                p.manual.requestReview { true }
+                assertNull(p.game.state.value.pendingReceipt)
+                assertEquals(RequestResult.Accepted, p.manual.choose(p.manual.state.value.confirmation!!.token,
+                    ManualJourneyChoice.ARRIVED) { true })
+                val receipt = p.game.state.value.pendingReceipt!!
+                assertEquals(regionId, receipt.regionId)
+                assertEquals(catalog.regions.single { it.id == regionId }.itemIds.toSet(), receipt.grantedItemIds.toSet())
+                assertEquals(DataSource.USER_CONFIRMED, receipt.source)
+                assertEquals(1, p.store.read()!!.processedReceipts.size)
+            } finally { p.close() }
+        }
+    }
+
     @Test fun changedOrCancelledNavigationRejectsOldQuestionAndUnknownPoiGetsNoRegionGift() = runBlocking {
         val p = pipeline()
         try {
